@@ -13,10 +13,10 @@ type MlAppMeta struct {
 }
 
 type MlAppUix struct {
-	Name        string        `json:"name"`
-	VisibleName string        `json:"visibleName,omitempty"`
-	Resources   MlAppResource `json:"resources,omitempty"`
-	Ports       []MlAppPort   `json:"ports,omitempty"`
+	Name        string      `json:"name"`
+	VisibleName string      `json:"visibleName,omitempty"`
+	Resources   Resource    `json:"resources,omitempty"`
+	Ports       []MlAppPort `json:"ports,omitempty"`
 }
 
 type MlAppPort struct {
@@ -44,7 +44,7 @@ type MlAppResource struct {
 	WorkDir         string            `json:"workDir"`
 	Args            string            `json:"args,omitempty"`
 	Env             []MLAppEnv        `json:"env"`
-	Resources       MlAppResource     `json:"resources"`
+	Resources       Resource          `json:"resources"`
 }
 
 type MlAppImages struct {
@@ -55,19 +55,4 @@ type MlAppImages struct {
 type MLAppEnv struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
-}
-
-type MlAppResource struct {
-	Accelerators MlAppResourceAccelerators `json:"accelerators"`
-	Requests     MlAppResourceReqLim       `json:"requests"`
-	Limits       MlAppResourceReqLim       `json:"limits"`
-}
-
-type MlAppResourceAccelerators struct {
-	GPU uint `json:"gpu"`
-}
-
-type MlAppResourceReqLim struct {
-	CPU    string `json:"cpu"`
-	Memory string `json:"memory"`
 }
