@@ -17,3 +17,4 @@ import:
   - rest
   - tools/clientcmd
 - package: github.com/pborman/uuid
+- package: github.com/ghodss/yaml
