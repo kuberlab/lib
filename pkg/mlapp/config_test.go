@@ -16,6 +16,7 @@ metadata:
   namespace: namespace
   labels: # Will be applayed to each resource
     key: value
+spec:
   tasks:
   - name: model
     labels:
@@ -84,29 +85,28 @@ func TestUnmarshalConfig(t *testing.T) {
 	}
 
 	Assert("MLApp", conf.Kind, t)
-	Assert("name", conf.Metadata.Name, t)
-	Assert("namespace", conf.Metadata.Namespace, t)
-	Assert("value", conf.Metadata.Labels["key"], t)
-	Assert("model", conf.Metadata.Tasks[0].Name, t)
-	Assert("value", conf.Metadata.Tasks[0].Labels["key"], t)
-	Assert("workers", conf.Metadata.Tasks[0].Resources[0].Name, t)
-	Assert("value", conf.Metadata.Tasks[0].Resources[0].Labels["key"], t)
-	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].Replicas, t)
-	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].MinAvailable, t)
-	Assert("python", conf.Metadata.Tasks[0].Resources[0].Command, t)
-	Assert("", conf.Metadata.Tasks[0].Resources[0].Args, t)
-	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].MaxRestartCount, t)
-	Assert("Always,Never,OnFailure", conf.Metadata.Tasks[0].Resources[0].RestartPolicy, t)
-	Assert("directory", conf.Metadata.Tasks[0].Resources[0].WorkDir, t)
-	Assert("NAME", conf.Metadata.Tasks[0].Resources[0].Env[0].Name, t)
-	Assert("value", conf.Metadata.Tasks[0].Resources[0].Env[0].Value, t)
-	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].Resources.Accelerators.GPU, t)
+	Assert("name", conf.Name, t)
+	Assert("value", conf.Labels["key"], t)
+	Assert("model", conf.Tasks[0].Name, t)
+	Assert("value", conf.Tasks[0].Labels["key"], t)
+	Assert("workers", conf.Tasks[0].Resources[0].Name, t)
+	Assert("value", conf.Tasks[0].Resources[0].Labels["key"], t)
+	Assert(uint(1), conf.Tasks[0].Resources[0].Replicas, t)
+	Assert(uint(1), conf.Tasks[0].Resources[0].MinAvailable, t)
+	Assert("python", conf.Tasks[0].Resources[0].Command, t)
+	Assert("", conf.Tasks[0].Resources[0].Args, t)
+	Assert(uint(1), conf.Tasks[0].Resources[0].MaxRestartCount, t)
+	Assert("Always,Never,OnFailure", conf.Tasks[0].Resources[0].RestartPolicy, t)
+	Assert("directory", conf.Tasks[0].Resources[0].WorkDir, t)
+	Assert("NAME", conf.Tasks[0].Resources[0].Env[0].Name, t)
+	Assert("value", conf.Tasks[0].Resources[0].Env[0].Value, t)
+	Assert(uint(1), conf.Tasks[0].Resources[0].Resources.Accelerators.GPU, t)
 
 	// UIX
-	Assert("jupyter", conf.Metadata.Uix[0].Name, t)
-	Assert("Jupyter", conf.Metadata.Uix[0].DisplayName, t)
-	Assert("http", conf.Metadata.Uix[0].Ports[0].Name, t)
-	Assert(uint(80), conf.Metadata.Uix[0].Ports[0].Port, t)
-	Assert("TCP", conf.Metadata.Uix[0].Ports[0].Protocol, t)
-	Assert(uint(8082), conf.Metadata.Uix[0].Ports[0].TargetPort, t)
+	Assert("jupyter", conf.Uix[0].Name, t)
+	Assert("Jupyter", conf.Uix[0].DisplayName, t)
+	Assert("http", conf.Uix[0].Ports[0].Name, t)
+	Assert(uint(80), conf.Uix[0].Ports[0].Port, t)
+	Assert("TCP", conf.Uix[0].Ports[0].Protocol, t)
+	Assert(uint(8082), conf.Uix[0].Ports[0].TargetPort, t)
 }

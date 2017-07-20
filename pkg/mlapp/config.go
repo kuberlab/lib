@@ -1,23 +1,28 @@
 package mlapp
 
 type Config struct {
-	Kind     string `json:"kind"`
-	Metadata Meta   `json:"metadata"`
+	Kind string `json:"kind"`
+	Meta `json:"metadata"`
+	Spec `json:"spec,omitempty"`
 }
 
 type Meta struct {
-	Name      string            `json:"name"`
-	Namespace string            `json:"namespace"`
-	Labels    map[string]string `json:"labels,omitempty"`
-	Tasks     []Task            `json:"tasks,omitempty"`
-	Uix       []Uix             `json:"uix,omitempty"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
+}
+
+type Spec struct {
+	Tasks   []Task   `json:"tasks,omitempty"`
+	Uix     []Uix    `json:"uix,omitempty"`
+	Volumes []Volume `json:"volumes"`
 }
 
 type Uix struct {
-	Name        string          `json:"name"`
+	Meta        `json:",inline"`
 	DisplayName string          `json:"displayName,omitempty"`
 	Resources   ResourceRequest `json:"resources,omitempty"`
 	Ports       []Port          `json:"ports,omitempty"`
+	Volumes     []VolumeMount   `json:"volumes"`
 }
 
 type Port struct {
@@ -28,25 +33,23 @@ type Port struct {
 }
 
 type Task struct {
-	Name      string            `json:"name"`
-	Labels    map[string]string `json:"labels,omitempty"`
-	Resources []Resource        `json:"resources"`
-	Volumes   []Volume          `json:"volumes"`
+	Meta      `json:",inline"`
+	Resources []Resource `json:"resources"`
 }
 
 type Resource struct {
-	Name            string            `json:"name"`
-	Labels          map[string]string `json:"labels,omitempty"`
-	Replicas        uint              `json:"replicas"`
-	MinAvailable    uint              `json:"minAvailable"`
-	RestartPolicy   string            `json:"restartPolicy"`
-	MaxRestartCount uint              `json:"maxRestartCount"`
-	Images          Images            `json:"images"`
-	Command         string            `json:"command"`
-	WorkDir         string            `json:"workDir"`
-	Args            string            `json:"args,omitempty"`
-	Env             []Env             `json:"env"`
-	Resources       ResourceRequest   `json:"resources"`
+	Meta            `json:",inline"`
+	Replicas        uint            `json:"replicas"`
+	MinAvailable    uint            `json:"minAvailable"`
+	RestartPolicy   string          `json:"restartPolicy"`
+	MaxRestartCount uint            `json:"maxRestartCount"`
+	Images          Images          `json:"images"`
+	Command         string          `json:"command"`
+	WorkDir         string          `json:"workDir"`
+	Args            string          `json:"args,omitempty"`
+	Env             []Env           `json:"env"`
+	Resources       ResourceRequest `json:"resources"`
+	Volumes         []VolumeMount   `json:"volumes"`
 }
 
 type Images struct {

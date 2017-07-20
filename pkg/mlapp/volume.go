@@ -2,6 +2,11 @@ package mlapp
 
 import "k8s.io/client-go/pkg/api/v1"
 
+type VolumeMount struct {
+	Name      string `json:"name"`
+	MountPath string `json:"mountPath"`
+	ReadOnly  bool   `json:"readOnly,omitempty"`
+}
 type Volume struct {
 	// as in v1.Volume
 	VolumeSource `json:",inline" protobuf:"bytes,2,opt,name=volumeSource"`
