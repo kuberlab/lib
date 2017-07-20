@@ -31,6 +31,7 @@ type Task struct {
 	Name      string            `json:"name"`
 	Labels    map[string]string `json:"labels,omitempty"`
 	Resources []Resource        `json:"resources"`
+	Volumes   []Volume          `json:"volumes"`
 }
 
 type Resource struct {
