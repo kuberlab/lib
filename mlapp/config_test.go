@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"reflect"
 	"os"
-	"fmt"
 )
 
 var cfg = `
