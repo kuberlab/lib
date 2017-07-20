@@ -2,7 +2,7 @@ package mlapp
 
 import (
 	"testing"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 	"strings"
 	"runtime"
 	"reflect"
@@ -92,7 +92,6 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert("value", conf.Metadata.Tasks[0].Labels["key"], t)
 	Assert("workers", conf.Metadata.Tasks[0].Resources[0].Name, t)
 	Assert("value", conf.Metadata.Tasks[0].Resources[0].Labels["key"], t)
-	fmt.Println(conf.Metadata.Tasks[0].Resources[0])
 	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].Replicas, t)
 	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].MinAvailable, t)
 	Assert("python", conf.Metadata.Tasks[0].Resources[0].Command, t)
@@ -100,7 +99,7 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].MaxRestartCount, t)
 	Assert("Always,Never,OnFailure", conf.Metadata.Tasks[0].Resources[0].RestartPolicy, t)
 	Assert("directory", conf.Metadata.Tasks[0].Resources[0].WorkDir, t)
-	Assert("name", conf.Metadata.Tasks[0].Resources[0].Env[0].Name, t)
+	Assert("NAME", conf.Metadata.Tasks[0].Resources[0].Env[0].Name, t)
 	Assert("value", conf.Metadata.Tasks[0].Resources[0].Env[0].Value, t)
 	Assert(uint(1), conf.Metadata.Tasks[0].Resources[0].Resources.Accelerators.GPU, t)
 
