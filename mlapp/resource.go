@@ -1,9 +1,9 @@
-package resource
+package mlapp
 
 type Resource struct {
 	Accelerators ResourceAccelerators
-	Requests ResourceRequests
-	Limits ResourceRequests
+	Requests     ResourceRequests
+	Limits       ResourceRequests
 }
 
 type ResourceAccelerators struct {
@@ -11,6 +11,6 @@ type ResourceAccelerators struct {
 }
 
 type ResourceRequests struct {
-	CPU string
+	CPU    string
 	Memory string
 }
