@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -77,7 +76,6 @@ func Noop(_ runtime.Object) error {
 func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) error {
 	switch v := resource.Object.(type) {
 	case *api_v1.Namespace:
-		logrus.Info(v)
 		if _, err := kubeClient.Namespaces().Get(v.Name, meta_v1.GetOptions{}); err == nil {
 			return nil
 		} else {
@@ -216,10 +214,6 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return err
 		}
 	default:
-		logrus.Println("!!!!!-1", resource)
-		logrus.Println("!!!!!-2", resource.Kind)
-		logrus.Println("!!!!!-3", resource.Kind.GroupKind())
-		logrus.Println("!!!!!-4", resource.Kind.GroupKind().Kind)
 		return errors.New("Undefined resource " + resource.Kind.GroupKind().Kind)
 	}
 }
