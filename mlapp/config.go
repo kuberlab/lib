@@ -1,58 +1,59 @@
 package mlapp
 
-type MlApp struct {
-	Metadata MlAppMeta  `json:"metadata"`
-	Uix      []MlAppUix `json:"uix,omitempty"`
+type Config struct {
+	Kind     string `json:"kind"`
+	Metadata Meta   `json:"metadata"`
 }
 
-type MlAppMeta struct {
+type Meta struct {
 	Name      string            `json:"name"`
 	Namespace string            `json:"namespace"`
 	Labels    map[string]string `json:"labels,omitempty"`
-	Tasks     []MlAppTask       `json:"tasks,omitempty"`
+	Tasks     []Task            `json:"tasks,omitempty"`
+	Uix       []Uix             `json:"uix,omitempty"`
 }
 
-type MlAppUix struct {
-	Name        string      `json:"name"`
-	VisibleName string      `json:"visibleName,omitempty"`
-	Resources   Resource    `json:"resources,omitempty"`
-	Ports       []MlAppPort `json:"ports,omitempty"`
+type Uix struct {
+	Name        string          `json:"name"`
+	DisplayName string          `json:"displayName,omitempty"`
+	Resources   ResourceRequest `json:"resources,omitempty"`
+	Ports       []Port          `json:"ports,omitempty"`
 }
 
-type MlAppPort struct {
+type Port struct {
 	Name       string `json:"name"`
 	Protocol   string `json:"protocol,omitempty"`
 	Port       uint   `json:"port,omitempty"`
 	TargetPort uint   `targetPort:"name,omitempty"`
 }
 
-type MlAppTask struct {
+type Task struct {
 	Name      string            `json:"name"`
 	Labels    map[string]string `json:"labels,omitempty"`
-	Resources MlAppResource     `json:"resources"`
+	Resources []Resource        `json:"resources"`
 }
 
-type MlAppResource struct {
+type Resource struct {
 	Name            string            `json:"name"`
 	Labels          map[string]string `json:"labels,omitempty"`
 	Replicas        uint              `json:"replicas"`
 	MinAvailable    uint              `json:"minAvailable"`
 	RestartPolicy   string            `json:"restartPolicy"`
 	MaxRestartCount uint              `json:"maxRestartCount"`
-	Images          MlAppImages       `json:"images"`
+	Images          Images            `json:"images"`
 	Command         string            `json:"command"`
 	WorkDir         string            `json:"workDir"`
 	Args            string            `json:"args,omitempty"`
-	Env             []MLAppEnv        `json:"env"`
-	Resources       Resource          `json:"resources"`
+	Env             []Env             `json:"env"`
+	Resources       ResourceRequest   `json:"resources"`
 }
 
-type MlAppImages struct {
+type Images struct {
 	CPU string `json:"cpu,omitempty"`
 	GPU string `json:"gpu,omitempty"`
 }
 
-type MLAppEnv struct {
+type Env struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
 }

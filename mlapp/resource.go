@@ -1,6 +1,6 @@
 package mlapp
 
-type Resource struct {
+type ResourceRequest struct {
 	Accelerators ResourceAccelerators `json:"accelerators"`
 	Requests     ResourceReqLim       `json:"requests"`
 	Limits       ResourceReqLim       `json:"limits"`
