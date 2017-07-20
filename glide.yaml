@@ -1,0 +1,19 @@
+package: github.com/kuberlab/lib
+import:
+- package: github.com/Sirupsen/logrus
+- package: k8s.io/apimachinery
+  version: 9c89140a45325f83409e90359888133478207c7a
+  subpackages:
+  - pkg/apis/meta/v1
+  - pkg/runtime
+  - pkg/watch
+- package: k8s.io/client-go
+  version: f64a115c809b7dbd30bd787d9557b7926dbba81e
+  subpackages:
+  - kubernetes
+  - pkg/api
+  - pkg/api/v1
+  - pkg/apis/batch/v1
+  - rest
+  - tools/clientcmd
+- package: github.com/pborman/uuid
