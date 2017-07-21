@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	KUBELAB_WS_LABEL = "kuberlab.io/workspace"
+	KUBELAB_WS_LABEL    = "kuberlab.io/workspace"
 	KUBELAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
 )
+
 type Config struct {
 	Kind      string `json:"kind"`
 	Meta      `json:"metadata"`
@@ -190,8 +191,8 @@ var PythonPathOption = func(c *Config) (res *Config, err error) {
 	return
 }
 
-func BuildOption(workspaceID,workspaceName string)  func(c *Config) (res *Config, err error) {
-	return func(c *Config) (res *Config,err error) {
+func BuildOption(workspaceID, workspaceName string) func(c *Config) (res *Config, err error) {
+	return func(c *Config) (res *Config, err error) {
 		res = c
 		res.Workspace = workspaceName
 		res.Labels[KUBELAB_WS_LABEL] = workspaceName
@@ -200,22 +201,21 @@ func BuildOption(workspaceID,workspaceName string)  func(c *Config) (res *Config
 	}
 }
 
-func (c *Config) GetTaskResources(userID string,taskID string,buildID string) []Resource{
-	for _,t := range c.Tasks{
-		if t.Name==taskID{
+func (c *Config) GetTaskResources(userID string, taskID string, buildID string) []Resource {
+	for _, t := range c.Tasks {
+		if t.Name == taskID {
 			l := map[string]string{}
-			jonMap(l,c.Labels)
-			jonMap(l,t.Labels)
+			jonMap(l, c.Labels)
+			jonMap(l, t.Labels)
 			//resources := make([]Resource,len(t.Resources))
-
 
 		}
 	}
 	return nil
 }
 
-func jonMap(dest,src map[string]string) {
-	for k,v := range src{
+func jonMap(dest, src map[string]string) {
+	for k, v := range src {
 		dest[k] = v
 	}
 }
