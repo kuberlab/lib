@@ -2,7 +2,7 @@ package mlapp
 
 import (
 	"fmt"
-	kapi_v1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/pkg/api/v1"
 	"path/filepath"
 	"strings"
 )
@@ -97,11 +97,11 @@ func (c *Config) VolumeByName(name string) *Volume {
 	}
 	return nil
 }
-func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]kapi_v1.Volume, []kapi_v1.VolumeMount, error) {
+func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
 	added := make(map[string]string)
 	names := make(map[string]string)
-	kvolumes := make([]kapi_v1.Volume, 0)
-	kvolumesMount := make([]kapi_v1.VolumeMount, 0)
+	kvolumes := make([]v1.Volume, 0)
+	kvolumesMount := make([]v1.VolumeMount, 0)
 	for _, m := range mounts {
 		v := c.VolumeByName(m.Name)
 		if v == nil {
@@ -131,7 +131,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]kapi_v1.Volume, []kapi
 		if len(m.SubPath) > 0 {
 			filepath.Join(subPath, m.SubPath)
 		}
-		kvolumesMount = append(kvolumesMount, kapi_v1.VolumeMount{
+		kvolumesMount = append(kvolumesMount, v1.VolumeMount{
 			Name:      names[m.Name],
 			SubPath:   subPath,
 			MountPath: mountPath,
