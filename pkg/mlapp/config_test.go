@@ -1,12 +1,13 @@
 package mlapp
 
 import (
-	"github.com/ghodss/yaml"
 	"os"
 	"reflect"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/ghodss/yaml"
 )
 
 var cfg = `

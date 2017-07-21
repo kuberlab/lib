@@ -1,9 +1,11 @@
 package kubernetes
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strings"
+	"text/template"
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,6 +26,20 @@ type KubeResource struct {
 	Kind    *schema.GroupVersionKind
 	Deps    []*KubeResource
 	Upgrade Upgrade
+}
+
+func GetTemplate(tpl string, vars map[string]interface{}) (string, error) {
+	t := template.New("gotpl")
+	t, err := t.Parse(tpl)
+	if err != nil {
+		return "", fmt.Errorf("Failed parse template %v", err)
+	}
+	buffer := bytes.NewBuffer(make([]byte, 0))
+
+	if err := t.ExecuteTemplate(buffer, "gotpl", vars); err != nil {
+		return "", err
+	}
+	return buffer.String(), nil
 }
 
 func GetKubeResource(name string, data string, tranform func(runtime.Object) error) (*KubeResource, error) {

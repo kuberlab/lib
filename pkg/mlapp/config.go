@@ -2,9 +2,10 @@ package mlapp
 
 import (
 	"fmt"
-	"k8s.io/client-go/pkg/api/v1"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -36,6 +37,10 @@ type Uix struct {
 	Resources   ResourceRequest `json:"resources,omitempty"`
 	Ports       []Port          `json:"ports,omitempty"`
 	Volumes     []VolumeMount   `json:"volumes"`
+	Image       string          `json:"image"`
+	Command     string          `json:"command"`
+	Args        string          `json:"args,omitempty"`
+	Env         []Env           `json:"env"`
 }
 
 type Port struct {
@@ -188,6 +193,29 @@ var PythonPathOption = func(c *Config) (res *Config, err error) {
 			}
 		}
 	}
+	for i, uix := range res.Spec.Uix {
+		path := []string{}
+		for _, m := range uix.Volumes {
+			v := c.VolumeByName(m.Name)
+			if v == nil {
+				err = fmt.Errorf("Source '%s' not found", m.Name)
+				return
+			}
+			if !v.IsLibDir {
+				continue
+			}
+			mount := m.MountPath
+			if len(mount) < 1 {
+				mount = v.MountPath
+			}
+			path = append(path, mount)
+		}
+		for ei, e := range uix.Env {
+			if e.Name == "PYTHONPATH" {
+				res.Spec.Uix[i].Env[ei].Value = e.Value + ":" + strings.Join(path, ":")
+			}
+		}
+	}
 	return
 }
 
@@ -205,8 +233,8 @@ func (c *Config) GetTaskResources(userID string, taskID string, buildID string) 
 	for _, t := range c.Tasks {
 		if t.Name == taskID {
 			l := map[string]string{}
-			jonMap(l, c.Labels)
-			jonMap(l, t.Labels)
+			joinMap(l, c.Labels)
+			joinMap(l, t.Labels)
 			//resources := make([]Resource,len(t.Resources))
 
 		}
@@ -214,7 +242,7 @@ func (c *Config) GetTaskResources(userID string, taskID string, buildID string) 
 	return nil
 }
 
-func jonMap(dest, src map[string]string) {
+func joinMap(dest, src map[string]string) {
 	for k, v := range src {
 		dest[k] = v
 	}
