@@ -68,7 +68,7 @@ type Resource struct {
 	Env             []Env           `json:"env"`
 	Resources       ResourceRequest `json:"resources"`
 	Volumes         []VolumeMount   `json:"volumes"`
-	Ports           Port            `json:"port,omitempty"`
+	Port            Port            `json:"port,omitempty"`
 }
 
 type Images struct {
