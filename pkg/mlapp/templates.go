@@ -248,17 +248,17 @@ func (c *Config) GenerateTaskResources() ([]*kubernetes.KubeResource, error) {
 			joinMap(labels, r.Labels)
 
 			vars := map[string]interface{}{
-				"Component": task.Name,
-				"Name":      c.Name,
-				"Labels":    labels,
-				"Ports":     r.Ports,
+				"Component":    task.Name,
+				"Name":         c.Name,
+				"Labels":       labels,
+				"Ports":        r.Ports,
 				"ExecutionDir": r.WorkDir,
-				"Command": r.Command,
-				"Args": r.Args,
-				"Replicas": r.Replicas,
+				"Command":      r.Command,
+				"Args":         r.Args,
+				"Replicas":     r.Replicas,
 			}
 			if r.RestartPolicy != "" {
-				vars["RestartPolicy"]= r.RestartPolicy
+				vars["RestartPolicy"] = r.RestartPolicy
 			}
 			if r.MaxRestartCount != 0 {
 				vars["MaxRestartCount"] = r.MaxRestartCount
@@ -285,7 +285,6 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 			"Env":       uix.Env,
 		}
 		joinRawMap(vars, uix.Resources.AsVars())
-
 
 		if uix.Args != "" {
 			vars["Args"] = strings.Split(uix.Args, " ")
