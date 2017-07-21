@@ -251,7 +251,7 @@ func (c *Config) GenerateTaskResources() ([]*kubernetes.KubeResource, error) {
 				"Component":    task.Name,
 				"Name":         c.Name,
 				"Labels":       labels,
-				"Ports":        r.Ports,
+				"Ports":        r.Port,
 				"ExecutionDir": r.WorkDir,
 				"Command":      r.Command,
 				"Args":         r.Args,
