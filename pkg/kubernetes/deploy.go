@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Sirupsen/logrus"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -90,6 +91,7 @@ func Noop(_ runtime.Object) error {
 }
 
 func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) error {
+	logrus.Infof("Apply %v, %v", resource.Name, resource.Kind)
 	switch v := resource.Object.(type) {
 	case *api_v1.Namespace:
 		if _, err := kubeClient.Namespaces().Get(v.Name, meta_v1.GetOptions{}); err == nil {

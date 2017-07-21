@@ -1,0 +1,44 @@
+kind: MLApp
+metadata:
+  name: test-v2
+  labels: # Will be applied to each resource
+    mlapp: test-v2
+spec:
+  volumes:
+    - name: lib
+    - name: logs
+  uix:
+    - name: jupyter
+      displayName: Jupyter
+      labels:
+        app: jupyter
+      image: "tensorflow/tensorflow:latest"
+      env:
+        - name: LOL
+          value: "TRUE"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1Gi
+      volumes:
+        - name: lib
+          mountPath: /notebooks/lib
+      ports:
+        - port: 80
+          targetPort: 8888
+          protocol: TCP
+          name: http
+    - name: tensorboard
+      labels:
+        app: tensorboard
+      displayName: Tensorboard
+      command: "tensorboard"
+      args: "--logdir /tflogs"
+      image: "lsheiba/tensorflow-ls-devel"
+      volumes:
+      - name: logs
+        mountPath: /tflogs
+      ports:
+      - targetPort: 6006
+        name: tensorboard
+        port: 6006

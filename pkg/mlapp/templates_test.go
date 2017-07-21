@@ -1,7 +1,6 @@
 package mlapp
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ghodss/yaml"
