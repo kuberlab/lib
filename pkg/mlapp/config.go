@@ -68,6 +68,7 @@ type Resource struct {
 	Env             []Env           `json:"env"`
 	Resources       ResourceRequest `json:"resources"`
 	Volumes         []VolumeMount   `json:"volumes"`
+	Ports           Port            `json:"port,omitempty"`
 }
 
 type Images struct {
@@ -188,6 +189,7 @@ var PythonPathOption = func(c *Config) (res *Config, err error) {
 			}
 			for ei, e := range r.Env {
 				if e.Name == "PYTHONPATH" {
+					res.Spec.Tasks[ti].Resources[ri].Env[ei].Name = "KUBERLAB_PYTHONPATH"
 					res.Spec.Tasks[ti].Resources[ri].Env[ei].Value = e.Value + ":" + strings.Join(path, ":")
 				}
 			}
@@ -243,6 +245,12 @@ func (c *Config) GetTaskResources(userID string, taskID string, buildID string) 
 }
 
 func joinMap(dest, src map[string]string) {
+	for k, v := range src {
+		dest[k] = v
+	}
+}
+
+func joinRawMap(dest, src map[string]interface{}) {
 	for k, v := range src {
 		dest[k] = v
 	}
