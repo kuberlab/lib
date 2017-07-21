@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+const (
+	KUBELAB_WS_LABEL = "kuberlab.io/workspace"
+	KUBELAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
+)
 type Config struct {
 	Kind      string `json:"kind"`
 	Meta      `json:"metadata"`
@@ -134,4 +138,84 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]kapi_v1.Volume, []kapi
 		})
 	}
 	return kvolumes, kvolumesMount, nil
+}
+
+type ConfigOption func(*Config) (*Config, error)
+
+func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err error) {
+	res = c
+	for _, o := range options {
+		res, err = o(res)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func SetClusterStorageOption(mapping func(name string) (*VolumeSource, error)) ConfigOption {
+	return func(c *Config) (*Config, error) {
+		err := c.SetClusterStorage(mapping)
+		return c, err
+	}
+}
+
+var PythonPathOption = func(c *Config) (res *Config, err error) {
+	res = c
+	for ti := range res.Spec.Tasks {
+		for ri, r := range res.Spec.Tasks[ti].Resources {
+			path := []string{}
+			for _, m := range r.Volumes {
+				v := c.VolumeByName(m.Name)
+				if v == nil {
+					err = fmt.Errorf("Source '%s' not found", m.Name)
+					return
+				}
+				if !v.IsLibDir {
+					continue
+				}
+				mount := m.MountPath
+				if len(mount) < 1 {
+					mount = v.MountPath
+				}
+				path = append(path, mount)
+			}
+			for ei, e := range r.Env {
+				if e.Name == "PYTHONPATH" {
+					res.Spec.Tasks[ti].Resources[ri].Env[ei].Value = e.Value + ":" + strings.Join(path, ":")
+				}
+			}
+		}
+	}
+	return
+}
+
+func BuildOption(workspaceID,workspaceName string)  func(c *Config) (res *Config, err error) {
+	return func(c *Config) (res *Config,err error) {
+		res = c
+		res.Workspace = workspaceName
+		res.Labels[KUBELAB_WS_LABEL] = workspaceName
+		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
+		return
+	}
+}
+
+func (c *Config) GetTaskResources(userID string,taskID string,buildID string) []Resource{
+	for _,t := range c.Tasks{
+		if t.Name==taskID{
+			l := map[string]string{}
+			jonMap(l,c.Labels)
+			jonMap(l,t.Labels)
+			//resources := make([]Resource,len(t.Resources))
+
+
+		}
+	}
+	return nil
+}
+
+func jonMap(dest,src map[string]string) {
+	for k,v := range src{
+		dest[k] = v
+	}
 }
