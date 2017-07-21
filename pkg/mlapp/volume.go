@@ -6,6 +6,7 @@ type VolumeMount struct {
 	Name      string `json:"name"`
 	MountPath string `json:"mountPath"`
 	ReadOnly  bool   `json:"readOnly,omitempty"`
+	SubPath   string `json:"subPath"`
 }
 type Volume struct {
 	// as in v1.Volume
@@ -39,4 +40,19 @@ func (v Volume) v1Volume() v1.Volume {
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
 		},
 	}
+}
+
+func (v Volume) GetBoundID() string {
+	if v.NFS != nil {
+		p := "rw"
+		if v.NFS.ReadOnly {
+			p = "r"
+		}
+		return v.NFS.Server + "/" + v.NFS.Path + ":" + p
+	} else if v.GitRepo != nil {
+		return v.GitRepo.Repository + "/" + v.GitRepo.Directory + ":" + v.GitRepo.Revision
+	} else if v.PersistentVolumeClaim != nil {
+		return v.PersistentVolumeClaim.ClaimName
+	}
+	return v.Name
 }
