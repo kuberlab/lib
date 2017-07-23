@@ -63,9 +63,11 @@ func GetKubeResource(name string, data string, tranform func(runtime.Object) err
 	if err != nil {
 		return nil, fmt.Errorf("Failed decode object %v: ", err)
 	}
-	err = tranform(o)
-	if err != nil {
-		return nil, fmt.Errorf("Failed transform object %v: ", err)
+	if tranform != nil {
+		err = tranform(o)
+		if err != nil {
+			return nil, fmt.Errorf("Failed transform object %v: ", err)
+		}
 	}
 	return &KubeResource{
 		Name:   name,

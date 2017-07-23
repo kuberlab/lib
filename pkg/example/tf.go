@@ -36,10 +36,10 @@ spec:
           gpu: 1
           dedicated_gpu: true
         requests:
-          cpu: 100mi
+          cpu: 100m
           memory: 1Gi
         limits:
-          cpu: 100mi
+          cpu: 100m
           memory: 1Gi
       port: 9000
       volumes:
@@ -73,10 +73,10 @@ spec:
         accelerators:
           gpu: 1
         requests:
-          cpu: 100mi
+          cpu: 100m
           memory: 1Gi
         limits:
-          cpu: 100mi
+          cpu: 100m
           memory: 1Gi
       ports:
         - port: 80

@@ -31,14 +31,24 @@ type Spec struct {
 	Volumes []Volume `json:"volumes"`
 }
 type Resource struct {
-	Resources  ResourceRequest `json:"resources,omitempty"`
-	Images     Images          `json:"images"`
-	Command    string          `json:"command"`
-	WorkDir    string          `json:"workDir"`
-	RawArgs    string          `json:"args,omitempty"`
-	Env        []Env           `json:"env"`
-	Volumes    []VolumeMount   `json:"volumes"`
-	NodesLabel string          `json:"nodes"`
+	Resources  *ResourceRequest `json:"resources,omitempty"`
+	Images     Images           `json:"images"`
+	Command    string           `json:"command"`
+	WorkDir    string           `json:"workDir"`
+	RawArgs    string           `json:"args,omitempty"`
+	Env        []Env            `json:"env"`
+	Volumes    []VolumeMount    `json:"volumes"`
+	NodesLabel string           `json:"nodes"`
+}
+
+func (r Resource) Image() string {
+	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
+		if len(r.Images.GPU) == 0 {
+			return r.Images.CPU
+		}
+		return r.Images.GPU
+	}
+	return r.Images.CPU
 }
 
 func (r Resource) Args() []string {
@@ -55,8 +65,8 @@ type Uix struct {
 type Port struct {
 	Name       string `json:"name"`
 	Protocol   string `json:"protocol,omitempty"`
-	Port       uint   `json:"port,omitempty"`
-	TargetPort uint   `targetPort:"name,omitempty"`
+	Port       int32  `json:"port,omitempty"`
+	TargetPort int32  `targetPort:"name,omitempty"`
 }
 
 type Task struct {
@@ -70,7 +80,7 @@ type TaskResource struct {
 	MinAvailable    uint   `json:"minAvailable"`
 	RestartPolicy   string `json:"restartPolicy"`
 	MaxRestartCount uint   `json:"maxRestartCount"`
-	Port            uint   `json:"port,omitempty"`
+	Port            int32  `json:"port,omitempty"`
 	Resource        `json:",inline"`
 }
 
