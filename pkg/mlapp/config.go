@@ -199,8 +199,10 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 	}
 }
 
-func joinMap(dest, src map[string]string) {
-	for k, v := range src {
-		dest[k] = v
+func joinMaps(dest map[string]string, srcs ...map[string]string) {
+	for _, src := range srcs {
+		for k, v := range src {
+			dest[k] = v
+		}
 	}
 }

@@ -243,9 +243,7 @@ func (t TaskResourceGenerator) Workspace() string {
 }
 func (t TaskResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
-	joinMap(labels, t.c.Labels)
-	joinMap(labels, t.task.Labels)
-	joinMap(labels, t.TaskResource.Labels)
+	joinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 	return labels
 }
 
@@ -350,8 +348,7 @@ func (ui UIXResourceGenerator) Workspace() string {
 }
 func (ui UIXResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
-	joinMap(labels, ui.c.Labels)
-	joinMap(labels, ui.Uix.Labels)
+	joinMaps(labels, ui.c.Labels, ui.Uix.Labels)
 	return labels
 }
 
