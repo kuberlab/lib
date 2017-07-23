@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/kuberlab/lib/pkg/apputil"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -29,8 +30,9 @@ type KubeResource struct {
 	Upgrade Upgrade
 }
 
-func GetTemplate(tpl string, vars map[string]interface{}) (string, error) {
+func GetTemplate(tpl string, vars interface{}) (string, error) {
 	t := template.New("gotpl")
+	t = t.Funcs(apputil.FuncMap())
 	t, err := t.Parse(tpl)
 	if err != nil {
 		return "", fmt.Errorf("Failed parse template %v", err)

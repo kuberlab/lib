@@ -95,7 +95,7 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert(uint(1), conf.Tasks[0].Resources[0].Replicas, t)
 	Assert(uint(1), conf.Tasks[0].Resources[0].MinAvailable, t)
 	Assert("python", conf.Tasks[0].Resources[0].Command, t)
-	Assert("", conf.Tasks[0].Resources[0].Args, t)
+	Assert("", conf.Tasks[0].Resources[0].RawArgs, t)
 	Assert(uint(1), conf.Tasks[0].Resources[0].MaxRestartCount, t)
 	Assert("Always,Never,OnFailure", conf.Tasks[0].Resources[0].RestartPolicy, t)
 	Assert("directory", conf.Tasks[0].Resources[0].WorkDir, t)

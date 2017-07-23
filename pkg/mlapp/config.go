@@ -2,10 +2,10 @@ package mlapp
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
+	"k8s.io/client-go/pkg/api/v1"
 	"path/filepath"
 	"strings"
-
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -17,7 +17,7 @@ type Config struct {
 	Kind      string `json:"kind"`
 	Meta      `json:"metadata"`
 	Spec      `json:"spec,omitempty"`
-	Workspace string `json:"workspace"`
+	Workspace string `json:"workspace,omitempty"`
 }
 
 type Meta struct {
@@ -30,17 +30,26 @@ type Spec struct {
 	Uix     []Uix    `json:"uix,omitempty"`
 	Volumes []Volume `json:"volumes"`
 }
+type Resource struct {
+	Resources  ResourceRequest `json:"resources,omitempty"`
+	Images     Images          `json:"images"`
+	Command    string          `json:"command"`
+	WorkDir    string          `json:"workDir"`
+	RawArgs    string          `json:"args,omitempty"`
+	Env        []Env           `json:"env"`
+	Volumes    []VolumeMount   `json:"volumes"`
+	NodesLabel string          `json:"nodes"`
+}
+
+func (r Resource) Args() []string {
+	return strings.Split(r.RawArgs, " ")
+}
 
 type Uix struct {
 	Meta        `json:",inline"`
-	DisplayName string          `json:"displayName,omitempty"`
-	Resources   ResourceRequest `json:"resources,omitempty"`
-	Ports       []Port          `json:"ports,omitempty"`
-	Volumes     []VolumeMount   `json:"volumes"`
-	Image       string          `json:"image"`
-	Command     string          `json:"command"`
-	Args        string          `json:"args,omitempty"`
-	Env         []Env           `json:"env"`
+	DisplayName string `json:"displayName,omitempty"`
+	Ports       []Port `json:"ports,omitempty"`
+	Resource    `json:",inline"`
 }
 
 type Port struct {
@@ -52,23 +61,17 @@ type Port struct {
 
 type Task struct {
 	Meta      `json:",inline"`
-	Resources []Resource `json:"resources"`
+	Resources []TaskResource `json:"resources"`
 }
 
-type Resource struct {
+type TaskResource struct {
 	Meta            `json:",inline"`
-	Replicas        uint            `json:"replicas"`
-	MinAvailable    uint            `json:"minAvailable"`
-	RestartPolicy   string          `json:"restartPolicy"`
-	MaxRestartCount uint            `json:"maxRestartCount"`
-	Images          Images          `json:"images"`
-	Command         string          `json:"command"`
-	WorkDir         string          `json:"workDir"`
-	Args            string          `json:"args,omitempty"`
-	Env             []Env           `json:"env"`
-	Resources       ResourceRequest `json:"resources"`
-	Volumes         []VolumeMount   `json:"volumes"`
-	Port            Port            `json:"port,omitempty"`
+	Replicas        uint   `json:"replicas"`
+	MinAvailable    uint   `json:"minAvailable"`
+	RestartPolicy   string `json:"restartPolicy"`
+	MaxRestartCount uint   `json:"maxRestartCount"`
+	Port            uint   `json:"port,omitempty"`
+	Resource        `json:",inline"`
 }
 
 type Images struct {
@@ -135,7 +138,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			subPath = c.Workspace + "/" + c.Name + "/" + subPath
 		}
 		if len(m.SubPath) > 0 {
-			filepath.Join(subPath, m.SubPath)
+			subPath = filepath.Join(subPath, m.SubPath)
 		}
 		kvolumesMount = append(kvolumesMount, v1.VolumeMount{
 			Name:      names[m.Name],
@@ -149,6 +152,14 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 
 type ConfigOption func(*Config) (*Config, error)
 
+func NewConfig(data []byte, options ...ConfigOption) (*Config, error) {
+	var c Config
+	err := yaml.Unmarshal(data, &c)
+	if err != nil {
+		return nil, err
+	}
+	return ApplyConfigOptions(&c, options...)
+}
 func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err error) {
 	res = c
 	for _, o := range options {
@@ -167,63 +178,10 @@ func SetClusterStorageOption(mapping func(name string) (*VolumeSource, error)) C
 	}
 }
 
-var PythonPathOption = func(c *Config) (res *Config, err error) {
-	res = c
-	for ti := range res.Spec.Tasks {
-		for ri, r := range res.Spec.Tasks[ti].Resources {
-			path := []string{}
-			for _, m := range r.Volumes {
-				v := c.VolumeByName(m.Name)
-				if v == nil {
-					err = fmt.Errorf("Source '%s' not found", m.Name)
-					return
-				}
-				if !v.IsLibDir {
-					continue
-				}
-				mount := m.MountPath
-				if len(mount) < 1 {
-					mount = v.MountPath
-				}
-				path = append(path, mount)
-			}
-			for ei, e := range r.Env {
-				if e.Name == "PYTHONPATH" {
-					res.Spec.Tasks[ti].Resources[ri].Env[ei].Name = "KUBERLAB_PYTHONPATH"
-					res.Spec.Tasks[ti].Resources[ri].Env[ei].Value = e.Value + ":" + strings.Join(path, ":")
-				}
-			}
-		}
-	}
-	for i, uix := range res.Spec.Uix {
-		path := []string{}
-		for _, m := range uix.Volumes {
-			v := c.VolumeByName(m.Name)
-			if v == nil {
-				err = fmt.Errorf("Source '%s' not found", m.Name)
-				return
-			}
-			if !v.IsLibDir {
-				continue
-			}
-			mount := m.MountPath
-			if len(mount) < 1 {
-				mount = v.MountPath
-			}
-			path = append(path, mount)
-		}
-		for ei, e := range uix.Env {
-			if e.Name == "PYTHONPATH" {
-				res.Spec.Uix[i].Env[ei].Value = e.Value + ":" + strings.Join(path, ":")
-			}
-		}
-	}
-	return
-}
-
-func BuildOption(workspaceID, workspaceName string) func(c *Config) (res *Config, err error) {
+func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
 		res = c
+		res.Name = appName
 		res.Workspace = workspaceName
 		res.Labels[KUBELAB_WS_LABEL] = workspaceName
 		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
@@ -231,26 +189,7 @@ func BuildOption(workspaceID, workspaceName string) func(c *Config) (res *Config
 	}
 }
 
-func (c *Config) GetTaskResources(userID string, taskID string, buildID string) []Resource {
-	for _, t := range c.Tasks {
-		if t.Name == taskID {
-			l := map[string]string{}
-			joinMap(l, c.Labels)
-			joinMap(l, t.Labels)
-			//resources := make([]Resource,len(t.Resources))
-
-		}
-	}
-	return nil
-}
-
 func joinMap(dest, src map[string]string) {
-	for k, v := range src {
-		dest[k] = v
-	}
-}
-
-func joinRawMap(dest, src map[string]interface{}) {
 	for k, v := range src {
 		dest[k] = v
 	}

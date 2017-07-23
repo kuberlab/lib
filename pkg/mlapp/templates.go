@@ -1,29 +1,31 @@
 package mlapp
 
 import (
-	"strings"
-
+	"fmt"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
 	appsv1beta1 "k8s.io/client-go/pkg/apis/apps/v1beta1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 const DeploymentTpl = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .Component }}-{{ .Name }}"
-  namespace: {{ .Name }}
+  name: "{{ .Name }}"
+  namespace: {{ .AppName }}
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: {{ $value }}
     {{- end }}
-    workspace: {{ .Name }}
-    component: {{ .Component }}
+    workspace: {{ .AppName }}
+    component: {{ .Name }}
 spec:
   replicas: 1
   template:
@@ -32,88 +34,95 @@ spec:
         {{- range $key, $value := .Labels }}
         {{ $key }}: {{ $value }}
         {{- end }}
-        workspace: {{ .Name }}
-        component: {{ .Component }}
+        workspace: {{ .AppName }}
+        component: {{ .Name }}
+      {{- if and (gt .Resources.Accelerators.GPU 0) (not .Resources.Accelerators.DedicatedGPU) }}
+      annotations:
+        experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
+      {{- end }}
     spec:
       containers:
-      - name: {{ .Name }}-{{ .Component }}
+      - name: {{ .AppName }}-{{ .Name }}
         {{- if .Command }}
         command: ["{{ .Command }}"]
         {{- end }}
-        {{- if .Args }}
-          {{- if gt (len .Args) 0 }}
+        {{- if .RawArgs }}
+          {{- if gt (len .RawArgs) 0 }}
         args:
           {{- range .Args }}
-            - {{ . }}
+          - {{ . }}
           {{- end }}
           {{- end }}
         {{- end }}
         image: "{{ .Image }}"
-        {{- if gt (len .Env) 0 }}
         env:
-          {{- range .Env }}
-            - name: {{ .Name }}
-              value: '{{ .Value }}'
-          {{- end }}
+        {{- range .Env }}
+        - name: {{ .Name }}
+          value: '{{ .Value }}'
         {{- end }}
+        - name: URL_PREFIX
+          value "/api/v1/ml-proxy/{{ .Workspace }}/{{ .AppName }}/{{ .Name }}/"
         {{- if .Ports }}
         ports:
         {{- range .Ports }}
-          - name: {{ .Name }}
-            {{- if .Protocol }}
-            protocol: {{ .Protocol }}
-            {{- end }}
-            {{- if .TargetPort }}
-            containerPort: {{ .TargetPort }}
-            {{- end }}
+        - name: {{ .Name }}
+          {{- if .Protocol }}
+          protocol: {{ .Protocol }}
+          {{- end }}
+          {{- if .TargetPort }}
+          containerPort: {{ .TargetPort }}
+          {{- end }}
         {{- end }}
         {{- end }}
         resources:
           requests:
-            {{- if .GpuRequests }}
-            alpha.kubernetes.io/nvidia-gpu: {{ .GpuRequests }}
+            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+            alpha.kubernetes.io/nvidia-gpu: {{ .Resources.Accelerators.GPU }}
             {{- end }}
-            {{- if .CpuRequests }}
-            cpu: "{{ .CpuRequests }}"
+            {{- if .Resources.Requests.CPU }}
+            cpu: "{{ .Resources.Requests.CPU }}"
             {{- end }}
-            {{- if .MemoryRequests }}
-            memory: "{{ .MemoryRequests }}"
+            {{- if .Resources.Requests.Memory }}
+            memory: "{{ .Resources.Requests.Memory }}"
             {{- end }}
           limits:
-            {{- if .GpuRequests }}
-            alpha.kubernetes.io/nvidia-gpu: {{ .GpuRequests }}
+            {{- if .Resources.Limits.CPU}}
+            cpu: "{{ .Resources.Limits.CPU }}"
             {{- end }}
-            {{- if .CpuLimits }}
-            cpu: "{{ .CpuLimits }}"
+            {{- if .Resources.Limits.Memory }}
+            memory: "{{ .Resources.Limits.Memory }}"
             {{- end }}
-            {{- if .MemoryLimits }}
-            memory: "{{ .MemoryLimits }}"
-            {{- end }}
+{{ toYaml .Mounts | indent 8 }}
+{{ toYaml .Volumes | indent 6 }}
 `
 
 const StatefulSetTpl = `
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ .JobID }}-{{ .JobName }}
-  namespace: {{ .Name }}
+  name: "{{ .Task }}-{{ .Name }}-{{ .JobID }}"
+  namespace: {{ .AppName }}
   labels:
-    kuberlab.io/job-id: {{ .MasterJob }}
     {{- range $key, $value := .Labels }}
-	{{ $key }}: {{ $value }}
-	{{- end }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    workspace: {{ .AppName }}
+    component: "{{ .Task }}-{{ .Name }}"
+    kuberlab.io/job-id: "{{ .JobID }}"
 spec:
   replicas: {{ .Replicas }}
-  serviceName: {{ .JobID }}-{{ .JobName }}
+  serviceName: "{{ .Task }}-{{ .Name }}-{{ .JobID }}"
   template:
     metadata:
       labels:
         {{- range $key, $value := .Labels }}
-	    {{ $key }}: {{ $value }}
-	    {{- end }}
-        service: {{ .JobID }}-{{ .JobName }}
-        kuberlab.io/job-id: {{ .MasterJob }}
-      {{- if .GpuRequests }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        workspace: {{ .AppName }}
+        component: "{{ .Task }}-{{ .Name }}"
+        kuberlab.io/job-id: "{{ .JobID }}"
+        service: "{{ .Task }}-{{ .Name }}-{{ .JobID }}"
+      {{- if and (gt .Resources.Accelerators.GPU 0) (not .Resources.Accelerators.DedicatedGPU) }}
       annotations:
         experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
       {{- end }}
@@ -127,188 +136,287 @@ spec:
       - command: ["/bin/sh", "-c"]
         args:
         - >
-          export PYTHONPATH=$PYTHONPATH:$KUBERLAB_PYTHONPATH;
           task_id=$(hostname | rev | cut -d ''-'' -f 1 | rev);
           echo "Start with task-id=$task_id";
-          cd {{.ExecutionDir}};
-          {{- if .GpuRequests }}
-          export KUBE_GPU_AVAILABLE=$(nvidia-smi --query-gpu=index --format=csv,noheader | awk '{print}' ORS=',');
-          export KUBE_GPU_COUNT={{ .GpuRequests }};
-          {{- else }}
-          export KUBE_GPU_COUNT=0;
-          {{- end }}
-          {{- if .WorkerHosts }}
-          python {{ .Script }} --job_name {{ .JobName }} --task_index $task_id --num_gpus=${KUBE_GPU_COUNT} --ps_hosts "{{ .PsHosts }}" --worker_hosts "{{ .WorkerHosts }}" {{.ExtraArgs}};
-          {{- else }}
-          python {{ .Script }} --job_name {{ .JobName }} --task_index $task_id --num_gpus=${KUBE_GPU_COUNT} {{.ExtraArgs}};
-          {{- end }}
+          cd {{.WorkDir}};
+          {{.Command}} {{.ExtraArgs}};
           code=$?;
           echo "Script exit code: ${code}";
           while true; do  echo "waiting..."; curl -H "X-Source: ${POD_NAME}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
           echo 'Wait deletion...';
           sleep 86400
-        image: {{ .ContainerImage }}
-        name: {{ .ContainerName }}
+        image: {{ .Image }}
+        name: build
         env:
           - name: POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: RUNDIR
-            value: {{ .TrainDir }}
-          {{- if .PythonPath }}
-          - name: KUBERLAB_PYTHONPATH
-            value: {{ .PythonPath }}
-          {{- end }}
           {{- range .Env }}
           - name: {{ .Name }}
             value: '{{ .Value }}'
           {{- end }}
         # Auto-deleting metric from prometheus.
+        {{- if gt .Port 0 }}
         ports:
-        - containerPort: 2222
+        - containerPort: {{ .Port }}
           name: cluster-port
           protocol: TCP
+        {{- end }}
         resources:
           requests:
-            {{- if .GpuRequests }}
-            alpha.kubernetes.io/nvidia-gpu: {{ .GpuRequests }}
+            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+            alpha.kubernetes.io/nvidia-gpu: {{ .Resources.Accelerators.GPU }}
             {{- end }}
-            {{- if .CpuRequests }}
-            cpu: {{ .CpuRequests }}
+            {{- if .Resources.Requests.CPU }}
+            cpu: "{{ .Resources.Requests.CPU }}"
             {{- end }}
-            {{- if .MemoryRequests }}
-            memory: {{ .MemoryRequests }}
+            {{- if .Resources.Requests.Memory }}
+            memory: "{{ .Resources.Requests.Memory }}"
             {{- end }}
           limits:
-            {{- if .GpuRequests }}
-            alpha.kubernetes.io/nvidia-gpu: {{ .GpuRequests }}
+            {{- if .Resources.Limits.CPU}}
+            cpu: "{{ .Resources.Limits.CPU }}"
             {{- end }}
-            {{- if .CpuLimits }}
-            cpu: {{ .CpuLimits }}
+            {{- if .Resources.Limits.Memory }}
+            memory: "{{ .Resources.Limits.Memory }}"
             {{- end }}
-            {{- if .MemoryLimits }}
-            memory: {{ .MemoryLimits }}
-            {{- end }}
-      - name: monitoring
-        image: kuberlab/gpu-monitoring:latest
-        args:
-          - /bin/sh
-          - -c
-          - >
-            while true; do sleep 3; done
-        env:
-          - name: KUBERLAB_GPU
-            value: "all"
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: JOB_NAME
-            value: {{ .MasterJob }}
-          - name: RUNDIR
-            value: {{ .TrainDir }}
-          - name: NODE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          - name: PUSH_GATEWAY
-            value: prometheus-push.{{ .MonitoringNamespace }}:9091
-        lifecycle:
-          preStop:
-            exec:
-              command:
-               - /bin/bash
-               - -c
-               - curl -X DELETE http://prometheus-push.{{ .MonitoringNamespace }}:9091/metrics/job/{{ .MasterJob }}
-        resources:
-          requests:
-            cpu: 200m
-            memory: 100Mi
-          limits:
-            cpu: 500m
-            memory: 1Gi
-        volumeMounts:
-        - name: docker
-          mountPath: /var/run/docker.sock
-      volumes:
-      - name: docker
-        hostPath:
-          path: /var/run/docker.sock
+{{ toYaml .Mounts | indent 8 }}
+{{ toYaml .Volumes | indent 6 }}
 `
 
-// Must be called by spawner due to extracting the right IP for callback.
+type TaskResourceGenerator struct {
+	JobID    string
+	Callback string
+	c        *Config
+	task     Task
+	TaskResource
+	once    sync.Once
+	volumes []v1.Volume
+	mounts  []v1.VolumeMount
+}
+
+func (t TaskResourceGenerator) Task() string {
+	return t.task.Name
+}
+func (t TaskResourceGenerator) Env() []Env {
+	envs := make([]Env, 0, len(t.TaskResource.Env))
+	path := make([]string, 0)
+	for _, e := range t.TaskResource.Env {
+		if e.Name == "PYTHONPATH" {
+			path = strings.Split(e.Value, ":")
+		} else {
+			envs = append(envs, e)
+		}
+	}
+	for _, m := range t.TaskResource.Volumes {
+		v := t.c.VolumeByName(m.Name)
+		if v == nil {
+			continue
+		}
+		if !v.IsLibDir {
+			continue
+		}
+		mount := m.MountPath
+		if len(mount) < 1 {
+			mount = v.MountPath
+		}
+		path = append(path, mount)
+	}
+	envs = append(envs, Env{
+		Name:  "PYTHONPATH",
+		Value: strings.Join(path, ":"),
+	})
+	if t.TaskResource.Resources.Accelerators.GPU > 0 && !t.TaskResource.Resources.Accelerators.DedicatedGPU {
+		envs = append(envs, Env{
+			Name:  "KUBERLAB_GPU",
+			Value: "all",
+		})
+	}
+	for _, r := range t.task.Resources {
+		//cassandra-0.cassandra.cirrus.svc.cluster.local
+		hosts := make([]string, r.Replicas)
+		for i := range hosts {
+			serviceName := fmt.Sprintf("%s-%s-%s", t.task.Name, r.Name, t.JobID)
+			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.AppName())
+			if r.Port > 0 {
+				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
+			}
+		}
+		envs = append(envs, Env{
+			Name:  strings.ToUpper(r.Name + "_NODES"),
+			Value: strings.Join(hosts, ","),
+		})
+	}
+	for _, v := range t.TaskResource.Volumes {
+		mountPath := v.MountPath
+		if len(mountPath) == 0 {
+			if v := t.c.VolumeByName(v.Name); v != nil {
+				mountPath = v.MountPath
+			}
+		}
+		if len(mountPath) > 0 {
+			envs = append(envs, Env{
+				Name:  strings.ToUpper(v.Name + "_DIR"),
+				Value: mountPath,
+			})
+		}
+	}
+	return envs
+}
+func (t TaskResourceGenerator) Mounts() interface{} {
+	return map[string]interface{}{
+		"volumeMounts": t.mounts,
+	}
+}
+func (t TaskResourceGenerator) Volumes() interface{} {
+	return map[string]interface{}{
+		"volumes": t.volumes,
+	}
+}
+func (t TaskResourceGenerator) AppName() string {
+	return t.c.Name
+}
+func (t TaskResourceGenerator) Workspace() string {
+	return t.c.Workspace
+}
+func (t TaskResourceGenerator) Labels() map[string]string {
+	labels := make(map[string]string, 0)
+	joinMap(labels, t.c.Labels)
+	joinMap(labels, t.task.Labels)
+	joinMap(labels, t.TaskResource.Labels)
+	return labels
+}
+func (t TaskResourceGenerator) Image() string {
+	if t.Resources.Accelerators.GPU > 0 {
+		if len(t.Images.GPU) == 0 {
+			return t.Images.CPU
+		}
+		return t.Images.GPU
+	}
+	return t.Images.CPU
+}
+func (t TaskResourceGenerator) ExtraArgs() string {
+	return "required"
+}
 func (c *Config) GenerateTaskResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, task := range c.Tasks {
 		for _, r := range task.Resources {
-			labels := make(map[string]string, 0)
-			joinMap(labels, c.Labels)
-			joinMap(labels, task.Labels)
-			joinMap(labels, r.Labels)
-
-			vars := map[string]interface{}{
-				"Component":    task.Name,
-				"Name":         c.Name,
-				"Labels":       labels,
-				"Ports":        r.Port,
-				"ExecutionDir": r.WorkDir,
-				"Command":      r.Command,
-				"Args":         r.Args,
-				"Replicas":     r.Replicas,
+			volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
+			if err != nil {
+				return nil, err
 			}
-			if r.RestartPolicy != "" {
-				vars["RestartPolicy"] = r.RestartPolicy
+			data, err := kubernetes.GetTemplate(StatefulSetTpl, TaskResourceGenerator{
+				c:            c,
+				task:         task,
+				TaskResource: r,
+				mounts:       mounts,
+				volumes:      volumes,
+				JobID:        "1",
+				Callback:     "http://test.com",
+			})
+			if err != nil {
+				return nil, err
 			}
-			if r.MaxRestartCount != 0 {
-				vars["MaxRestartCount"] = r.MaxRestartCount
+			f, err := os.Create(fmt.Sprintf("test/%s-%s.yaml", task.Name, r.Name))
+			if err != nil {
+				return nil, err
 			}
-			joinRawMap(vars, r.Resources.AsVars())
+			f.WriteString(data)
+			f.Close()
 		}
 	}
 	return resources, nil
 }
 
+type UIXResourceGenerator struct {
+	c *Config
+	Uix
+	volumes []v1.Volume
+	mounts  []v1.VolumeMount
+}
+
+func (ui UIXResourceGenerator) Env() []Env {
+	envs := make([]Env, 0, len(ui.Uix.Env))
+	path := make([]string, 0)
+	for _, e := range ui.Uix.Env {
+		if e.Name == "PYTHONPATH" {
+			path = strings.Split(e.Value, ":")
+		} else {
+			envs = append(envs, e)
+		}
+	}
+	for _, m := range ui.Uix.Volumes {
+		v := ui.c.VolumeByName(m.Name)
+		if v == nil {
+			continue
+		}
+		if !v.IsLibDir {
+			continue
+		}
+		mount := m.MountPath
+		if len(mount) < 1 {
+			mount = v.MountPath
+		}
+		path = append(path, mount)
+	}
+	envs = append(envs, Env{
+		Name:  "PYTHONPATH",
+		Value: strings.Join(path, ":"),
+	})
+	if ui.Resources.Accelerators.GPU > 0 && !ui.Resources.Accelerators.DedicatedGPU {
+		envs = append(envs, Env{
+			Name:  "KUBERLAB_GPU",
+			Value: "all",
+		})
+	}
+	return envs
+}
+func (ui UIXResourceGenerator) Mounts() interface{} {
+	return map[string]interface{}{
+		"volumeMounts": ui.mounts,
+	}
+}
+func (ui UIXResourceGenerator) Volumes() interface{} {
+	return map[string]interface{}{
+		"volumes": ui.volumes,
+	}
+}
+func (ui UIXResourceGenerator) AppName() string {
+	return ui.c.Name
+}
+func (ui UIXResourceGenerator) Workspace() string {
+	return ui.c.Workspace
+}
+func (ui UIXResourceGenerator) Labels() map[string]string {
+	labels := make(map[string]string, 0)
+	joinMap(labels, ui.c.Labels)
+	joinMap(labels, ui.Uix.Labels)
+	return labels
+}
+func (ui UIXResourceGenerator) Image() string {
+	if ui.Resources.Accelerators.GPU > 0 {
+		if len(ui.Images.GPU) == 0 {
+			return ui.Images.CPU
+		}
+		return ui.Images.GPU
+	}
+	return ui.Images.CPU
+}
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
-		labels := make(map[string]string, 0)
-		joinMap(labels, c.Labels)
-		joinMap(labels, uix.Labels)
-
-		vars := map[string]interface{}{
-			"Component": uix.Name,
-			"Name":      c.Name,
-			"Image":     uix.Image,
-			"Labels":    labels,
-			"Ports":     uix.Ports,
-			"Env":       uix.Env,
+		volumes, mounts, err := c.KubeVolumesSpec(uix.Volumes)
+		if err != nil {
+			return nil, err
 		}
-		joinRawMap(vars, uix.Resources.AsVars())
-
-		if uix.Args != "" {
-			vars["Args"] = strings.Split(uix.Args, " ")
-		}
-		if uix.Command != "" {
-			vars["Command"] = uix.Command
-		}
-
-		insertVolumes := func(o runtime.Object) error {
-			d := o.(*extv1beta1.Deployment)
-			v, vmounts, err := c.KubeVolumesSpec(uix.Volumes)
-			if err != nil {
-				return err
-			}
-			d.Spec.Template.Spec.Volumes = v
-			d.Spec.Template.Spec.Containers[0].VolumeMounts = vmounts
-			return nil
-		}
-		data, err := kubernetes.GetTemplate(DeploymentTpl, vars)
+		data, err := kubernetes.GetTemplate(DeploymentTpl, UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes})
 		if err != nil {
 			return nil, err
 		}
 
-		res, err := kubernetes.GetKubeResource(uix.Name, data, insertVolumes)
+		/*res, err := kubernetes.GetKubeResource(uix.Name, data, insertVolumes)
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +426,13 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 		resources = append(
 			resources,
 			&kubernetes.KubeResource{Kind: &kind, Object: svc, Name: svc.Name},
-		)
+		)*/
+		f, err := os.Create("test/" + uix.Name + ".yaml")
+		if err != nil {
+			return nil, err
+		}
+		f.WriteString(data)
+		f.Close()
 	}
 	return resources, nil
 }
