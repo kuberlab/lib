@@ -242,6 +242,84 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 	}
 }
 
+func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) error {
+	logrus.Infof("Delete %v, %v", resource.Name, resource.Kind)
+	var propagation = meta_v1.DeletePropagationForeground
+	switch v := resource.Object.(type) {
+	case *api_v1.Namespace:
+		if err := kubeClient.Namespaces().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *batch_v1.Job:
+		if err := kubeClient.BatchV1().Jobs(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.ReplicationController:
+		if err := kubeClient.ReplicationControllers(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *appsv1beta1.StatefulSet:
+		if err := kubeClient.StatefulSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.ConfigMap:
+		if err := kubeClient.ConfigMaps(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *policyv1beta1.PodDisruptionBudget:
+		if err := kubeClient.PodDisruptionBudgets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.Secret:
+		if err := kubeClient.Secrets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *extv1beta1.DaemonSet:
+		if err := kubeClient.DaemonSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *extv1beta1.Deployment:
+		if err := kubeClient.ExtensionsV1beta1().Deployments(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.Service:
+		if err := kubeClient.Services(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.ServiceAccount:
+		if err := kubeClient.ServiceAccounts(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.PersistentVolumeClaim:
+		if err := kubeClient.PersistentVolumeClaims(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *api_v1.PersistentVolume:
+		if err := kubeClient.PersistentVolumes().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *rbacv1beta1.Role:
+		if err := kubeClient.RbacV1beta1().Roles(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *rbacv1beta1.ClusterRole:
+		if err := kubeClient.RbacV1beta1().ClusterRoles().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *rbacv1beta1.RoleBinding:
+		if err := kubeClient.RbacV1beta1().RoleBindings(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	case *rbacv1beta1.ClusterRoleBinding:
+		if err := kubeClient.RbacV1beta1().ClusterRoleBindings().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+			return err
+		}
+	default:
+		return errors.New("Undefined resource " + resource.Kind.GroupKind().Kind)
+	}
+	return nil
+}
+
 func AlreadyExistsError(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
