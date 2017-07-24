@@ -147,7 +147,7 @@ spec:
           {{ .Command }} {{ .ExtraArgs }};
           code=$?;
           echo "Script exit code: ${code}";
-          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}-{{ .JobID }}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
+          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}|{{ .Task }}|{{ .JobID }}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
           echo 'Wait deletion...';
           sleep 86400
         image: {{ .Image }}
@@ -291,7 +291,12 @@ func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource
 			if g.Port > 0 {
 				res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
 			}
-			callbacks = append(callbacks, Callback{WaitCount: g.WaitCount(), TaskName: task.Name, AcceptedCallbacks: make(map[string]int)})
+			callbacks = append(callbacks, Callback{
+				WaitCount: g.WaitCount(),
+				TaskName: task.Name,
+				ResourceName: r.Name,
+				AcceptedCallbacks: make(map[string]int),
+			})
 			resources = append(resources, res)
 		}
 	}
