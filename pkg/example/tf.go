@@ -4,7 +4,6 @@ var TF_EXAMPLE = `
 kind: MLApp
 metadata:
   name: tfexample
-  namespace: mapp
   labels: # Will be applayed to each resource
     testKey: testValue
 spec:
@@ -100,6 +99,5 @@ spec:
       mountPath: /workspace/training
       subPath: training
       clusterStorage: test
-      hostPath:
-        path: /test
+      emptyDir: {}
 `

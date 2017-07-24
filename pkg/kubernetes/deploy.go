@@ -174,11 +174,13 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return err
 		}
 	case *api_v1.Service:
-		if _, err := kubeClient.Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+		if old, err := kubeClient.Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
 			_, err := kubeClient.Services(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.Services(v.Namespace).Update(v)
+			old.Labels = v.Labels
+			old.Spec.Selector = v.Spec.Selector
+			_, err := kubeClient.Services(v.Namespace).Update(old)
 			return err
 		}
 		return nil

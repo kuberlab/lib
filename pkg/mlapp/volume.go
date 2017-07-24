@@ -28,15 +28,17 @@ type VolumeSource struct {
 	GitRepo               *v1.GitRepoVolumeSource               `json:"gitRepo,omitempty" protobuf:"bytes,5,opt,name=gitRepo"`
 	NFS                   *v1.NFSVolumeSource                   `json:"nfs,omitempty" protobuf:"bytes,7,opt,name=nfs"`
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty" protobuf:"bytes,10,opt,name=persistentVolumeClaim"`
+	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
 }
 
 func (v Volume) v1Volume() v1.Volume {
 	return v1.Volume{
 		Name: v.Name,
 		VolumeSource: v1.VolumeSource{
-			HostPath: v.HostPath,
-			GitRepo:  v.GitRepo,
-			NFS:      v.NFS,
+			HostPath:              v.HostPath,
+			GitRepo:               v.GitRepo,
+			NFS:                   v.NFS,
+			EmptyDir:              v.EmptyDir,
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
 		},
 	}

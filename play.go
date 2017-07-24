@@ -16,4 +16,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	_, err = c.GenerateUIXResources()
+	if err != nil {
+		panic(err)
+	}
 }
