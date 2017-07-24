@@ -21,7 +21,7 @@ func LogExit(status int) {
 func GetCallback() (string, error) {
 	ip, err := ChooseHostInterface()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	hostname := fmt.Sprintf("%v.%v.pod.cluster.local", strings.Replace(ip.String(), ".", "-", -1), GetNamespace())
 	return hostname, nil

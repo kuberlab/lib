@@ -25,6 +25,7 @@ func GetNamespace() string {
 	if namespace == "" {
 		return DefaultNamespace
 	}
+	return namespace
 }
 
 func GetName() string {
