@@ -317,6 +317,13 @@ func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) er
 	default:
 		return errors.New("Undefined resource " + resource.Kind.GroupKind().Kind)
 	}
+
+	for _, dep := range resource.Deps {
+		if err := DeleteResource(kubeClient, dep); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
