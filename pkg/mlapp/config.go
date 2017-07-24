@@ -98,6 +98,7 @@ type Env struct {
 
 type Callback struct {
 	WaitCount         uint
+	TaskName          string
 	AcceptedCallbacks map[string]int
 }
 
