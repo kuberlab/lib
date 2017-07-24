@@ -36,6 +36,7 @@ type Resource struct {
 	Command    string           `json:"command"`
 	WorkDir    string           `json:"workDir"`
 	RawArgs    string           `json:"args,omitempty"`
+	WaitCount  string           `json:"waitCount,omitempty"`
 	Env        []Env            `json:"env"`
 	Volumes    []VolumeMount    `json:"volumes"`
 	NodesLabel string           `json:"nodes"`
