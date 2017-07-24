@@ -291,7 +291,7 @@ func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource
 			if g.Port > 0 {
 				res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
 			}
-			callbacks = append(callbacks, Callback{WaitCount: g.WaitCount(), TaskName: task.Name})
+			callbacks = append(callbacks, Callback{WaitCount: g.WaitCount(), TaskName: task.Name, AcceptedCallbacks: make(map[string]int)})
 			resources = append(resources, res)
 		}
 	}
