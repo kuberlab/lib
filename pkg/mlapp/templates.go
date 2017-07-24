@@ -141,8 +141,8 @@ spec:
         - >
           task_id=$(hostname | rev | cut -d ''-'' -f 1 | rev);
           echo "Start with task-id=$task_id";
-          cd {{.WorkDir}};
-          {{.Command}} {{.ExtraArgs}};
+          cd {{ .WorkDir }};
+          {{.Command}} {{ .ExtraArgs }};
           code=$?;
           echo "Script exit code: ${code}";
           while true; do  echo "waiting..."; curl -H "X-Source: ${POD_NAME}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;

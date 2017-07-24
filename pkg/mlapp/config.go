@@ -208,7 +208,6 @@ func joinMaps(dest map[string]string, srcs ...map[string]string) {
 	}
 }
 
-
-func (c Config) ToYaml() ([]byte,error){
+func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }
