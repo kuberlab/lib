@@ -147,7 +147,7 @@ spec:
           {{ .Command }} {{ .ExtraArgs }};
           code=$?;
           echo "Script exit code: ${code}";
-          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}|{{ .Task }}|{{ .JobID }}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
+          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}|{{ .Task }}|{{ .JobID }}|$task_id" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
           echo 'Wait deletion...';
           sleep 86400
         image: {{ .Image }}
