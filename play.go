@@ -12,7 +12,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(*c)
-	_, err = c.GenerateTaskResources()
+	_, err = c.GenerateTaskResources("1")
 	if err != nil {
 		panic(err)
 	}

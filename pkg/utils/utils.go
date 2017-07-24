@@ -3,6 +3,9 @@ package utils
 import (
 	"os"
 
+	"fmt"
+	"strings"
+
 	"github.com/Sirupsen/logrus"
 )
 
@@ -13,4 +16,13 @@ func IntPtr(i int) *int {
 func LogExit(status int) {
 	logrus.Infof("Exiting with status: %v", status)
 	os.Exit(status)
+}
+
+func GetCallback() (string, error) {
+	ip, err := ChooseHostInterface()
+	if err != nil {
+		return nil, err
+	}
+	hostname := fmt.Sprintf("%v.%v.pod.cluster.local", strings.Replace(ip.String(), ".", "-", -1), GetNamespace())
+	return hostname, nil
 }

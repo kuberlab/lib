@@ -2,13 +2,15 @@ package mlapp
 
 import (
 	"fmt"
-	"github.com/kuberlab/lib/pkg/kubernetes"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/pkg/api/v1"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/utils"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const DeploymentTpl = `
@@ -250,7 +252,7 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 func (t TaskResourceGenerator) ExtraArgs() string {
 	return t.RawArgs
 }
-func (c *Config) GenerateTaskResources() ([]*kubernetes.KubeResource, error) {
+func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, task := range c.Tasks {
 		for _, r := range task.Resources {
@@ -258,14 +260,18 @@ func (c *Config) GenerateTaskResources() ([]*kubernetes.KubeResource, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 			}
+			callback, err := utils.GetCallback()
+			if err != nil {
+				return nil, err
+			}
 			g := TaskResourceGenerator{
 				c:            c,
 				task:         task,
 				TaskResource: r,
 				mounts:       mounts,
 				volumes:      volumes,
-				JobID:        "1",
-				Callback:     "http://test.com",
+				JobID:        jobID,
+				Callback:     callback,
 			}
 			data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
 			if err != nil {

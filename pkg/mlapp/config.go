@@ -2,10 +2,11 @@ package mlapp
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
-	"k8s.io/client-go/pkg/api/v1"
 	"path/filepath"
 	"strings"
+
+	"github.com/ghodss/yaml"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 const (

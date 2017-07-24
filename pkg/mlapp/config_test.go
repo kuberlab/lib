@@ -107,7 +107,7 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert("jupyter", conf.Uix[0].Name, t)
 	Assert("Jupyter", conf.Uix[0].DisplayName, t)
 	Assert("http", conf.Uix[0].Ports[0].Name, t)
-	Assert(uint(80), conf.Uix[0].Ports[0].Port, t)
+	Assert(int32(80), conf.Uix[0].Ports[0].Port, t)
 	Assert("TCP", conf.Uix[0].Ports[0].Protocol, t)
-	Assert(uint(8082), conf.Uix[0].Ports[0].TargetPort, t)
+	Assert(int32(8082), conf.Uix[0].Ports[0].TargetPort, t)
 }

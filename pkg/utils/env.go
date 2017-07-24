@@ -5,10 +5,11 @@ import (
 )
 
 const (
-	Namespace = "POD_NAMESPACE"
-	Name      = "POD_NAME"
-	LogLevel  = "LOG_LEVEL"
-	MasterJob = "MASTER_JOB"
+	Namespace        = "POD_NAMESPACE"
+	DefaultNamespace = "kuberlab"
+	Name             = "POD_NAME"
+	LogLevel         = "LOG_LEVEL"
+	MasterJob        = "MASTER_JOB"
 )
 
 func getFromEnv(varName string) string {
@@ -20,7 +21,10 @@ func GetLogLevel() string {
 }
 
 func GetNamespace() string {
-	return getFromEnv(Namespace)
+	namespace := getFromEnv(Namespace)
+	if namespace == "" {
+		return DefaultNamespace
+	}
 }
 
 func GetName() string {
