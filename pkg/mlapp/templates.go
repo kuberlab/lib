@@ -271,7 +271,7 @@ func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource
 				mounts:       mounts,
 				volumes:      volumes,
 				JobID:        jobID,
-				Callback:     callback,
+				Callback:     fmt.Sprintf("http://%v/api/v2/%v/callback", callback, c.Name),
 			}
 			data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
 			if err != nil {
