@@ -147,7 +147,7 @@ spec:
           {{ .Command }} {{ .ExtraArgs }};
           code=$?;
           echo "Script exit code: ${code}";
-          while true; do  echo "waiting..."; curl -H "X-Source: ${POD_NAME}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
+          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}-{{ .JobID }}" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
           echo 'Wait deletion...';
           sleep 86400
         image: {{ .Image }}
@@ -206,6 +206,7 @@ type TaskResourceGenerator struct {
 func (t TaskResourceGenerator) Task() string {
 	return t.task.Name
 }
+
 func (t TaskResourceGenerator) Env() []Env {
 	envs := baseEnv(t.c, t.TaskResource.Resource)
 	for _, r := range t.task.Resources {
@@ -252,17 +253,23 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 func (t TaskResourceGenerator) ExtraArgs() string {
 	return t.RawArgs
 }
-func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource, error) {
+
+func (t TaskResourceGenerator) WaitCount() uint {
+	return t.TaskResource.WaitCount
+}
+
+func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource, []Callback, error) {
 	resources := []*kubernetes.KubeResource{}
+	callbacks := []Callback{}
 	for _, task := range c.Tasks {
 		for _, r := range task.Resources {
 			volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
 			if err != nil {
-				return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
+				return nil, nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 			}
 			callback, err := utils.GetCallback()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			g := TaskResourceGenerator{
 				c:            c,
@@ -275,19 +282,20 @@ func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource
 			}
 			data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
 			if err != nil {
-				return nil, fmt.Errorf("Failed parse template '%s': %v", g.TaskName(), err)
+				return nil, nil, fmt.Errorf("Failed parse template '%s': %v", g.TaskName(), err)
 			}
 			res, err := kubernetes.GetKubeResource(g.TaskName()+":resource", data, nil)
 			if err != nil {
-				return nil, fmt.Errorf("Failed get kube resource '%s': %v", g.TaskName(), err)
+				return nil, nil, fmt.Errorf("Failed get kube resource '%s': %v", g.TaskName(), err)
 			}
 			if g.Port > 0 {
 				res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
 			}
+			callbacks = append(callbacks, Callback{WaitCount: g.WaitCount()})
 			resources = append(resources, res)
 		}
 	}
-	return resources, nil
+	return resources, callbacks, nil
 }
 
 func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {

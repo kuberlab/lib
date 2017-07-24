@@ -37,7 +37,7 @@ type Resource struct {
 	Command    string           `json:"command"`
 	WorkDir    string           `json:"workDir"`
 	RawArgs    string           `json:"args,omitempty"`
-	WaitCount  string           `json:"waitCount,omitempty"`
+	WaitCount  uint             `json:"waitCount,omitempty"`
 	Env        []Env            `json:"env"`
 	Volumes    []VolumeMount    `json:"volumes"`
 	NodesLabel string           `json:"nodes"`
@@ -94,6 +94,11 @@ type Images struct {
 type Env struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
+}
+
+type Callback struct {
+	WaitCount         uint
+	AcceptedCallbacks map[string]int
 }
 
 func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, error)) error {
