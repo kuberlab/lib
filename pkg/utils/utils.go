@@ -19,10 +19,13 @@ func LogExit(status int) {
 }
 
 func GetCallback() (string, error) {
+	if v := os.Getenv("USE_CALLBACK_ADDR"); v != "" {
+		return v
+	}
 	ip, err := ChooseHostInterface()
 	if err != nil {
 		return "", err
 	}
-	hostname := fmt.Sprintf("%v.%v.pod.cluster.local", strings.Replace(ip.String(), ".", "-", -1), GetNamespace())
+	hostname := fmt.Sprintf("http://%v.%v.pod.cluster.local", strings.Replace(ip.String(), ".", "-", -1), GetNamespace())
 	return hostname, nil
 }
