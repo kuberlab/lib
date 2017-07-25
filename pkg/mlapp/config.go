@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/kuberlab/lib/pkg/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 )
 
@@ -37,7 +38,6 @@ type Resource struct {
 	Command    string           `json:"command"`
 	WorkDir    string           `json:"workDir"`
 	RawArgs    string           `json:"args,omitempty"`
-	WaitCount  uint             `json:"waitCount,omitempty"`
 	Env        []Env            `json:"env"`
 	Volumes    []VolumeMount    `json:"volumes"`
 	NodesLabel string           `json:"nodes"`
@@ -51,10 +51,6 @@ func (r Resource) Image() string {
 		return r.Images.GPU
 	}
 	return r.Images.CPU
-}
-
-func (r Resource) Args() []string {
-	return strings.Split(r.RawArgs, " ")
 }
 
 type Uix struct {
@@ -79,10 +75,11 @@ type Task struct {
 type TaskResource struct {
 	Meta            `json:",inline"`
 	Replicas        uint   `json:"replicas"`
-	MinAvailable    uint   `json:"minAvailable"`
 	RestartPolicy   string `json:"restartPolicy"`
 	MaxRestartCount uint   `json:"maxRestartCount"`
+	AllowFail       bool   `json:"allowFail"`
 	Port            int32  `json:"port,omitempty"`
+	DoneCondition   string `json:"DoneCondition,omitempty"`
 	Resource        `json:",inline"`
 }
 
@@ -96,11 +93,13 @@ type Env struct {
 	Value string `json:"value,omitempty"`
 }
 
-type Callback struct {
-	WaitCount         uint
-	TaskName          string
-	ResourceName      string
-	AcceptedCallbacks map[string]int
+type TaskResourceSpec struct {
+	PodsNumber    int
+	DoneCondition string
+	AllowFail     bool
+	TaskName      string
+	ResourceName  string
+	Resource      *kubernetes.KubeResource
 }
 
 func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, error)) error {

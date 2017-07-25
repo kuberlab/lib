@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/kuberlab/lib/pkg/kubernetes"
-	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
@@ -112,6 +111,7 @@ metadata:
     workspace: {{ .AppName }}
     component: "{{ .Task }}-{{ .Name }}"
     kuberlab.io/job-id: "{{ .JobID }}"
+    kuberlab.io/task: "{{ .Task }}"
 spec:
   replicas: {{ .Replicas }}
   serviceName: "{{ .TaskName }}"
@@ -147,7 +147,7 @@ spec:
           {{ .Command }} {{ .ExtraArgs }};
           code=$?;
           echo "Script exit code: ${code}";
-          while true; do  echo "waiting..."; curl -H "X-Source: {{ .TaskName }}|{{ .Task }}|{{ .JobID }}|$task_id" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
+          while true; do  echo "waiting..."; curl -H "X-Source: $task_id" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
           echo 'Wait deletion...';
           sleep 86400
         image: {{ .Image }}
@@ -254,59 +254,53 @@ func (t TaskResourceGenerator) ExtraArgs() string {
 	return t.RawArgs
 }
 
-func (t TaskResourceGenerator) WaitCount() uint {
-	return t.TaskResource.WaitCount
-}
-
-func (c *Config) GenerateTaskResources(jobID string) ([]*kubernetes.KubeResource, []Callback, error) {
-	resources := []*kubernetes.KubeResource{}
-	callbacks := []Callback{}
-	for _, task := range c.Tasks {
-		for _, r := range task.Resources {
-			volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
-			}
-			callback, err := utils.GetCallback()
-			if err != nil {
-				return nil, nil, err
-			}
-			g := TaskResourceGenerator{
-				c:            c,
-				task:         task,
-				TaskResource: r,
-				mounts:       mounts,
-				volumes:      volumes,
-				JobID:        jobID,
-				Callback:     fmt.Sprintf("http://%v/api/v2/%v/callback", callback, c.Name),
-			}
-			data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Failed parse template '%s': %v", g.TaskName(), err)
-			}
-			res, err := kubernetes.GetKubeResource(g.TaskName()+":resource", data, nil)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Failed get kube resource '%s': %v", g.TaskName(), err)
-			}
-			if g.Port > 0 {
-				res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
-			}
-			callbacks = append(callbacks, Callback{
-				WaitCount: g.WaitCount(),
-				TaskName: task.Name,
-				ResourceName: r.Name,
-				AcceptedCallbacks: make(map[string]int),
-			})
-			resources = append(resources, res)
+func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string) ([]TaskResourceSpec, error) {
+	resources := make([]*kubernetes.KubeResource, 0)
+	taskSpec := make([]TaskResourceSpec, 0)
+	for _, r := range task.Resources {
+		volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
+		if err != nil {
+			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
+
+		g := TaskResourceGenerator{
+			c:            c,
+			task:         task,
+			TaskResource: r,
+			mounts:       mounts,
+			volumes:      volumes,
+			JobID:        jobID,
+			Callback:     fmt.Sprintf("/%s/%s/%s/%s", submitURL, c.Name, task.Name, r.Name),
+		}
+		data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
+		if err != nil {
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.TaskName(), err)
+		}
+		res, err := kubernetes.GetKubeResource(g.TaskName()+":resource", data, nil)
+		if err != nil {
+			return nil, fmt.Errorf("Failed get kube resource '%s': %v", g.TaskName(), err)
+		}
+		if g.Port > 0 {
+			res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
+		}
+		taskSpec = append(taskSpec, TaskResourceSpec{
+			DoneCondition: r.DoneCondition,
+			TaskName:      task.Name,
+			ResourceName:  r.Name,
+			AllowFail:     r.AllowFail,
+			PodsNumber:    int(r.Replicas),
+			Resource:      res,
+		})
+		resources = append(resources, res)
 	}
-	return resources, callbacks, nil
+	return taskSpec, nil
 }
 
 func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 	labels := map[string]string{
 		"kuberlab.io/job-id": g.JobID,
 		"component":          g.task.Name + "-" + g.TaskResource.Name,
+		"kuberlab.io/task":   g.task.Name,
 	}
 	svc := &v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
@@ -371,6 +365,9 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 	return labels
 }
 
+func (ui UIXResourceGenerator) Args() []string {
+	return strings.Split(ui.RawArgs, " ")
+}
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
