@@ -102,7 +102,7 @@ const StatefulSetTpl = `
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: "{{ .TaskName }}"
+  name: "{{ .BuildName }}"
   namespace: {{ .AppName }}
   labels:
     {{- range $key, $value := .Labels }}
@@ -114,7 +114,7 @@ metadata:
     kuberlab.io/task: "{{ .Task }}"
 spec:
   replicas: {{ .Replicas }}
-  serviceName: "{{ .TaskName }}"
+  serviceName: "{{ .BuildName }}"
   template:
     metadata:
       labels:
@@ -124,7 +124,7 @@ spec:
         workspace: {{ .AppName }}
         component: "{{ .Task }}-{{ .Name }}"
         kuberlab.io/job-id: "{{ .JobID }}"
-        service: "{{ .TaskName }}"
+        service: "{{ .BuildName }}"
       {{- if .Resources }}
       {{- if and (gt .Resources.Accelerators.GPU 0) (not .Resources.Accelerators.DedicatedGPU) }}
       annotations:
@@ -151,7 +151,7 @@ spec:
           echo 'Wait deletion...';
           sleep 86400
         image: {{ .Image }}
-        name: build
+        name: {{ .Task }}-{{ .JobID }}
         env:
           - name: POD_NAME
             valueFrom:
@@ -161,7 +161,6 @@ spec:
           - name: {{ .Name }}
             value: '{{ .Value }}'
           {{- end }}
-        # Auto-deleting metric from prometheus.
         {{- if gt .Port 0 }}
         ports:
         - containerPort: {{ .Port }}
@@ -212,7 +211,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
-			serviceName := t.TaskName()
+			serviceName := t.BuildName()
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.AppName())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
@@ -225,7 +224,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	}
 	return envs
 }
-func (t TaskResourceGenerator) TaskName() string {
+func (t TaskResourceGenerator) BuildName() string {
 	return fmt.Sprintf("%s-%s-%s", t.task.Name, t.TaskResource.Name, t.JobID)
 }
 func (t TaskResourceGenerator) Mounts() interface{} {
@@ -255,7 +254,6 @@ func (t TaskResourceGenerator) ExtraArgs() string {
 }
 
 func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string) ([]TaskResourceSpec, error) {
-	resources := make([]*kubernetes.KubeResource, 0)
 	taskSpec := make([]TaskResourceSpec, 0)
 	for _, r := range task.Resources {
 		volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
@@ -274,11 +272,11 @@ func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string
 		}
 		data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
 		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", g.TaskName(), err)
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
 		}
-		res, err := kubernetes.GetKubeResource(g.TaskName()+":resource", data, nil)
+		res, err := kubernetes.GetKubeResource(g.BuildName()+":resource", data, nil)
 		if err != nil {
-			return nil, fmt.Errorf("Failed get kube resource '%s': %v", g.TaskName(), err)
+			return nil, fmt.Errorf("Failed get kube resource '%s': %v", g.BuildName(), err)
 		}
 		if g.Port > 0 {
 			res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
@@ -291,7 +289,6 @@ func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string
 			PodsNumber:    int(r.Replicas),
 			Resource:      res,
 		})
-		resources = append(resources, res)
 	}
 	return taskSpec, nil
 }
@@ -308,7 +305,7 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      g.TaskName(),
+			Name:      g.BuildName(),
 			Namespace: g.c.Name,
 			Labels:    labels,
 		},
@@ -327,7 +324,7 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 	}
 	groupKind := svc.GroupVersionKind()
 	return &kubernetes.KubeResource{
-		Name:   g.TaskName() + ":service",
+		Name:   g.BuildName() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
 	}
