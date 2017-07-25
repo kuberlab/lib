@@ -79,7 +79,7 @@ type TaskResource struct {
 	MaxRestartCount uint   `json:"maxRestartCount"`
 	AllowFail       bool   `json:"allowFail"`
 	Port            int32  `json:"port,omitempty"`
-	DoneCondition   string `json:"DoneCondition,omitempty"`
+	DoneCondition   string `json:"doneCondition,omitempty"`
 	Resource        `json:",inline"`
 }
 
