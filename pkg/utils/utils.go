@@ -20,7 +20,7 @@ func LogExit(status int) {
 
 func GetCallback() (string, error) {
 	if v := os.Getenv("USE_CALLBACK_ADDR"); v != "" {
-		return v
+		return v, nil
 	}
 	ip, err := ChooseHostInterface()
 	if err != nil {
