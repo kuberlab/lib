@@ -141,7 +141,7 @@ spec:
       - command: ["/bin/sh", "-c"]
         args:
         - >
-          hostname=$(hostname)
+          hostname=$(hostname);
           task_id=$(echo ${hostname##*-});
           echo "Start with task-id=$task_id";
           cd {{ .WorkDir }};
