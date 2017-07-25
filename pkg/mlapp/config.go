@@ -124,6 +124,17 @@ func (c *Config) VolumeByName(name string) *Volume {
 	}
 	return nil
 }
+
+func (c *Config) LibVolume() *Volume {
+	for _, v := range c.Volumes {
+		if v.IsLibDir {
+			res := v
+			return &res
+		}
+	}
+	return nil
+}
+
 func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
 	added := make(map[string]string)
 	names := make(map[string]string)
