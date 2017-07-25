@@ -154,7 +154,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		} else {
 			names[m.Name] = v.Name
 			added[id] = m.Name
-			kvolumes = append(kvolumes, v.v1Volume())
+			kvolumes = append(kvolumes, v.V1Volume())
 		}
 		mountPath := v.MountPath
 		if len(m.MountPath) > 0 {
