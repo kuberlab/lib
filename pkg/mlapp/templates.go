@@ -270,7 +270,7 @@ func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string
 			mounts:       mounts,
 			volumes:      volumes,
 			JobID:        jobID,
-			Callback:     fmt.Sprintf("/%s/%s/%s/%s", submitURL, c.Name, task.Name, r.Name),
+			Callback:     fmt.Sprintf("%s/%s/%s/%s/%s", submitURL, c.Name, task.Name, r.Name,jobID),
 		}
 		data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
 		if err != nil {
