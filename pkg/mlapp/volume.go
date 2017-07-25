@@ -31,7 +31,7 @@ type VolumeSource struct {
 	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
 }
 
-func (v Volume) v1Volume() v1.Volume {
+func (v Volume) V1Volume() v1.Volume {
 	return v1.Volume{
 		Name: v.Name,
 		VolumeSource: v1.VolumeSource{
