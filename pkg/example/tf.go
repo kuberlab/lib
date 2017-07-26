@@ -16,14 +16,15 @@ spec:
       labels:
         testWorkerKey: testWorkerValue  # Will be applayed to each resource
       replicas: 2
-      minAvailable: 2
       restartPolicy: Never
-      maxRestartCount: 0
+      maxRestartCount: 1
+      allowFail: true
       images:
         gpu: image-gpu
         cpu: image-cpu
       command: python
       workdir: directory
+      doneCondition: doneConditionValue
       args: "--log-dir=$TRAINING_DIR"
       env:
       - name: TEST_ENV_V1
@@ -68,6 +69,27 @@ spec:
       images:
         gpu: image-gpu
         cpu: image-cpu
+      resources:
+        accelerators:
+          gpu: 1
+        requests:
+          cpu: 100m
+          memory: 1Gi
+        limits:
+          cpu: 100m
+          memory: 1Gi
+      ports:
+        - port: 80
+          targetPort: 8082
+          protocol: TCP
+          name: http
+      volumes:
+        - name: lib
+  serving:
+    - name: test-serv
+      displayName: "Test serving"
+      taskName: task-name
+      build: 5
       resources:
         accelerators:
           gpu: 1

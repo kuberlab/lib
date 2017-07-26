@@ -20,3 +20,5 @@ import:
 - package: github.com/ghodss/yaml
 - package: github.com/Masterminds/sprig
   version: ^2.12
+- package: github.com/Masterminds/semver
+  version: v1.3.1

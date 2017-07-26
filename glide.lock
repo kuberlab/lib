@@ -1,6 +1,8 @@
-hash: 2cdbd92a3cb889bf9af7d43bece3316599bd03ae9e1b7fa77eedda1aa1c69bff
-updated: 2017-07-20T16:09:12.710056497+03:00
+hash: d9760d890a4970b60ca7d050c500114d6d77eec82d41d61b280068dddff0da64
+updated: 2017-07-26T10:35:49.709350176+03:00
 imports:
+- name: github.com/aokoli/goutils
+  version: 3391d3790d23d03408670993e957e8f408993c34
 - name: github.com/docker/distribution
   version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
@@ -11,8 +13,6 @@ imports:
   subpackages:
   - log
   - swagger
-- name: github.com/Masterminds/sprig
-  version: 9526be0327b26ad31aa70296a7b10704883976d5
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
@@ -32,6 +32,10 @@ imports:
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/huandu/xstrings
+  version: 3959339b333561bf62a38b424fd41517c2c90f40
+- name: github.com/imdario/mergo
+  version: 3e95a51e0639b4cf372f2ccf74c86749d747fbdc
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/mailru/easyjson
@@ -40,12 +44,18 @@ imports:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/Masterminds/semver
+  version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
+- name: github.com/Masterminds/sprig
+  version: 9526be0327b26ad31aa70296a7b10704883976d5
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/Sirupsen/logrus
   version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/spf13/pflag
@@ -54,6 +64,11 @@ imports:
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec
+- name: golang.org/x/crypto
+  version: d172538b2cfce0c13cee31e647d0367aa8cd2486
+  subpackages:
+  - pbkdf2
+  - scrypt
 - name: golang.org/x/net
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
@@ -61,6 +76,10 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+- name: golang.org/x/sys
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
+  subpackages:
+  - unix
 - name: golang.org/x/text
   version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:

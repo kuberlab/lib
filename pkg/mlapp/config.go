@@ -28,9 +28,10 @@ type Meta struct {
 }
 
 type Spec struct {
-	Tasks   []Task   `json:"tasks,omitempty"`
-	Uix     []Uix    `json:"uix,omitempty"`
-	Volumes []Volume `json:"volumes"`
+	Tasks   []Task    `json:"tasks,omitempty"`
+	Uix     []Uix     `json:"uix,omitempty"`
+	Serving []Serving `json:"serving,omitempty"`
+	Volumes []Volume  `json:"volumes"`
 }
 type Resource struct {
 	Resources  *ResourceRequest `json:"resources,omitempty"`
@@ -56,6 +57,15 @@ func (r Resource) Image() string {
 type Uix struct {
 	Meta        `json:",inline"`
 	DisplayName string `json:"displayName,omitempty"`
+	Ports       []Port `json:"ports,omitempty"`
+	Resource    `json:",inline"`
+}
+
+type Serving struct {
+	Meta        `json:",inline"`
+	DisplayName string `json:"displayName,omitempty"`
+	TaskName    string `json:"taskName,inline"`
+	Build       string `json:"build,inline"`
 	Ports       []Port `json:"ports,omitempty"`
 	Resource    `json:",inline"`
 }

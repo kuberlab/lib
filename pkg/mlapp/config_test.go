@@ -8,66 +8,8 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
+	"github.com/kuberlab/lib/pkg/example"
 )
-
-var cfg = `
-kind: MLApp
-metadata:
-  name: name
-  namespace: namespace
-  labels: # Will be applayed to each resource
-    key: value
-spec:
-  tasks:
-  - name: model
-    labels:
-      key: value  # Will be applayed to each resource
-    resources:
-    - name: workers
-      labels:
-        key: value  # Will be applayed to each resource
-      replicas: 1
-      minAvailable: 1
-      restartPolicy: Always,Never,OnFailure
-      maxRestartCount: 1
-      images:
-        gpu: image-gpu
-        cpu: image-cpu
-      command: python
-      workdir: directory
-      args: ""
-      env:
-      - name: NAME
-        value: value
-      - name: PYTHONPATH
-        value: /usr/local # Will be extended as /usr/local:KUBERLAB_PYYHON_LIB
-      resources:
-        accelerators:
-          gpu: 1
-        requests:
-          cpu: 100mi
-          memory: 1Gi
-        limits:
-          cpu: 100mi
-          memory: 1Gi
-  uix:
-    - name: jupyter
-      displayName: Jupyter
-      resources:
-        accelerators:
-          gpu: 1
-        requests:
-          cpu: 100mi
-          memory: 1Gi
-        limits:
-          cpu: 100mi
-          memory: 1Gi
-      ports:
-        - port: 80
-          targetPort: 8082
-          protocol: TCP
-          name: http
-`
 
 func Assert(want, got interface{}, t *testing.T) {
 	if !reflect.DeepEqual(want, got) {
@@ -78,36 +20,66 @@ func Assert(want, got interface{}, t *testing.T) {
 }
 
 func TestUnmarshalConfig(t *testing.T) {
+
 	conf := Config{}
-	err := yaml.Unmarshal([]byte(cfg), &conf)
+	err := yaml.Unmarshal([]byte(example.TF_EXAMPLE), &conf)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	Assert("MLApp", conf.Kind, t)
-	Assert("name", conf.Name, t)
-	Assert("value", conf.Labels["key"], t)
+	Assert("tfexample", conf.Name, t)
+	Assert("testValue", conf.Labels["testKey"], t)
+	Assert(1, len(conf.Tasks), t)
 	Assert("model", conf.Tasks[0].Name, t)
-	Assert("value", conf.Tasks[0].Labels["key"], t)
-	Assert("workers", conf.Tasks[0].Resources[0].Name, t)
-	Assert("value", conf.Tasks[0].Resources[0].Labels["key"], t)
-	Assert(uint(1), conf.Tasks[0].Resources[0].Replicas, t)
-	Assert(uint(1), conf.Tasks[0].Resources[0].MinAvailable, t)
-	Assert("python", conf.Tasks[0].Resources[0].Command, t)
-	Assert("", conf.Tasks[0].Resources[0].RawArgs, t)
+	Assert("testModelValue", conf.Tasks[0].Labels["testModelKey"], t)
+	Assert(2, len(conf.Tasks[0].Resources), t)
+	Assert("worker", conf.Tasks[0].Resources[0].Name, t)
+	Assert("testWorkerValue", conf.Tasks[0].Resources[0].Labels["testWorkerKey"], t)
+	Assert(uint(2), conf.Tasks[0].Resources[0].Replicas, t)
 	Assert(uint(1), conf.Tasks[0].Resources[0].MaxRestartCount, t)
-	Assert("Always,Never,OnFailure", conf.Tasks[0].Resources[0].RestartPolicy, t)
+	Assert(true, conf.Tasks[0].Resources[0].AllowFail, t)
+	Assert(int32(9000), conf.Tasks[0].Resources[0].Port, t)
+	Assert("doneConditionValue", conf.Tasks[0].Resources[0].DoneCondition, t)
+	Assert("image-cpu", conf.Tasks[0].Resources[0].Images.CPU, t)
+	Assert("image-gpu", conf.Tasks[0].Resources[0].Images.GPU, t)
+	Assert("python", conf.Tasks[0].Resources[0].Command, t)
+	Assert("Never", conf.Tasks[0].Resources[0].RestartPolicy, t)
+	Assert("--log-dir=$TRAINING_DIR", conf.Tasks[0].Resources[0].RawArgs, t)
+	Assert(uint(1), conf.Tasks[0].Resources[0].MaxRestartCount, t)
 	Assert("directory", conf.Tasks[0].Resources[0].WorkDir, t)
-	Assert("NAME", conf.Tasks[0].Resources[0].Env[0].Name, t)
-	Assert("value", conf.Tasks[0].Resources[0].Env[0].Value, t)
+	Assert(2, len(conf.Tasks[0].Resources), t)
+	Assert("v1", conf.Tasks[0].Resources[0].Env[0].Value, t)
+	Assert("TEST_ENV_V1", conf.Tasks[0].Resources[0].Env[0].Name, t)
+	Assert("v1", conf.Tasks[0].Resources[0].Env[0].Value, t)
 	Assert(uint(1), conf.Tasks[0].Resources[0].Resources.Accelerators.GPU, t)
+	Assert(2, len(conf.Tasks[0].Resources[0].Volumes), t)
 
 	// UIX
+	Assert(1, len(conf.Uix), t)
 	Assert("jupyter", conf.Uix[0].Name, t)
 	Assert("Jupyter", conf.Uix[0].DisplayName, t)
 	Assert("http", conf.Uix[0].Ports[0].Name, t)
 	Assert(int32(80), conf.Uix[0].Ports[0].Port, t)
 	Assert("TCP", conf.Uix[0].Ports[0].Protocol, t)
 	Assert(int32(8082), conf.Uix[0].Ports[0].TargetPort, t)
+
+	// Serving
+	Assert(1, len(conf.Serving), t)
+	Assert("test-serv", conf.Serving[0].Name, t)
+	Assert("Test serving", conf.Serving[0].DisplayName, t)
+	Assert("task-name", conf.Serving[0].TaskName, t)
+	Assert("5", conf.Serving[0].Build, t)
+
+	// Volumes
+	Assert(2, len(conf.Volumes), t)
+	Assert("lib", conf.Volumes[0].Name, t)
+	Assert(true, conf.Volumes[0].IsLibDir, t)
+	Assert(true, conf.Volumes[1].IsTrainLogDir, t)
+	Assert("/workspace/lib", conf.Volumes[0].MountPath, t)
+	Assert("lib", conf.Volumes[0].SubPath, t)
+	Assert("test", conf.Volumes[0].ClusterStorage, t)
+	Assert("/test", conf.Volumes[0].HostPath.Path, t)
+
 }
