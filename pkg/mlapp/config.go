@@ -62,12 +62,9 @@ type Uix struct {
 }
 
 type Serving struct {
-	Meta        `json:",inline"`
-	DisplayName string `json:"displayName,omitempty"`
-	TaskName    string `json:"taskName,inline"`
-	Build       string `json:"build,inline"`
-	Ports       []Port `json:"ports,omitempty"`
-	Resource    `json:",inline"`
+	Uix
+	TaskName string `json:"taskName,inline"`
+	Build    string `json:"build,inline"`
 }
 
 type Port struct {

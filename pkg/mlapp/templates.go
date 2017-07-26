@@ -271,13 +271,9 @@ func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string
 			JobID:        jobID,
 			Callback:     fmt.Sprintf("%s/%s/%s/%s/%s", submitURL, c.Name, task.Name, r.Name, jobID),
 		}
-		data, err := kubernetes.GetTemplate(StatefulSetTpl, g)
+		res, err := kubernetes.GetTemplatedResource(StatefulSetTpl, g.BuildName()+":resource", g)
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
-		}
-		res, err := kubernetes.GetKubeResource(g.BuildName()+":resource", data, nil)
-		if err != nil {
-			return nil, fmt.Errorf("Failed get kube resource '%s': %v", g.BuildName(), err)
 		}
 		if g.Port > 0 {
 			res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
@@ -366,6 +362,7 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 func (ui UIXResourceGenerator) Args() []string {
 	return strings.Split(ui.RawArgs, " ")
 }
+
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
@@ -374,18 +371,52 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes}
-		data, err := kubernetes.GetTemplate(DeploymentTpl, g)
+		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, uix.Name+":resource", g)
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", uix.Name, err)
 		}
 
-		res, err := kubernetes.GetKubeResource(uix.Name+":resource", data, nil)
-		if err != nil {
-			return nil, fmt.Errorf("Failed get kube resource '%s': %v", uix.Name, err)
-		}
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
 		resources = append(resources, res)
 	}
+	return resources, nil
+}
+
+type ServingResourceGenerator struct {
+	UIXResourceGenerator
+	TaskName string
+	Build    string
+}
+
+func (serving ServingResourceGenerator) Labels() map[string]string {
+	labels := serving.UIXResourceGenerator.Labels()
+	labels["kuberlab.io/serving-id"] = fmt.Sprintf("%v-%v-%v", serving.UIXResourceGenerator.Name, serving.TaskName, serving.Build)
+	return labels
+}
+
+func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
+	resources := []*kubernetes.KubeResource{}
+	volumes, mounts, err := c.KubeVolumesSpec(serving.Volumes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
+	}
+	g := ServingResourceGenerator{
+		TaskName: serving.TaskName,
+		Build:    serving.Build,
+		UIXResourceGenerator: UIXResourceGenerator{
+			c:       c,
+			Uix:     serving.Uix,
+			mounts:  mounts,
+			volumes: volumes,
+		},
+	}
+	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, serving.Name+":resource", g)
+	if err != nil {
+		return nil, fmt.Errorf("Failed parse template '%s': %v", serving.Name, err)
+	}
+
+	res.Deps = []*kubernetes.KubeResource{generateUIService(g.UIXResourceGenerator)}
+	resources = append(resources, res)
 	return resources, nil
 }
 

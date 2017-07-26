@@ -76,6 +76,14 @@ func GetKubeResource(name string, data string, tranform func(runtime.Object) err
 	}, nil
 }
 
+func GetTemplatedResource(tpl string, name string, vars interface{}) (*KubeResource, error) {
+	data, err := GetTemplate(tpl, vars)
+	if err != nil {
+		return nil, err
+	}
+	return GetKubeResource(name, data, Noop)
+}
+
 func Apply(client *kubernetes.Clientset, resources []*KubeResource) error {
 	for _, r := range resources {
 		if len(r.Deps) > 0 {
