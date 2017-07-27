@@ -229,10 +229,6 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 	return labels
 }
 
-func (t TaskResourceGenerator) Command() string {
-	return strings.Join(t.Resource.Command, " ")
-}
-
 func (t TaskResourceGenerator) Args() string {
 	//return strings.Replace(t.RawArgs, "\"", "\\\"", -1)
 	return t.RawArgs
@@ -355,7 +351,7 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 	return labels
 }
 
-func (ui UIXResourceGenerator) Args() []string {
+func (ui UIXResourceGenerator) Args() string {
 	return ui.Resource.RawArgs
 }
 
