@@ -17,7 +17,7 @@ const (
 
 type Config struct {
 	Kind      string `json:"kind"`
-	Meta      `json:",inline"`
+	Meta      `json:"metadata"`
 	Spec      `json:"spec,omitempty"`
 	Workspace string `json:"workspace,omitempty"`
 }
