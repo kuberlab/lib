@@ -83,7 +83,7 @@ type TaskResource struct {
 	Meta            `json:",inline"`
 	Replicas        uint   `json:"replicas"`
 	RestartPolicy   string `json:"restartPolicy"`
-	MaxRestartCount uint   `json:"maxRestartCount"`
+	MaxRestartCount int    `json:"maxRestartCount"`
 	AllowFail       bool   `json:"allowFail"`
 	Port            int32  `json:"port,omitempty"`
 	DoneCondition   string `json:"doneCondition,omitempty"`

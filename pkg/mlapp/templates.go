@@ -47,12 +47,12 @@ spec:
         command: ["{{ .Command }}"]
         {{- end }}
         {{- if .RawArgs }}
-          {{- if gt (len .RawArgs) 0 }}
+        {{- if gt (len .RawArgs) 0 }}
         args:
           {{- range .Args }}
-          - {{ . }}
+        - {{ . }}
           {{- end }}
-          {{- end }}
+        {{- end }}
         {{- end }}
         image: "{{ .Image }}"
         env:
@@ -98,9 +98,9 @@ spec:
 {{ toYaml .Volumes | indent 6 }}
 `
 
-const StatefulSetTpl = `
-apiVersion: apps/v1beta1
-kind: StatefulSet
+const ResourceTpl = `
+apiVersion: v1
+kind: Pod
 metadata:
   name: "{{ .BuildName }}"
   namespace: {{ .AppName }}
@@ -111,85 +111,67 @@ metadata:
     workspace: {{ .AppName }}
     component: "{{ .Task }}-{{ .Name }}"
     kuberlab.io/job-id: "{{ .JobID }}"
-    kuberlab.io/task: "{{ .Task }}"
+  {{- if .Resources }}
+  {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+  annotations:
+    experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
+  {{- end }}
+  {{- end }}
 spec:
-  replicas: {{ .Replicas }}
-  serviceName: "{{ .BuildName }}"
-  template:
-    metadata:
-      labels:
-        {{- range $key, $value := .Labels }}
-        {{ $key }}: {{ $value }}
+  terminationGracePeriodSeconds: 10
+  {{- if .NodesLabel }}
+  nodeSelector:
+    kuberlab.io/mljob: {{ .NodesLabel }}
+  {{- end }}
+  hostname: "{{ .BuildName }}"
+  subdomain: "{{ .BuildName }}"
+  containers:
+  - command: ["/bin/sh", "-c"]
+    args:
+    - >
+      cd {{ .WorkDir }};
+      {{ .Command }} {{ .Args }};
+      code=$?;
+      exit $code
+    image: {{ .Image }}
+    name: {{ .Task }}-{{ .JobID }}
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    {{- range .Env }}
+    - name: {{ .Name }}
+      value: '{{ .Value }}'
+    {{- end }}
+    {{- if gt .Port 0 }}
+    ports:
+    - containerPort: {{ .Port }}
+      name: cluster-port
+      protocol: TCP
+    {{- end }}
+    {{- if .Resources }}
+    resources:
+      requests:
+        {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+        alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
-        workspace: {{ .AppName }}
-        component: "{{ .Task }}-{{ .Name }}"
-        kuberlab.io/job-id: "{{ .JobID }}"
-        service: "{{ .BuildName }}"
-      {{- if .Resources }}
-      {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
-      annotations:
-        experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
-      {{- end }}
-      {{- end }}
-    spec:
-      terminationGracePeriodSeconds: 10
-      {{- if .NodesLabel }}
-      nodeSelector:
-        kuberlab.io/mljob: {{ .NodesLabel }}
-      {{- end }}
-      containers:
-      - command: ["/bin/sh", "-c"]
-        args:
-        - >
-          hostname=$(hostname);
-          task_id=$(echo ${hostname##*-});
-          echo "Start with task-id=$task_id";
-          cd {{ .WorkDir }};
-          {{ .Command }} {{ .ExtraArgs }};
-          code=$?;
-          echo "Script exit code: ${code}";
-          while true; do  echo "waiting..."; curl -H "X-Source: $task_id" -H "X-Result: ${code}" {{ .Callback }}; sleep 60; done;
-          echo 'Wait deletion...';
-          sleep 86400
-        image: {{ .Image }}
-        name: {{ .Task }}-{{ .JobID }}
-        env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          {{- range .Env }}
-          - name: {{ .Name }}
-            value: '{{ .Value }}'
-          {{- end }}
-        {{- if gt .Port 0 }}
-        ports:
-        - containerPort: {{ .Port }}
-          name: cluster-port
-          protocol: TCP
+        {{- if .Resources.Requests.CPU }}
+        cpu: "{{ .Resources.Requests.CPU }}"
         {{- end }}
-        {{- if .Resources }}
-        resources:
-          requests:
-            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
-            alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
-            {{- end }}
-            {{- if .Resources.Requests.CPU }}
-            cpu: "{{ .Resources.Requests.CPU }}"
-            {{- end }}
-            {{- if .Resources.Requests.Memory }}
-            memory: "{{ .Resources.Requests.Memory }}"
-            {{- end }}
-          limits:
-            {{- if .Resources.Limits.CPU}}
-            cpu: "{{ .Resources.Limits.CPU }}"
-            {{- end }}
-            {{- if .Resources.Limits.Memory }}
-            memory: "{{ .Resources.Limits.Memory }}"
-            {{- end }}
-         {{- end }}
-{{ toYaml .Mounts | indent 8 }}
-{{ toYaml .Volumes | indent 6 }}
+        {{- if .Resources.Requests.Memory }}
+        memory: "{{ .Resources.Requests.Memory }}"
+        {{- end }}
+      limits:
+        {{- if .Resources.Limits.CPU}}
+        cpu: "{{ .Resources.Limits.CPU }}"
+        {{- end }}
+        {{- if .Resources.Limits.Memory }}
+        memory: "{{ .Resources.Limits.Memory }}"
+        {{- end }}
+    {{- end }}
+{{ toYaml .Mounts | indent 4 }}
+{{ toYaml .Volumes | indent 2 }}
 `
 
 type TaskResourceGenerator struct {
@@ -250,11 +232,12 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 	return labels
 }
 
-func (t TaskResourceGenerator) ExtraArgs() string {
+func (t TaskResourceGenerator) Args() string {
+	//return strings.Replace(t.RawArgs, "\"", "\\\"", -1)
 	return t.RawArgs
 }
 
-func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string) ([]TaskResourceSpec, error) {
+func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
 	for _, r := range task.Resources {
 		volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
@@ -269,9 +252,21 @@ func (c *Config) GenerateTaskResources(task Task, submitURL string, jobID string
 			mounts:       mounts,
 			volumes:      volumes,
 			JobID:        jobID,
-			Callback:     fmt.Sprintf("%s/%s/%s/%s/%s", submitURL, c.Name, task.Name, r.Name, jobID),
 		}
-		res, err := kubernetes.GetTemplatedResource(StatefulSetTpl, g.BuildName()+":resource", g)
+		res, err := kubernetes.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
+		if err != nil {
+			return nil, err
+		}
+		res.Object = &WorkerSet{
+			PodTemplate:  res.Object.(*v1.Pod),
+			ResourceName: r.Name,
+			TaskName:     task.Name,
+			AppName:      c.Name,
+			JobID:        jobID,
+			AllowFail:    r.AllowFail,
+			MaxRestarts:  r.MaxRestartCount,
+			Replicas:     int(r.Replicas),
+		}
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
 		}
