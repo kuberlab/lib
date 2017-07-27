@@ -125,6 +125,7 @@ spec:
   {{- end }}
   hostname: "{{ .BuildName }}"
   subdomain: "{{ .BuildName }}"
+  restartPolicy: Never
   containers:
   - command: ["/bin/sh", "-c"]
     args:
