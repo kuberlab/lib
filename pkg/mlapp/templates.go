@@ -43,22 +43,12 @@ spec:
     spec:
       containers:
       - name: {{ .AppName }}-{{ .Name }}
-        {{- if .Command }}
-        {{- if gt (len .Args) 0 }}
-        command:
-          {{- range .Command }}
-        - {{ . }}
-          {{- end }}
-        {{- end }}
-        {{- end }}
-        {{- if .Args }}
-        {{- if gt (len .Args) 0 }}
+        command: ["/bin/sh", "-c"]
         args:
-          {{- range .Args }}
-        - {{ . }}
-          {{- end }}
-        {{- end }}
-        {{- end }}
+        - >
+          {{ .Command }} {{ .Args }}
+          ;code=$?;
+          exit $code
         image: "{{ .Image }}"
         env:
         {{- range .Env }}
@@ -245,7 +235,7 @@ func (t TaskResourceGenerator) Command() string {
 
 func (t TaskResourceGenerator) Args() string {
 	//return strings.Replace(t.RawArgs, "\"", "\\\"", -1)
-	return strings.Join(t.Resource.Args, " ")
+	return t.RawArgs
 }
 
 func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
@@ -366,7 +356,7 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 }
 
 func (ui UIXResourceGenerator) Args() []string {
-	return ui.Resource.Args
+	return ui.Resource.RawArgs
 }
 
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
