@@ -1,6 +1,9 @@
 package mlapp
 
-import "k8s.io/client-go/pkg/api/v1"
+import (
+	"k8s.io/client-go/pkg/api/v1"
+	"encoding/json"
+)
 
 type VolumeMount struct {
 	Name      string `json:"name"`
@@ -42,6 +45,14 @@ func (v Volume) V1Volume() v1.Volume {
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
 		},
 	}
+}
+
+func (v Volume) String() string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return ""
+	}
+	return string(b)
 }
 
 func (v Volume) GetBoundID() string {
