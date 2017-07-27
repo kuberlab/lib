@@ -1,8 +1,8 @@
 package mlapp
 
 import (
-	"k8s.io/client-go/pkg/api/v1"
 	"encoding/json"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 type VolumeMount struct {

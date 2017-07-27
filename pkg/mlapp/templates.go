@@ -137,8 +137,8 @@ spec:
     args:
     - >
       cd {{ .WorkDir }};
-      {{ .Command }} {{ .Args }};
-      code=$?;
+      {{ .Command }} {{ .Args }}
+      ;code=$?;
       exit $code
     image: {{ .Image }}
     name: {{ .Task }}-{{ .JobID }}
