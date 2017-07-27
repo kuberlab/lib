@@ -22,7 +22,7 @@ func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
 func (s *WorkerSet) GetWorker(i int) *v1.Pod {
-	p := s.PodTemplate
+	p := *s.PodTemplate
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)
 	p.Spec.Hostname = fmt.Sprintf("%s-%d", p.Spec.Hostname, i)
 	containers := make([]v1.Container, len(p.Spec.Containers))
@@ -41,5 +41,5 @@ func (s *WorkerSet) GetWorker(i int) *v1.Pod {
 		containers[i] = c
 	}
 	p.Spec.Containers = containers
-	return p
+	return &p
 }
