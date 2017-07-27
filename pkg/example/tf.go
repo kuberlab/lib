@@ -22,10 +22,12 @@ spec:
       images:
         gpu: image-gpu
         cpu: image-cpu
-      command: python
+      command:
+      - python
       workdir: directory
       doneCondition: doneConditionValue
-      args: "--log-dir=$TRAINING_DIR"
+      args:
+      - "--log-dir=$TRAINING_DIR"
       env:
       - name: TEST_ENV_V1
         value: v1
@@ -55,7 +57,8 @@ spec:
       maxRestartCount: 0
       images:
         cpu: image-cpu
-      command: python
+      command:
+      - python
       workdir: directory
       port: 9000
       env:
