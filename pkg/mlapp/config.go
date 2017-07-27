@@ -37,9 +37,9 @@ type Spec struct {
 type Resource struct {
 	Resources  *ResourceRequest `json:"resources,omitempty"`
 	Images     Images           `json:"images"`
-	Command    string           `json:"command"`
+	Command    []string         `json:"command"`
 	WorkDir    string           `json:"workDir"`
-	RawArgs    string           `json:"args,omitempty"`
+	Args       []string         `json:"args,omitempty"`
 	Env        []Env            `json:"env"`
 	Volumes    []VolumeMount    `json:"volumes"`
 	NodesLabel string           `json:"nodes"`

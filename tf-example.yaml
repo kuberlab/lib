@@ -20,9 +20,9 @@ spec:
       images:
         gpu: image-gpu
         cpu: image-cpu
-      command: python
+      command: ['python']
       workdir: directory
-      args: "--log-dir=$TRAINING_DIR"
+      args: ["--log-dir=$TRAINING_DIR"]
       env:
       - name: TEST_ENV_V1
         value: v1

@@ -44,10 +44,15 @@ spec:
       containers:
       - name: {{ .AppName }}-{{ .Name }}
         {{- if .Command }}
-        command: ["{{ .Command }}"]
+        {{- if gt (len .Args) 0 }}
+        command:
+          {{- range .Command }}
+        - {{ . }}
+          {{- end }}
         {{- end }}
-        {{- if .RawArgs }}
-        {{- if gt (len .RawArgs) 0 }}
+        {{- end }}
+        {{- if .Args }}
+        {{- if gt (len .Args) 0 }}
         args:
           {{- range .Args }}
         - {{ . }}
@@ -234,9 +239,13 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 	return labels
 }
 
+func (t TaskResourceGenerator) Command() string {
+	return strings.Join(t.Resource.Command, " ")
+}
+
 func (t TaskResourceGenerator) Args() string {
 	//return strings.Replace(t.RawArgs, "\"", "\\\"", -1)
-	return t.RawArgs
+	return strings.Join(t.Resource.Args, " ")
 }
 
 func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
@@ -357,7 +366,7 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 }
 
 func (ui UIXResourceGenerator) Args() []string {
-	return strings.Split(ui.RawArgs, " ")
+	return ui.Resource.Args
 }
 
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
@@ -389,6 +398,10 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels := serving.UIXResourceGenerator.Labels()
 	labels["kuberlab.io/serving-id"] = fmt.Sprintf("%v-%v-%v", serving.UIXResourceGenerator.Name, serving.TaskName, serving.Build)
 	return labels
+}
+
+func (serving ServingResourceGenerator) Name() string {
+	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
 }
 
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
