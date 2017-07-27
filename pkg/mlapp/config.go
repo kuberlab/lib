@@ -17,7 +17,7 @@ const (
 
 type Config struct {
 	Kind      string `json:"kind"`
-	Meta      `json:"metadata"`
+	Meta      `json:",inline"`
 	Spec      `json:"spec,omitempty"`
 	Workspace string `json:"workspace,omitempty"`
 }
@@ -28,10 +28,11 @@ type Meta struct {
 }
 
 type Spec struct {
-	Tasks   []Task    `json:"tasks,omitempty"`
-	Uix     []Uix     `json:"uix,omitempty"`
-	Serving []Serving `json:"serving,omitempty"`
-	Volumes []Volume  `json:"volumes"`
+	Tasks          []Task    `json:"tasks,omitempty"`
+	Uix            []Uix     `json:"uix,omitempty"`
+	Serving        []Serving `json:"serving,omitempty"`
+	Volumes        []Volume  `json:"volumes,omitempty"`
+	PythonPackages []string  `json:"pythonPackages,omitempty"`
 }
 type Resource struct {
 	Resources  *ResourceRequest `json:"resources,omitempty"`
@@ -75,8 +76,10 @@ type Port struct {
 }
 
 type Task struct {
-	Meta      `json:",inline"`
-	Resources []TaskResource `json:"resources"`
+	Meta           `json:",inline"`
+	Version        string         `json:"version,omitempty"`
+	TimeoutMinutes uint           `json:"timeoutMinutes,omitempty"`
+	Resources      []TaskResource `json:"resources"`
 }
 
 type TaskResource struct {
