@@ -111,6 +111,7 @@ metadata:
     workspace: {{ .AppName }}
     component: "{{ .Task }}-{{ .Name }}"
     kuberlab.io/job-id: "{{ .JobID }}"
+    kuberlab.io/task: "{{ .Task }}"
   {{- if .Resources }}
   {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
   annotations:
