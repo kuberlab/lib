@@ -61,6 +61,9 @@ func GetKubeResource(name string, data string, tranform func(runtime.Object) err
 	d := api.Codecs.UniversalDeserializer()
 	o, i, err := d.Decode([]byte(data), nil, nil)
 	if err != nil {
+		logrus.Infoln("**************")
+		fmt.Println(data)
+		logrus.Infoln("**************")
 		return nil, fmt.Errorf("Failed decode object %v: ", err)
 	}
 	if tranform != nil {
