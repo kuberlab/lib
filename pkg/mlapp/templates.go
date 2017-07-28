@@ -211,6 +211,12 @@ func (t TaskResourceGenerator) Env() []Env {
 			Value: strings.Join(hosts, ","),
 		})
 	}
+	if t.Resources!=nil && t.Resources.Accelerators.GPU>0{
+		envs = append(envs, Env{
+			Name:  strings.ToUpper("GPU_COUNT"),
+			Value: strconv.Itoa(int(t.Resources.Accelerators.GPU)),
+		})
+	}
 	return envs
 }
 func (t TaskResourceGenerator) BuildName() string {
