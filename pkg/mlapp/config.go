@@ -24,7 +24,7 @@ type Config struct {
 
 type Meta struct {
 	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels"`
 }
 
 type Spec struct {
@@ -115,7 +115,7 @@ type TaskResourceSpec struct {
 func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, error)) error {
 	for i, v := range c.Spec.Volumes {
 		if len(v.ClusterStorage) > 0 {
-			if s, err := mapping(v.ClusterStorage); err != nil {
+			if s, err := mapping(v.ClusterStorage); err == nil {
 				c.Spec.Volumes[i].VolumeSource = *s
 			} else {
 				return fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
@@ -213,6 +213,9 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 		res = c
 		res.Name = appName
 		res.Workspace = workspaceName
+		if res.Labels == nil{
+			res.Labels = make(map[string]string)
+		}
 		res.Labels[KUBELAB_WS_LABEL] = workspaceName
 		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
 		return
