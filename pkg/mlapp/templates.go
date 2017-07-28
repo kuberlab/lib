@@ -29,6 +29,7 @@ spec:
   template:
     metadata:
       labels:
+
         {{- range $key, $value := .Labels }}
         {{ $key }}: {{ $value }}
         {{- end }}
@@ -43,12 +44,14 @@ spec:
     spec:
       containers:
       - name: {{ .AppName }}-{{ .Name }}
+        {{- if .Command }}
         command: ["/bin/sh", "-c"]
         args:
         - >
-          {{ .Command }} {{ .Args }}
-          ;code=$?;
+          {{ .Command }} {{ .Args }};
+          code=$?;
           exit $code
+        {{- end }}
         image: "{{ .Image }}"
         env:
         {{- range .Env }}
@@ -82,6 +85,9 @@ spec:
             memory: "{{ .Resources.Requests.Memory }}"
             {{- end }}
           limits:
+            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+            alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+            {{- end }}
             {{- if .Resources.Limits.CPU}}
             cpu: "{{ .Resources.Limits.CPU }}"
             {{- end }}
@@ -127,8 +133,8 @@ spec:
     args:
     - >
       cd {{ .WorkDir }};
-      {{ .Command }} {{ .Args }}
-      ;code=$?;
+      {{ .Command }} {{ .Args }};
+      code=$?;
       exit $code
     image: {{ .Image }}
     name: {{ .Task }}-{{ .JobID }}
@@ -150,7 +156,7 @@ spec:
     {{- if .Resources }}
     resources:
       requests:
-        {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
         {{- if .Resources.Requests.CPU }}
@@ -160,6 +166,9 @@ spec:
         memory: "{{ .Resources.Requests.Memory }}"
         {{- end }}
       limits:
+        {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+        alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+        {{- end }}
         {{- if .Resources.Limits.CPU}}
         cpu: "{{ .Resources.Limits.CPU }}"
         {{- end }}
@@ -191,7 +200,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
-			serviceName := t.BuildName()
+			serviceName := fmt.Sprintf("%s-%s-%s", t.task.Name, r.Name, t.JobID)
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.AppName())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))

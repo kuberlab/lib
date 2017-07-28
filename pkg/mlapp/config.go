@@ -146,8 +146,7 @@ func (c *Config) LibVolume() *Volume {
 }
 
 func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
-	added := make(map[string]string)
-	names := make(map[string]string)
+	added := make(map[string]bool)
 	kvolumes := make([]v1.Volume, 0)
 	kvolumesMount := make([]v1.VolumeMount, 0)
 	for _, m := range mounts {
@@ -155,15 +154,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		if v == nil {
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
-		id := v.GetBoundID()
-		if duplicate, ok := added[id]; ok {
-			if duplicate == m.Name {
-				continue
-			}
-			names[m.Name] = duplicate
-		} else {
-			names[m.Name] = v.Name
-			added[id] = m.Name
+		if _, ok := added[v.Name]; !ok {
 			kvolumes = append(kvolumes, v.V1Volume())
 		}
 		mountPath := v.MountPath
@@ -180,7 +171,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			subPath = filepath.Join(subPath, m.SubPath)
 		}
 		kvolumesMount = append(kvolumesMount, v1.VolumeMount{
-			Name:      names[m.Name],
+			Name:      m.Name,
 			SubPath:   subPath,
 			MountPath: mountPath,
 			ReadOnly:  m.ReadOnly,
