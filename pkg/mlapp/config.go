@@ -219,6 +219,10 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 		}
 		res.Labels[KUBELAB_WS_LABEL] = workspaceName
 		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
+		for i := range res.Uix{
+			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/ml-proxy/%s/%s/%s/",
+				workspaceName,appName,res.Uix[i].Name)
+		}
 		return
 	}
 }
