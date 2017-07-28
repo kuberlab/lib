@@ -58,7 +58,7 @@ spec:
           value: '{{ .Value }}'
         {{- end }}
         - name: URL_PREFIX
-          value: "/api/v1/ml-proxy/{{ .Workspace }}/{{ .AppName }}/{{ .Name }}/"
+          value: "/api/v1/ml2-proxy/{{ .Workspace }}/{{ .AppName }}/{{ .Name }}/"
         {{- if .Ports }}
         ports:
         {{- range .Ports }}
