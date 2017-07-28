@@ -20,7 +20,7 @@ metadata:
   namespace: "{{ .AppName }}"
   labels:
     {{- range $key, $value := .Labels }}
-    {{ $key }}: {{ $value }}
+    {{ $key }}: "{{ $value }}"
     {{- end }}
     workspace: "{{ .AppName }}"
     component: "{{ .Name }}"
@@ -30,7 +30,7 @@ spec:
     metadata:
       labels:
         {{- range $key, $value := .Labels }}
-        {{ $key }}: {{ $value }}
+        {{ $key }}: "{{ $value }}"
         {{- end }}
         workspace: "{{ .AppName }}"
         component: "{{ .Name }}"
@@ -106,9 +106,9 @@ metadata:
   namespace: {{ .AppName }}
   labels:
     {{- range $key, $value := .Labels }}
-    {{ $key }}: {{ $value }}
+    {{ $key }}: "{{ $value }}"
     {{- end }}
-    workspace: {{ .AppName }}
+    workspace: "{{ .AppName }}"
     component: "{{ .Task }}-{{ .Name }}"
     kuberlab.io/job-id: "{{ .JobID }}"
     kuberlab.io/task: "{{ .Task }}"
