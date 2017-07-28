@@ -60,6 +60,7 @@ type Uix struct {
 	DisplayName string `json:"displayName,omitempty"`
 	Ports       []Port `json:"ports,omitempty"`
 	Resource    `json:",inline"`
+	FrontAPI    string `json:"front_api,omitempty"`
 }
 
 type Serving struct {

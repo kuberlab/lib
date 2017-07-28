@@ -17,24 +17,23 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: "{{ .Name }}"
-  namespace: {{ .AppName }}
+  namespace: "{{ .AppName }}"
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: {{ $value }}
     {{- end }}
-    workspace: {{ .AppName }}
-    component: {{ .Name }}
+    workspace: "{{ .AppName }}"
+    component: "{{ .Name }}"
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-
         {{- range $key, $value := .Labels }}
         {{ $key }}: {{ $value }}
         {{- end }}
-        workspace: {{ .AppName }}
-        component: {{ .Name }}
+        workspace: "{{ .AppName }}"
+        component: "{{ .Name }}"
       {{- if .Resources }}
       {{- if and (gt .Resources.Accelerators.GPU 0) (not .Resources.Accelerators.DedicatedGPU) }}
       annotations:
