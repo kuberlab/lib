@@ -215,6 +215,11 @@ func (t TaskResourceGenerator) Env() []Env {
 			Name:  strings.ToUpper("GPU_COUNT"),
 			Value: strconv.Itoa(int(t.Resources.Accelerators.GPU)),
 		})
+	} else{
+		envs = append(envs, Env{
+			Name:  strings.ToUpper("GPU_COUNT"),
+			Value: "0",
+		})
 	}
 	return envs
 }
