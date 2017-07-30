@@ -30,12 +30,12 @@ func (s *WorkerSet) GetWorker(i int) *v1.Pod {
 	for i, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))
 		for _, e := range c.Env {
-			if e.Name != "TASK_ID" {
+			if e.Name != "REPLICA_INDEX" {
 				env = append(env, e)
 			}
 		}
 		env = append(env, v1.EnvVar{
-			Name:  "TASK_ID",
+			Name:  "REPLICA_INDEX",
 			Value: strconv.Itoa(i),
 		})
 		c.Env = env

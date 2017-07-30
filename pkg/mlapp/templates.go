@@ -221,6 +221,10 @@ func (t TaskResourceGenerator) Env() []Env {
 			Value: "0",
 		})
 	}
+	envs = append(envs, Env{
+		Name:  strings.ToUpper("BUILD_ID"),
+		Value: t.JobID,
+	})
 	return envs
 }
 func (t TaskResourceGenerator) BuildName() string {
