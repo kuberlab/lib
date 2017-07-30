@@ -22,10 +22,14 @@ type WorkerSet struct {
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
-func (s *WorkerSet) GetWorker(i int) *v1.Pod {
+func (s *WorkerSet) GetWorker(i int,restart int) *v1.Pod {
 	p := *s.PodTemplate
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)
 	p.Spec.Hostname = fmt.Sprintf("%s-%d", p.Spec.Hostname, i)
+	annotations := make(map[string]string)
+	joinMaps(annotations,p.Annotations)
+	annotations["restart"] = strconv.Itoa(restart)
+	p.Annotations = annotations
 	containers := make([]v1.Container, len(p.Spec.Containers))
 	for i, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))
@@ -44,3 +48,4 @@ func (s *WorkerSet) GetWorker(i int) *v1.Pod {
 	p.Spec.Containers = containers
 	return &p
 }
+
