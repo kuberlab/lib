@@ -28,12 +28,18 @@ type Meta struct {
 }
 
 type Spec struct {
-	Tasks          []Task    `json:"tasks,omitempty"`
-	Uix            []Uix     `json:"uix,omitempty"`
-	Serving        []Serving `json:"serving,omitempty"`
-	Volumes        []Volume  `json:"volumes,omitempty"`
-	PythonPackages []string  `json:"pythonPackages,omitempty"`
+	Tasks    []Task     `json:"tasks,omitempty"`
+	Uix      []Uix      `json:"uix,omitempty"`
+	Serving  []Serving  `json:"serving,omitempty"`
+	Volumes  []Volume   `json:"volumes,omitempty"`
+	Packages []Packages `json:"packages,omitempty"`
 }
+
+type Packages struct {
+	Names   []string `json:"names"`
+	Manager string   `json:"manager"`
+}
+
 type Resource struct {
 	Resources  *ResourceRequest `json:"resources,omitempty"`
 	Images     Images           `json:"images"`
@@ -214,14 +220,14 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 		res = c
 		res.Name = appName
 		res.Workspace = workspaceName
-		if res.Labels == nil{
+		if res.Labels == nil {
 			res.Labels = make(map[string]string)
 		}
 		res.Labels[KUBELAB_WS_LABEL] = workspaceName
 		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
-		for i := range res.Uix{
+		for i := range res.Uix {
 			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",
-				workspaceName,appName,res.Uix[i].Name)
+				workspaceName, appName, res.Uix[i].Name)
 		}
 		return
 	}
