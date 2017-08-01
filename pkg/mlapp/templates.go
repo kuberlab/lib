@@ -35,7 +35,7 @@ spec:
         workspace: "{{ .AppName }}"
         component: "{{ .Name }}"
       {{- if .Resources }}
-      {{- if and (gt .Resources.Accelerators.GPU 0) (not .Resources.Accelerators.DedicatedGPU) }}
+      {{- if gt .Resources.Accelerators.GPU 0 }}
       annotations:
         experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
       {{- end }}
@@ -113,7 +113,7 @@ metadata:
     kuberlab.io/job-id: "{{ .JobID }}"
     kuberlab.io/task: "{{ .Task }}"
   {{- if .Resources }}
-  {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+  {{- if gt .Resources.Accelerators.GPU 0 }}
   annotations:
     experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
   {{- end }}
