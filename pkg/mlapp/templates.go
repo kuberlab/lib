@@ -210,17 +210,6 @@ func (t TaskResourceGenerator) Env() []Env {
 			Value: strings.Join(hosts, ","),
 		})
 	}
-	if t.Resources != nil && t.Resources.Accelerators.GPU > 0 {
-		envs = append(envs, Env{
-			Name:  strings.ToUpper("GPU_COUNT"),
-			Value: strconv.Itoa(int(t.Resources.Accelerators.GPU)),
-		})
-	} else {
-		envs = append(envs, Env{
-			Name:  strings.ToUpper("GPU_COUNT"),
-			Value: "0",
-		})
-	}
 	envs = append(envs, Env{
 		Name:  strings.ToUpper("BUILD_ID"),
 		Value: t.JobID,
@@ -525,6 +514,17 @@ func baseEnv(c *Config, r Resource) []Env {
 		envs = append(envs, Env{
 			Name:  "KUBERLAB_GPU",
 			Value: "all",
+		})
+	}
+	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
+		envs = append(envs, Env{
+			Name:  strings.ToUpper("GPU_COUNT"),
+			Value: strconv.Itoa(int(r.Resources.Accelerators.GPU)),
+		})
+	} else {
+		envs = append(envs, Env{
+			Name:  strings.ToUpper("GPU_COUNT"),
+			Value: "0",
 		})
 	}
 	for _, v := range r.Volumes {
