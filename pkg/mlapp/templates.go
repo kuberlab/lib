@@ -25,7 +25,7 @@ metadata:
     workspace: "{{ .AppName }}"
     component: "{{ .Name }}"
 spec:
-  replicas: 1
+  replicas: {{. Replicas }}
   template:
     metadata:
       labels:
@@ -210,12 +210,12 @@ func (t TaskResourceGenerator) Env() []Env {
 			Value: strings.Join(hosts, ","),
 		})
 	}
-	if t.Resources!=nil && t.Resources.Accelerators.GPU>0{
+	if t.Resources != nil && t.Resources.Accelerators.GPU > 0 {
 		envs = append(envs, Env{
 			Name:  strings.ToUpper("GPU_COUNT"),
 			Value: strconv.Itoa(int(t.Resources.Accelerators.GPU)),
 		})
-	} else{
+	} else {
 		envs = append(envs, Env{
 			Name:  strings.ToUpper("GPU_COUNT"),
 			Value: "0",
@@ -349,6 +349,12 @@ type UIXResourceGenerator struct {
 	mounts  []v1.VolumeMount
 }
 
+func (ui UIXResourceGenerator) Replicas() int {
+	if ui.Resource.Replicas>0{
+		return  ui.Resource.Replicas
+	}
+	return 1
+}
 func (ui UIXResourceGenerator) Env() []Env {
 	return baseEnv(ui.c, ui.Resource)
 }
@@ -403,6 +409,14 @@ type ServingResourceGenerator struct {
 	Build    string
 }
 
+func (serving ServingResourceGenerator) Env() []Env {
+	envs := baseEnv(serving.c, serving.Resource)
+	envs = append(envs, Env{
+		Name:  "BUILD_ID",
+		Value: serving.Build,
+	})
+	return envs
+}
 func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels := serving.UIXResourceGenerator.Labels()
 	labels["kuberlab.io/serving-id"] = fmt.Sprintf("%v-%v-%v", serving.UIXResourceGenerator.Name, serving.TaskName, serving.Build)

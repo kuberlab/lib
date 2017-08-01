@@ -28,11 +28,12 @@ type Meta struct {
 }
 
 type Spec struct {
-	Tasks    []Task     `json:"tasks,omitempty"`
-	Uix      []Uix      `json:"uix,omitempty"`
-	Serving  []Serving  `json:"serving,omitempty"`
-	Volumes  []Volume   `json:"volumes,omitempty"`
-	Packages []Packages `json:"packages,omitempty"`
+	Tasks                 []Task     `json:"tasks,omitempty"`
+	Uix                   []Uix      `json:"uix,omitempty"`
+	Serving               []Serving  `json:"serving,omitempty"`
+	Volumes               []Volume   `json:"volumes,omitempty"`
+	Packages              []Packages `json:"packages,omitempty"`
+	DefaultPackageManager string     `json:"package_manager,omitempty"`
 }
 
 type Packages struct {
@@ -41,6 +42,7 @@ type Packages struct {
 }
 
 type Resource struct {
+	Replicas   int           `json:"replicas"`
 	Resources  *ResourceRequest `json:"resources,omitempty"`
 	Images     Images           `json:"images"`
 	Command    string           `json:"command"`
@@ -70,9 +72,9 @@ type Uix struct {
 }
 
 type Serving struct {
-	Uix
-	TaskName string `json:"taskName,inline"`
-	Build    string `json:"build,inline"`
+	Uix      `json:",inline"`
+	TaskName string `json:"taskName"`
+	Build    string `json:"build"`
 }
 
 type Port struct {
@@ -91,7 +93,6 @@ type Task struct {
 
 type TaskResource struct {
 	Meta            `json:",inline"`
-	Replicas        uint   `json:"replicas"`
 	RestartPolicy   string `json:"restartPolicy"`
 	MaxRestartCount int    `json:"maxRestartCount"`
 	AllowFail       bool   `json:"allowFail"`
