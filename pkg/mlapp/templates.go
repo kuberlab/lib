@@ -25,7 +25,7 @@ metadata:
     workspace: "{{ .AppName }}"
     component: "{{ .Name }}"
 spec:
-  replicas: {{. Replicas }}
+  replicas: {{ .Replicas }}
   template:
     metadata:
       labels:
