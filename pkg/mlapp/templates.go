@@ -408,7 +408,7 @@ func (serving ServingResourceGenerator) Env() []Env {
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels := serving.UIXResourceGenerator.Labels()
-	labels["kuberlab.io/serving-id"] = fmt.Sprintf("%v-%v-%v", serving.UIXResourceGenerator.Name, serving.TaskName, serving.Build)
+	labels["kuberlab.io/serving-id"] = serving.Name()
 	return labels
 }
 
@@ -436,12 +436,51 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 	if err != nil {
 		return nil, fmt.Errorf("Failed parse template '%s': %v", serving.Name, err)
 	}
-
-	res.Deps = []*kubernetes.KubeResource{generateUIService(g.UIXResourceGenerator)}
+	res.Deps = []*kubernetes.KubeResource{generateServingService(g)}
 	resources = append(resources, res)
 	return resources, nil
 }
 
+func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResource {
+	labels := map[string]string{
+		"workspace": serv.AppName(),
+		"component": serv.Name(),
+		"kuberlab.io/serving-id": serv.Name(),
+	}
+	svc := &v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      serv.Name(),
+			Namespace: serv.AppName(),
+			Labels:    labels,
+		},
+		Spec: v1.ServiceSpec{
+			Selector: labels,
+			Type:     v1.ServiceTypeClusterIP,
+		},
+	}
+
+	for _, p := range serv.Ports {
+		svc.Spec.Ports = append(
+			svc.Spec.Ports,
+			v1.ServicePort{
+				Name:       p.Name,
+				TargetPort: intstr.FromInt(int(p.TargetPort)),
+				Protocol:   v1.Protocol(p.Protocol),
+				Port:       p.Port,
+			},
+		)
+	}
+	groupKind := svc.GroupVersionKind()
+	return &kubernetes.KubeResource{
+		Name:   serv.Name() + ":service",
+		Object: svc,
+		Kind:   &groupKind,
+	}
+}
 func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	labels := map[string]string{
 		"workspace": ui.AppName(),
