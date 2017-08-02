@@ -47,6 +47,9 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - >
+          {{- if .WorkDir }}
+          cd {{ .WorkDir }};
+          {{- end }}
           {{ .Command }} {{ .Args }};
           code=$?;
           exit $code
