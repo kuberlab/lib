@@ -31,7 +31,7 @@ func (s *WorkerSet) GetWorker(i int,restart int) *v1.Pod {
 	annotations["restart"] = strconv.Itoa(restart)
 	p.Annotations = annotations
 	containers := make([]v1.Container, len(p.Spec.Containers))
-	for i, c := range p.Spec.Containers {
+	for j, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))
 		for _, e := range c.Env {
 			if e.Name != "REPLICA_INDEX" {
@@ -40,10 +40,10 @@ func (s *WorkerSet) GetWorker(i int,restart int) *v1.Pod {
 		}
 		env = append(env, v1.EnvVar{
 			Name:  "REPLICA_INDEX",
-			Value: strconv.Itoa(i),
+			Value: strconv.Itoa(j),
 		})
 		c.Env = env
-		containers[i] = c
+		containers[j] = c
 	}
 	p.Spec.Containers = containers
 	return &p
