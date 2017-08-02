@@ -292,6 +292,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			AllowFail:     r.AllowFail,
 			PodsNumber:    int(r.Replicas),
 			Resource:      res,
+			NodeAllocator: r.NodesLabel,
 		})
 	}
 	return taskSpec, nil
