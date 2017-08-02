@@ -40,7 +40,7 @@ func (s *WorkerSet) GetWorker(i int,restart int) *v1.Pod {
 		}
 		env = append(env, v1.EnvVar{
 			Name:  "REPLICA_INDEX",
-			Value: strconv.Itoa(j),
+			Value: strconv.Itoa(i),
 		})
 		c.Env = env
 		containers[j] = c
