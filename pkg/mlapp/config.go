@@ -117,6 +117,7 @@ type TaskResourceSpec struct {
 	AllowFail     bool
 	TaskName      string
 	ResourceName  string
+	NodeAllocator string
 	Resource      *kubernetes.KubeResource
 }
 
