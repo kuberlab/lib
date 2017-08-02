@@ -151,7 +151,6 @@ func (c *Config) LibVolume() *VolumeMount {
 				Name: res.Name,
 				MountPath:v.MountPath,
 				ReadOnly:false,
-				SubPath:v.SubPath,
 			}
 		}
 	}
