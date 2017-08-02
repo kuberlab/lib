@@ -143,11 +143,16 @@ func (c *Config) VolumeByName(name string) *Volume {
 	return nil
 }
 
-func (c *Config) LibVolume() *Volume {
+func (c *Config) LibVolume() *VolumeMount {
 	for _, v := range c.Volumes {
 		if v.IsLibDir {
 			res := v
-			return &res
+			return &VolumeMount{
+				Name: res.Name,
+				MountPath:v.MountPath,
+				ReadOnly:false,
+				SubPath:v.SubPath,
+			}
 		}
 	}
 	return nil
