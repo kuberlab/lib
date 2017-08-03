@@ -144,18 +144,21 @@ func (c *Config) VolumeByName(name string) *Volume {
 	return nil
 }
 
-func (c *Config) LibVolume() *VolumeMount {
+func (c *Config) LibVolume() (*v1.Volume, *v1.VolumeMount) {
 	for _, v := range c.Volumes {
 		if v.IsLibDir {
-			res := v
-			return &VolumeMount{
-				Name: res.Name,
-				MountPath:v.MountPath,
-				ReadOnly:false,
+			vols, mounts, err := c.KubeVolumesSpec(
+				[]VolumeMount{
+					{Name: v.Name, ReadOnly: false, MountPath: v.MountPath},
+				},
+			)
+			if err != nil {
+				return nil, nil
 			}
+			return &vols[0], &mounts[0]
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
@@ -183,6 +186,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)
 		}
+		subPath = strings.TrimPrefix(subPath, "/")
 		kvolumesMount = append(kvolumesMount, v1.VolumeMount{
 			Name:      m.Name,
 			SubPath:   subPath,
