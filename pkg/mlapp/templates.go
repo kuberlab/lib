@@ -584,5 +584,9 @@ func baseEnv(c *Config, r Resource) []Env {
 			})
 		}
 	}
+
+	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
+	envs = append(envs, Env{Name: "APP_NAME", Value: c.Name})
+
 	return envs
 }
