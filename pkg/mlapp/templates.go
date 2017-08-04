@@ -343,8 +343,8 @@ type UIXResourceGenerator struct {
 }
 
 func (ui UIXResourceGenerator) Replicas() int {
-	if ui.Resource.Replicas>0{
-		return  ui.Resource.Replicas
+	if ui.Resource.Replicas > 0 {
+		return ui.Resource.Replicas
 	}
 	return 1
 }
@@ -404,10 +404,16 @@ type ServingResourceGenerator struct {
 
 func (serving ServingResourceGenerator) Env() []Env {
 	envs := baseEnv(serving.c, serving.Resource)
-	envs = append(envs, Env{
-		Name:  "BUILD_ID",
-		Value: serving.Build,
-	})
+	envs = append(envs,
+		Env{
+			Name:  "BUILD_ID",
+			Value: serving.Build,
+		},
+		Env{
+			Name:  "TASK_ID",
+			Value: serving.TaskName,
+		},
+	)
 	return envs
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
@@ -447,8 +453,8 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 
 func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResource {
 	labels := map[string]string{
-		"workspace": serv.AppName(),
-		"component": serv.Name(),
+		"workspace":              serv.AppName(),
+		"component":              serv.Name(),
 		"kuberlab.io/serving-id": serv.Name(),
 	}
 	svc := &v1.Service{
