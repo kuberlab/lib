@@ -123,10 +123,10 @@ metadata:
   {{- end }}
 spec:
   terminationGracePeriodSeconds: 10
-  {{- if .NodesLabel }}
-  nodeSelector:
-    kuberlab.io/mljob: {{ .NodesLabel }}
-  {{- end }}
+  #{{- if .NodesLabel }}
+  #nodeSelector:
+  #  kuberlab.io/mljob: {{ .NodesLabel }}
+  #{{- end }}
   hostname: "{{ .BuildName }}"
   subdomain: "{{ .BuildName }}"
   restartPolicy: Never
