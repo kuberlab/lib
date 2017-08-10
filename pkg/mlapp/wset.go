@@ -22,8 +22,8 @@ type WorkerSet struct {
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
-func (s *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
-	p := *s.PodTemplate
+func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
+	p := *ws.PodTemplate
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)
 	p.Spec.Hostname = fmt.Sprintf("%s-%d", p.Spec.Hostname, i)
 	annotations := make(map[string]string)
