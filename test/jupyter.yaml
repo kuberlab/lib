@@ -1,0 +1,56 @@
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "jupyter"
+  namespace: my-app
+  labels:
+    key: value
+    kuberlab.io/workspace: ws-name
+    kuberlab.io/workspace-id: ws-id
+    workspace: my-app
+    component: jupyter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        key: value
+        kuberlab.io/workspace: ws-name
+        kuberlab.io/workspace-id: ws-id
+        workspace: my-app
+        component: jupyter
+      annotations:
+        experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
+    spec:
+      containers:
+      - name: my-app-jupyter
+        image: "image-gpu"
+        env:
+        - name: PYTHONPATH
+          value: '/workspace/lib'
+        - name: KUBERLAB_GPU
+          value: 'all'
+        - name: URL_PREFIX
+          value "/api/v1/ml-proxy/ws-name/my-app/jupyter/"
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 8082
+        resources:
+          requests:
+            cpu: "100mi"
+            memory: "1Gi"
+          limits:
+            cpu: "100mi"
+            memory: "1Gi"
+        volumeMounts:
+        - mountPath: /workspace/lib
+          name: lib
+          subPath: ws-name/my-app/lib
+        
+      volumes:
+      - hostPath:
+          path: /test
+        name: lib
+      

@@ -1,0 +1,93 @@
+
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: "model-worker-1"
+  namespace: my-app
+  labels:
+    kuberlab.io/workspace: ws-name
+    kuberlab.io/workspace-id: ws-id
+    testKey: testValue
+    testModelKey: testModelValue
+    testWorkerKey: testWorkerValue
+    workspace: my-app
+    component: "model-worker"
+    kuberlab.io/job-id: "1"
+spec:
+  replicas: 2
+  serviceName: "model-worker-1"
+  template:
+    metadata:
+      labels:
+        kuberlab.io/workspace: ws-name
+        kuberlab.io/workspace-id: ws-id
+        testKey: testValue
+        testModelKey: testModelValue
+        testWorkerKey: testWorkerValue
+        workspace: my-app
+        component: "model-worker"
+        kuberlab.io/job-id: "1"
+        service: "model-worker-1"
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - command: ["/bin/sh", "-c"]
+        args:
+        - >
+          task_id=$(hostname | rev | cut -d ''-'' -f 1 | rev);
+          echo "Start with task-id=$task_id";
+          cd directory;
+          python required;
+          code=$?;
+          echo "Script exit code: ${code}";
+          while true; do  echo "waiting..."; curl -H "X-Source: ${POD_NAME}" -H "X-Result: ${code}" http://test.com; sleep 60; done;
+          echo 'Wait deletion...';
+          sleep 86400
+        image: image-gpu
+        name: build
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: TEST_ENV_V1
+            value: 'v1'
+          - name: PYTHONPATH
+            value: '/usr/local:/workspace/lib'
+          - name: LIB_DIR
+            value: '/workspace/lib'
+          - name: TRAINING_DIR
+            value: '/workspace/training'
+          - name: WORKER_NODES
+            value: 'model-worker-1-0.model-worker-1.my-app.svc.cluster.local:9000,model-worker-1-1.model-worker-1.my-app.svc.cluster.local:9000'
+          - name: PS_NODES
+            value: 'model-worker-1-0.model-worker-1.my-app.svc.cluster.local:9000'
+        # Auto-deleting metric from prometheus.
+        ports:
+        - containerPort: 9000
+          name: cluster-port
+          protocol: TCP
+        resources:
+          requests:
+            alpha.kubernetes.io/nvidia-gpu: "1"
+            cpu: "100m"
+            memory: "1Gi"
+          limits:
+            cpu: "100m"
+            memory: "1Gi"
+        volumeMounts:
+        - mountPath: /workspace/lib
+          name: lib
+          subPath: ws-name/my-app/lib
+        - mountPath: /workspace/training
+          name: training
+          subPath: ws-name/my-app/training/build-1
+        
+      volumes:
+      - hostPath:
+          path: /test
+        name: lib
+      - hostPath:
+          path: /test
+        name: training
+      

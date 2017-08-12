@@ -32,6 +32,10 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	p.Annotations = annotations
 	containers := make([]v1.Container, len(p.Spec.Containers))
 	if node != "" {
+		labels := make(map[string]string)
+		joinMaps(labels, p.Labels)
+		labels["kuberlab.io/ml-node"] = node
+		p.Labels = labels
 		p.Spec.NodeSelector = map[string]string{"kuberlab.io/mljob": node}
 	}
 	for j, c := range p.Spec.Containers {

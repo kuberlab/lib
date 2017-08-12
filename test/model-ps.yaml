@@ -1,0 +1,77 @@
+
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: "model-ps-1"
+  namespace: my-app
+  labels:
+    kuberlab.io/workspace: ws-name
+    kuberlab.io/workspace-id: ws-id
+    testKey: testValue
+    testModelKey: testModelValue
+    testPsKey: testPsValue
+    workspace: my-app
+    component: "model-ps"
+    kuberlab.io/job-id: "1"
+spec:
+  replicas: 1
+  serviceName: "model-ps-1"
+  template:
+    metadata:
+      labels:
+        kuberlab.io/workspace: ws-name
+        kuberlab.io/workspace-id: ws-id
+        testKey: testValue
+        testModelKey: testModelValue
+        testPsKey: testPsValue
+        workspace: my-app
+        component: "model-ps"
+        kuberlab.io/job-id: "1"
+        service: "model-ps-1"
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - command: ["/bin/sh", "-c"]
+        args:
+        - >
+          task_id=$(hostname | rev | cut -d ''-'' -f 1 | rev);
+          echo "Start with task-id=$task_id";
+          cd directory;
+          python required;
+          code=$?;
+          echo "Script exit code: ${code}";
+          while true; do  echo "waiting..."; curl -H "X-Source: ${POD_NAME}" -H "X-Result: ${code}" http://test.com; sleep 60; done;
+          echo 'Wait deletion...';
+          sleep 86400
+        image: image-cpu
+        name: build
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: TEST_ENV_V2
+            value: 'v2'
+          - name: PYTHONPATH
+            value: ''
+          - name: TRAINING_DIR
+            value: '/workspace/training'
+          - name: WORKER_NODES
+            value: 'model-ps-1-0.model-ps-1.my-app.svc.cluster.local:9000,model-ps-1-1.model-ps-1.my-app.svc.cluster.local:9000'
+          - name: PS_NODES
+            value: 'model-ps-1-0.model-ps-1.my-app.svc.cluster.local:9000'
+        # Auto-deleting metric from prometheus.
+        ports:
+        - containerPort: 9000
+          name: cluster-port
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /workspace/training
+          name: training
+          subPath: ws-name/my-app/training
+        
+      volumes:
+      - hostPath:
+          path: /test
+        name: training
+      
