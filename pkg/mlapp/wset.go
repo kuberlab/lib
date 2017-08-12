@@ -36,7 +36,7 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 		joinMaps(labels, p.Labels)
 		labels["kuberlab.io/ml-node"] = node
 		p.Labels = labels
-		p.Spec.NodeSelector = map[string]string{"kuberlab.io/mljob": node}
+		p.Spec.NodeSelector = map[string]string{"kuberlab.io/ml-node": node}
 	}
 	for j, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))
