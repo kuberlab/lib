@@ -42,7 +42,7 @@ type Packages struct {
 }
 
 type Resource struct {
-	Replicas   int           `json:"replicas"`
+	Replicas   int              `json:"replicas"`
 	Resources  *ResourceRequest `json:"resources,omitempty"`
 	Images     Images           `json:"images"`
 	Command    string           `json:"command"`
@@ -102,13 +102,13 @@ type TaskResource struct {
 }
 
 type Images struct {
-	CPU string `json:"cpu,omitempty"`
-	GPU string `json:"gpu,omitempty"`
+	CPU string `json:"cpu"`
+	GPU string `json:"gpu"`
 }
 
 type Env struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TaskResourceSpec struct {
