@@ -205,17 +205,36 @@ func NewConfig(data []byte, options ...ConfigOption) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// init empty arrays
+	if c.Volumes == nil {
+		c.Volumes = []Volume{}
+	}
+	if c.Labels == nil {
+		c.Labels = map[string]string{}
+	}
+	// init empty arrays for tasks
+	if c.Spec.Tasks != nil {
+		for i := range c.Spec.Tasks {
+			if c.Spec.Tasks[i].Resources == nil {
+				c.Spec.Tasks[i].Resources = []TaskResource{}
+			}
+			for j := range c.Spec.Tasks[i].Resources {
+				if c.Spec.Tasks[i].Resources[j].Env == nil {
+					c.Spec.Tasks[i].Resources[j].Env = []Env{}
+				}
+				if c.Spec.Tasks[i].Resources[j].Labels == nil {
+					c.Spec.Tasks[i].Resources[j].Labels = map[string]string{}
+				}
+				if c.Spec.Tasks[i].Resources[j].Volumes == nil {
+					c.Spec.Tasks[i].Resources[j].Volumes = []VolumeMount{}
+				}
+			}
+		}
+	}
 	return ApplyConfigOptions(&c, options...)
 }
 func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err error) {
 	res = c
-	// init empty arrays
-	if res.Volumes == nil {
-		res.Volumes = []Volume{}
-	}
-	if res.Labels == nil {
-		res.Labels = map[string]string{}
-	}
 	for _, o := range options {
 		res, err = o(res)
 		if err != nil {
