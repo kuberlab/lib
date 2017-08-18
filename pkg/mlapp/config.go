@@ -209,6 +209,13 @@ func NewConfig(data []byte, options ...ConfigOption) (*Config, error) {
 }
 func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err error) {
 	res = c
+	// init empty arrays
+	if res.Volumes == nil {
+		res.Volumes = []Volume{}
+	}
+	if res.Labels == nil {
+		res.Labels = map[string]string{}
+	}
 	for _, o := range options {
 		res, err = o(res)
 		if err != nil {
