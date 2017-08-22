@@ -16,10 +16,15 @@ const (
 )
 
 type Config struct {
-	Kind      string `json:"kind"`
-	Meta      `json:"metadata"`
-	Spec      `json:"spec,omitempty"`
-	Workspace string `json:"workspace,omitempty"`
+	Kind        string `json:"kind"`
+	Meta        `json:"metadata"`
+	Spec        `json:"spec,omitempty"`
+	Workspace   string `json:"workspace,omitempty"`
+	WorkspaceID string `json:"workspace_id,omitempty"`
+}
+
+func (c Config) GetAppID() string {
+	return c.WorkspaceID + "-" + c.Name
 }
 
 type Meta struct {
@@ -42,7 +47,7 @@ type Packages struct {
 }
 
 type Resource struct {
-	Replicas   int           `json:"replicas"`
+	Replicas   int              `json:"replicas"`
 	Resources  *ResourceRequest `json:"resources,omitempty"`
 	Images     Images           `json:"images"`
 	Command    string           `json:"command"`
@@ -178,10 +183,12 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			mountPath = m.MountPath
 		}
 		subPath := v.SubPath
-		if strings.HasPrefix(subPath, "/") {
+		if strings.HasPrefix(subPath, "/shared/") {
 			subPath = strings.TrimPrefix(subPath, "/")
+		} else if strings.HasPrefix(subPath, "/") {
+			subPath = c.Workspace + "/" + c.WorkspaceID + "/" + strings.TrimPrefix(subPath, "/")
 		} else if len(subPath) > 0 {
-			subPath = c.Workspace + "/" + c.Name + "/" + subPath
+			subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
 		}
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)

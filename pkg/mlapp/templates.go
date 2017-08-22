@@ -17,7 +17,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: "{{ .Name }}"
-  namespace: "{{ .AppName }}"
+  namespace: "{{ .GetAppID }}"
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: "{{ $value }}"
@@ -106,7 +106,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ .BuildName }}"
-  namespace: {{ .AppName }}
+  namespace: {{ .GetAppID }}
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: "{{ $value }}"
@@ -236,6 +236,9 @@ func (t TaskResourceGenerator) Volumes() interface{} {
 		"volumes": t.volumes,
 	}
 }
+func (t TaskResourceGenerator) GetAppID() string {
+	return t.c.GetAppID()
+}
 func (t TaskResourceGenerator) AppName() string {
 	return t.c.Name
 }
@@ -315,7 +318,7 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      g.BuildName(),
-			Namespace: g.c.Name,
+			Namespace: g.c.GetAppID(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
@@ -364,6 +367,9 @@ func (ui UIXResourceGenerator) Volumes() interface{} {
 	return map[string]interface{}{
 		"volumes": ui.volumes,
 	}
+}
+func (t UIXResourceGenerator) GetAppID() string {
+	return t.c.GetAppID()
 }
 func (ui UIXResourceGenerator) AppName() string {
 	return ui.c.Name
@@ -425,7 +431,9 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels["kuberlab.io/serving-id"] = serving.Name()
 	return labels
 }
-
+func (serving ServingResourceGenerator) GetAppID() string {
+	return serving.c.GetAppID()
+}
 func (serving ServingResourceGenerator) Name() string {
 	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
 }
@@ -468,7 +476,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      serv.Name(),
-			Namespace: serv.AppName(),
+			Namespace: serv.GetAppID(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
@@ -507,7 +515,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      ui.Name,
-			Namespace: ui.AppName(),
+			Namespace: ui.GetAppID(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
