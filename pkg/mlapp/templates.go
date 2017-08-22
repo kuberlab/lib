@@ -281,6 +281,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			ResourceName: r.Name,
 			TaskName:     task.Name,
 			AppName:      c.Name,
+			Namespace:    c.GetAppID(),
 			JobID:        jobID,
 			AllowFail:    r.AllowFail,
 			MaxRestarts:  r.MaxRestartCount,

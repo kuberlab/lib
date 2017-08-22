@@ -183,17 +183,13 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			mountPath = m.MountPath
 		}
 		subPath := v.SubPath
-		if v.NFS!=nil {
+		if v.NFS != nil {
 			if strings.HasPrefix(subPath, "/shared/") {
 				subPath = strings.TrimPrefix(subPath, "/")
 			} else if strings.HasPrefix(subPath, "/") {
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + strings.TrimPrefix(subPath, "/")
 			} else if len(subPath) > 0 {
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
-			}
-		} else{
-			if strings.HasPrefix(subPath, "/"){
-				subPath = strings.TrimPrefix(subPath, "/")
 			}
 		}
 		if len(m.SubPath) > 0 {
