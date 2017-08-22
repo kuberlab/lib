@@ -10,7 +10,7 @@ import (
 
 type WorkerSet struct {
 	AppName      string
-	Namespace string
+	Namespace    string
 	TaskName     string
 	ResourceName string
 	JobID        string

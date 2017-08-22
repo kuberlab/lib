@@ -203,7 +203,7 @@ func (t TaskResourceGenerator) Env() []Env {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
 			serviceName := fmt.Sprintf("%s-%s-%s", t.task.Name, r.Name, t.JobID)
-			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.AppName())
+			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.GetAppID())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
 			}
