@@ -107,13 +107,13 @@ type TaskResource struct {
 }
 
 type Images struct {
-	CPU string `json:"cpu,omitempty"`
-	GPU string `json:"gpu,omitempty"`
+	CPU string `json:"cpu"`
+	GPU string `json:"gpu"`
 }
 
 type Env struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TaskResourceSpec struct {
@@ -211,6 +211,32 @@ func NewConfig(data []byte, options ...ConfigOption) (*Config, error) {
 	err := yaml.Unmarshal(data, &c)
 	if err != nil {
 		return nil, err
+	}
+	// init empty arrays
+	if c.Volumes == nil {
+		c.Volumes = []Volume{}
+	}
+	if c.Labels == nil {
+		c.Labels = map[string]string{}
+	}
+	// init empty arrays for tasks
+	if c.Spec.Tasks != nil {
+		for i := range c.Spec.Tasks {
+			if c.Spec.Tasks[i].Resources == nil {
+				c.Spec.Tasks[i].Resources = []TaskResource{}
+			}
+			for j := range c.Spec.Tasks[i].Resources {
+				if c.Spec.Tasks[i].Resources[j].Env == nil {
+					c.Spec.Tasks[i].Resources[j].Env = []Env{}
+				}
+				if c.Spec.Tasks[i].Resources[j].Labels == nil {
+					c.Spec.Tasks[i].Resources[j].Labels = map[string]string{}
+				}
+				if c.Spec.Tasks[i].Resources[j].Volumes == nil {
+					c.Spec.Tasks[i].Resources[j].Volumes = []VolumeMount{}
+				}
+			}
+		}
 	}
 	return ApplyConfigOptions(&c, options...)
 }
