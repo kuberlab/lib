@@ -263,6 +263,7 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 		res = c
 		res.Name = appName
 		res.Workspace = workspaceName
+		res.WorkspaceID = workspaceID
 		if res.Labels == nil {
 			res.Labels = make(map[string]string)
 		}
