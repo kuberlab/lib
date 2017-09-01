@@ -32,9 +32,11 @@ type VolumeSource struct {
 	NFS                   *v1.NFSVolumeSource                   `json:"nfs,omitempty" protobuf:"bytes,7,opt,name=nfs"`
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty" protobuf:"bytes,10,opt,name=persistentVolumeClaim"`
 	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
+	S3Bucket              *S3BucketSource                       `json:"s3bucket,omitempty" protobuf:"bytes,99,opt,name=s3bucket"`
 }
 
 func (v Volume) V1Volume() v1.Volume {
+	// TODO convert S3Bucket to k8s API structure
 	return v1.Volume{
 		Name: v.Name,
 		VolumeSource: v1.VolumeSource{
@@ -45,6 +47,12 @@ func (v Volume) V1Volume() v1.Volume {
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
 		},
 	}
+}
+
+type S3BucketSource struct {
+	Bucket    string `json:"bucket" protobuf:"bytes,1,opt,name=bucket"`
+	Server    string `json:"server,omitempty" protobuf:"bytes,2,opt,name=server"`
+	AccountId string `json:"accountId,omitempty" protobuf:"bytes,3,opt,name=accountId"`
 }
 
 func (v Volume) String() string {
