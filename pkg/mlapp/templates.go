@@ -90,13 +90,24 @@ spec:
             {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
             {{- end }}
-            {{- if and .Limits.CPU (gt .Limits.CPU 0) }}
-            cpu: "{{ .Limits.CPUs }}"
+            {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+            cpu: "{{ .Limits.CPU }}"
             {{- end }}
-            {{- if and .Limits.Memory (gt .Limits.Memory 0) }}
+            {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
             memory: "{{ .Limits.Memory }}"
             {{- end }}
-         {{- end }}
+        {{- else }}
+        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        resources:
+          limits:
+            {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+            cpu: "{{ .Limits.CPU }}"
+            {{- end }}
+            {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+            memory: "{{ .Limits.Memory }}"
+            {{- end }}
+        {{- end }}
+        {{- end }}
 {{ toYaml .Mounts | indent 8 }}
 {{ toYaml .Volumes | indent 6 }}
 `
@@ -171,12 +182,23 @@ spec:
         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
-        {{- if and .Limits.CPU (gt .Limits.CPU 0) }}
-        cpu: "{{ .Limits.CPUs }}"
+        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        cpu: "{{ .Limits.CPU }}"
         {{- end }}
-        {{- if and .Limits.Memory (gt .Limits.Memory 0) }}
+        {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
         memory: "{{ .Limits.Memory }}"
         {{- end }}
+    {{- else }}
+    {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+    resources:
+      limits:
+        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        cpu: "{{ .Limits.CPU }}"
+        {{- end }}
+        {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+        memory: "{{ .Limits.Memory }}"
+        {{- end }}
+    {{- end }}
     {{- end }}
 {{ toYaml .Mounts | indent 4 }}
 {{ toYaml .Volumes | indent 2 }}
