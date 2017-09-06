@@ -90,11 +90,11 @@ spec:
             {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
             {{- end }}
-            {{- if .Resources.Limits.CPU}}
-            cpu: "{{ .Resources.Limits.CPU }}"
+            {{- if and .Limits.CPU (gt .Limits.CPU 0) }}
+            cpu: "{{ .Limits.CPUs }}"
             {{- end }}
-            {{- if .Resources.Limits.Memory }}
-            memory: "{{ .Resources.Limits.Memory }}"
+            {{- if and .Limits.Memory (gt .Limits.Memory 0) }}
+            memory: "{{ .Limits.Memory }}"
             {{- end }}
          {{- end }}
 {{ toYaml .Mounts | indent 8 }}
@@ -171,11 +171,11 @@ spec:
         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
-        {{- if .Resources.Limits.CPU}}
-        cpu: "{{ .Resources.Limits.CPU }}"
+        {{- if and .Limits.CPU (gt .Limits.CPU 0) }}
+        cpu: "{{ .Limits.CPUs }}"
         {{- end }}
-        {{- if .Resources.Limits.Memory }}
-        memory: "{{ .Resources.Limits.Memory }}"
+        {{- if and .Limits.Memory (gt .Limits.Memory 0) }}
+        memory: "{{ .Limits.Memory }}"
         {{- end }}
     {{- end }}
 {{ toYaml .Mounts | indent 4 }}
@@ -191,6 +191,13 @@ type TaskResourceGenerator struct {
 	once    sync.Once
 	volumes []v1.Volume
 	mounts  []v1.VolumeMount
+}
+
+func (t TaskResourceGenerator) Limits() ResourceReqLim {
+	if t.c.ClusterLimits != nil {
+		return *t.c.ClusterLimits
+	}
+	return t.Resource.Resources.Limits
 }
 
 func (t TaskResourceGenerator) Task() string {
@@ -350,6 +357,13 @@ type UIXResourceGenerator struct {
 	mounts  []v1.VolumeMount
 }
 
+func (ui UIXResourceGenerator) Limits() ResourceReqLim {
+	if ui.c.ClusterLimits != nil {
+		return *ui.c.ClusterLimits
+	}
+	return ui.Uix.Resource.Resources.Limits
+}
+
 func (ui UIXResourceGenerator) Replicas() int {
 	if ui.Resource.Replicas > 0 {
 		return ui.Resource.Replicas
@@ -411,6 +425,10 @@ type ServingResourceGenerator struct {
 	UIXResourceGenerator
 	TaskName string
 	Build    string
+}
+
+func (serving ServingResourceGenerator) Limits() ResourceReqLim {
+	return serving.UIXResourceGenerator.Limits()
 }
 
 func (serving ServingResourceGenerator) Env() []Env {

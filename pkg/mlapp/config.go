@@ -33,12 +33,13 @@ type Meta struct {
 }
 
 type Spec struct {
-	Tasks                 []Task     `json:"tasks,omitempty"`
-	Uix                   []Uix      `json:"uix,omitempty"`
-	Serving               []Serving  `json:"serving,omitempty"`
-	Volumes               []Volume   `json:"volumes,omitempty"`
-	Packages              []Packages `json:"packages,omitempty"`
-	DefaultPackageManager string     `json:"package_manager,omitempty"`
+	Tasks                 []Task          `json:"tasks,omitempty"`
+	Uix                   []Uix           `json:"uix,omitempty"`
+	Serving               []Serving       `json:"serving,omitempty"`
+	Volumes               []Volume        `json:"volumes,omitempty"`
+	Packages              []Packages      `json:"packages,omitempty"`
+	DefaultPackageManager string          `json:"package_manager,omitempty"`
+	ClusterLimits         *ResourceReqLim `json:"cluster_limits,omitempty"`
 }
 
 type Packages struct {
