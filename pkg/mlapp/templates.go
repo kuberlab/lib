@@ -90,20 +90,20 @@ spec:
             {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
             {{- end }}
-            {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+            {{- if gt (len .Limits.CPU) 0 }}
             cpu: "{{ .Limits.CPU }}"
             {{- end }}
-            {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+            {{- if gt (len .Limits.Memory) 0 }}
             memory: "{{ .Limits.Memory }}"
             {{- end }}
         {{- else }}
-        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }}
         resources:
           limits:
-            {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+            {{- if gt (len .Limits.CPU) 0 }}
             cpu: "{{ .Limits.CPU }}"
             {{- end }}
-            {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+            {{- if gt (len .Limits.Memory) 0 }}
             memory: "{{ .Limits.Memory }}"
             {{- end }}
         {{- end }}
@@ -182,20 +182,20 @@ spec:
         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
-        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        {{- if and not .Limits (gt (len .Limits.CPU) 0) }}
         cpu: "{{ .Limits.CPU }}"
         {{- end }}
-        {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+        {{- if and not .Limits (gt (len .Limits.Memory) 0) }}
         memory: "{{ .Limits.Memory }}"
         {{- end }}
     {{- else }}
-    {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+    {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }} # means 'not nil'
     resources:
       limits:
-        {{- if and .Limits.CPU (gt (len .Limits.CPU) 0) }}
+        {{- if gt (len .Limits.CPU) 0 }}
         cpu: "{{ .Limits.CPU }}"
         {{- end }}
-        {{- if and .Limits.Memory (gt (len .Limits.Memory) 0) }}
+        {{- if gt (len .Limits.Memory) 0 }}
         memory: "{{ .Limits.Memory }}"
         {{- end }}
     {{- end }}
@@ -219,7 +219,10 @@ func (t TaskResourceGenerator) Limits() ResourceReqLim {
 	if t.c.ClusterLimits != nil {
 		return *t.c.ClusterLimits
 	}
-	return t.Resource.Resources.Limits
+	if t.TaskResource.Resources != nil {
+		return t.TaskResource.Resources.Limits
+	}
+	return ResourceReqLim{}
 }
 
 func (t TaskResourceGenerator) Task() string {
@@ -383,7 +386,10 @@ func (ui UIXResourceGenerator) Limits() ResourceReqLim {
 	if ui.c.ClusterLimits != nil {
 		return *ui.c.ClusterLimits
 	}
-	return ui.Uix.Resource.Resources.Limits
+	if ui.Uix.Resource.Resources != nil {
+		return ui.Uix.Resources.Limits
+	}
+	return ResourceReqLim{}
 }
 
 func (ui UIXResourceGenerator) Replicas() int {
