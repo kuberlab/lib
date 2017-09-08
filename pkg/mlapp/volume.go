@@ -33,6 +33,7 @@ type VolumeSource struct {
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty" protobuf:"bytes,10,opt,name=persistentVolumeClaim"`
 	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
 	S3Bucket              *S3BucketSource                       `json:"s3bucket,omitempty" protobuf:"bytes,99,opt,name=s3bucket"`
+	FlexVolume            *v1.FlexVolumeSource                  `json:"flexVolume,omitempty" protobuf:"bytes,12,opt,name=flexVolume"`
 }
 
 func (v Volume) V1Volume() v1.Volume {

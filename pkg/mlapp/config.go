@@ -40,8 +40,12 @@ type Spec struct {
 	Packages              []Packages      `json:"packages,omitempty"`
 	DefaultPackageManager string          `json:"package_manager,omitempty"`
 	ClusterLimits         *ResourceReqLim `json:"cluster_limits,omitempty"`
+	Secrets               []Secret        `json:"secrets,omitempty"`
 }
 
+type Secret struct {
+	Name string
+}
 type Packages struct {
 	Names   []string `json:"names"`
 	Manager string   `json:"manager"`
@@ -135,6 +139,17 @@ func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, err
 			} else {
 				return fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
 			}
+		}
+	}
+	return nil
+}
+
+func (c *Config) SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) error {
+	for i, v := range c.Spec.Volumes {
+		if s, err := mapping(v); err == nil {
+			c.Spec.Volumes[i].VolumeSource = *s
+		} else {
+			return fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
 		}
 	}
 	return nil
