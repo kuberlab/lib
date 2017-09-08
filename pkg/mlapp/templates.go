@@ -182,14 +182,14 @@ spec:
         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
-        {{- if and not .Limits (gt (len .Limits.CPU) 0) }}
-        cpu: "{{ .Limits.CPU }}"
-        {{- end }}
-        {{- if and not .Limits (gt (len .Limits.Memory) 0) }}
-        memory: "{{ .Limits.Memory }}"
-        {{- end }}
+        {{- if gt (len .Limits.CPU) 0 }}
+		cpu: "{{ .Limits.CPU }}"
+		{{- end }}
+		{{- if gt (len .Limits.Memory) 0 }}
+		memory: "{{ .Limits.Memory }}"
+		{{- end }}
     {{- else }}
-    {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }} # means 'not nil'
+    {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }}
     resources:
       limits:
         {{- if gt (len .Limits.CPU) 0 }}
