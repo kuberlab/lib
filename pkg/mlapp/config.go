@@ -44,7 +44,9 @@ type Spec struct {
 }
 
 type Secret struct {
-	Name string
+	Name string            `json:"name,omitempty"`
+	Data map[string][]byte `json:"data,omitempty"`
+	Type string            `json:"type,omitempty"`
 }
 type Packages struct {
 	Names   []string `json:"names"`

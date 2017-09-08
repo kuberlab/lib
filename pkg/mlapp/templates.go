@@ -308,6 +308,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, err
 		}
+		v1.Secret{}
 		res.Object = &WorkerSet{
 			PodTemplate:  res.Object.(*v1.Pod),
 			ResourceName: r.Name,
