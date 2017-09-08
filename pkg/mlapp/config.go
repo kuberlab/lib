@@ -285,6 +285,12 @@ func SetClusterStorageOption(mapping func(name string) (*VolumeSource, error)) C
 		return c, err
 	}
 }
+func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOption {
+	return func(c *Config) (*Config, error) {
+		err := c.SetupClusterStorage(mapping)
+		return c, err
+	}
+}
 
 func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
