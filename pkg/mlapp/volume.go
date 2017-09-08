@@ -46,6 +46,7 @@ func (v Volume) V1Volume() v1.Volume {
 			NFS:                   v.NFS,
 			EmptyDir:              v.EmptyDir,
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
+			FlexVolume:            v.FlexVolume,
 		},
 	}
 }
