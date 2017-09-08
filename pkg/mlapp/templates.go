@@ -183,10 +183,10 @@ spec:
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
         {{- end }}
         {{- if gt (len .Limits.CPU) 0 }}
-		cpu: "{{ .Limits.CPU }}"
+        cpu: "{{ .Limits.CPU }}"
 		{{- end }}
 		{{- if gt (len .Limits.Memory) 0 }}
-		memory: "{{ .Limits.Memory }}"
+        memory: "{{ .Limits.Memory }}"
 		{{- end }}
     {{- else }}
     {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }}
