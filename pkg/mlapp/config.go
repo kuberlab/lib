@@ -254,6 +254,14 @@ func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err er
 	return
 }
 
+func LimitsOption(limits *ResourceReqLim) func(c *Config) (res *Config, err error) {
+	return func(c *Config) (res *Config, err error) {
+		res = c
+		res.ClusterLimits = limits
+		return
+	}
+}
+
 func SetClusterStorageOption(mapping func(name string) (*VolumeSource, error)) ConfigOption {
 	return func(c *Config) (*Config, error) {
 		err := c.SetClusterStorage(mapping)
