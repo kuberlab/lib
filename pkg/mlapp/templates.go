@@ -45,6 +45,7 @@ spec:
       - name: {{ .AppName }}-{{ .Name }}
         {{- if .Command }}
         command: ["/bin/sh", "-c"]
+        imagePullPolicy: Always
         args:
         - >
           {{- if .WorkDir }}
@@ -150,6 +151,7 @@ spec:
       code=$?;
       exit $code
     image: {{ .Image }}
+    imagePullPolicy: Always
     name: {{ .Task }}-{{ .JobID }}
     env:
     - name: POD_NAME
