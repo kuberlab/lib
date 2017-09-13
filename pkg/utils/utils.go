@@ -29,3 +29,11 @@ func GetCallback() (string, error) {
 	hostname := fmt.Sprintf("http://%v.%v.pod.cluster.local", strings.Replace(ip.String(), ".", "-", -1), GetNamespace())
 	return hostname, nil
 }
+
+func JoinMaps(dest map[string]string, srcs ...map[string]string) {
+	for _, src := range srcs {
+		for k, v := range src {
+			dest[k] = v
+		}
+	}
+}

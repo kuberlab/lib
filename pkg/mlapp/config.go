@@ -311,14 +311,6 @@ func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (re
 	}
 }
 
-func joinMaps(dest map[string]string, srcs ...map[string]string) {
-	for _, src := range srcs {
-		for k, v := range src {
-			dest[k] = v
-		}
-	}
-}
-
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }

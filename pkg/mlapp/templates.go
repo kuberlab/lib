@@ -10,6 +10,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
+	"github.com/kuberlab/lib/pkg/utils"
 )
 
 const DeploymentTpl = `
@@ -281,7 +282,7 @@ func (t TaskResourceGenerator) Workspace() string {
 }
 func (t TaskResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
-	joinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
+	utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 	return labels
 }
 
@@ -310,7 +311,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, err
 		}
-		res.Object = &WorkerSet{
+		res.Object = &kubernetes.WorkerSet{
 			PodTemplate:  res.Object.(*v1.Pod),
 			ResourceName: r.Name,
 			TaskName:     task.Name,
@@ -424,7 +425,7 @@ func (ui UIXResourceGenerator) Workspace() string {
 }
 func (ui UIXResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
-	joinMaps(labels, ui.c.Labels, ui.Uix.Labels)
+	utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
 	return labels
 }
 

@@ -1,4 +1,4 @@
-package mlapp
+package kubernetes
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api/v1"
+	"github.com/kuberlab/lib/pkg/utils"
 )
 
 type WorkerSet struct {
@@ -28,13 +29,13 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)
 	p.Spec.Hostname = fmt.Sprintf("%s-%d", p.Spec.Hostname, i)
 	annotations := make(map[string]string)
-	joinMaps(annotations, p.Annotations)
+	utils.JoinMaps(annotations, p.Annotations)
 	annotations["restart"] = strconv.Itoa(restart)
 	p.Annotations = annotations
 	containers := make([]v1.Container, len(p.Spec.Containers))
 	if node != "" {
 		labels := make(map[string]string)
-		joinMaps(labels, p.Labels)
+		utils.JoinMaps(labels, p.Labels)
 		labels["kuberlab.io/ml-node"] = node
 		p.Labels = labels
 		p.Spec.NodeSelector = map[string]string{"kuberlab.io/ml-node": node}
