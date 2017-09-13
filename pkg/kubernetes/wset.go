@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api/v1"
-	"github.com/kuberlab/lib/pkg/utils"
 )
 
 type WorkerSet struct {

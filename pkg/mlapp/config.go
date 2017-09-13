@@ -6,8 +6,11 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/kuberlab/lib/pkg/kubernetes"
+	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
+	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 const (
@@ -30,6 +33,12 @@ func (c Config) GetAppID() string {
 type Meta struct {
 	Name   string            `json:"name"`
 	Labels map[string]string `json:"labels"`
+}
+
+type DeploymentBasedResource interface {
+	Type() string
+	GetName() string
+	Deployment(client *kubernetes.Clientset, namespace string) (*extv1beta1.Deployment, error)
 }
 
 type Spec struct {
@@ -83,10 +92,26 @@ type Uix struct {
 	FrontAPI    string `json:"front_api,omitempty"`
 }
 
+func (uix *Uix) Type() string {
+	return "UIX"
+}
+
+func (uix *Uix) GetName() string {
+	return uix.Name
+}
+
+func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace string) (*extv1beta1.Deployment, error) {
+	return client.ExtensionsV1beta1().Deployments(namespace).Get(uix.Name, meta_v1.GetOptions{})
+}
+
 type Serving struct {
 	Uix      `json:",inline"`
 	TaskName string `json:"taskName"`
 	Build    string `json:"build"`
+}
+
+func (s *Serving) Type() string {
+	return "Serving"
 }
 
 type Port struct {
@@ -130,7 +155,7 @@ type TaskResourceSpec struct {
 	TaskName      string
 	ResourceName  string
 	NodeAllocator string
-	Resource      *kubernetes.KubeResource
+	Resource      *kuberlab.KubeResource
 }
 
 func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, error)) error {

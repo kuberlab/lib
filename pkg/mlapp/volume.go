@@ -2,6 +2,7 @@ package mlapp
 
 import (
 	"encoding/json"
+
 	"k8s.io/client-go/pkg/api/v1"
 )
 
