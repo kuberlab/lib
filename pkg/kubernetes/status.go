@@ -55,8 +55,6 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 		}
 	}
 
-	logrus.Infof("pods = %v", len(pods))
-
 	state := &ComponentState{Type: type_, Name: name, ResourceStates: make([]*ResourceState, 0)}
 	statusMap := make(map[string]int, 0)
 
