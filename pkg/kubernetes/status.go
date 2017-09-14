@@ -14,16 +14,16 @@ import (
 )
 
 type ComponentState struct {
-	Type           string
-	Name           string
-	Status         string
-	ResourceStates []*ResourceState
+	Type           string           `json:"type"`
+	Name           string           `json:"name"`
+	Status         string           `json:"status"`
+	ResourceStates []*ResourceState `json:"resource_states"`
 }
 
 type ResourceState struct {
-	Name   string
-	Status string
-	Reason string
+	Name   string         `json:"name"`
+	Status string         `json:"status"`
+	Events []api_v1.Event `json:"events"`
 }
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
@@ -59,19 +59,19 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	statusMap := make(map[string]int, 0)
 
 	for _, pod := range pods {
-		resState := &ResourceState{Name: pod.Name, Status: string(pod.Status.Phase)}
+		resState := &ResourceState{Name: pod.Name, Status: string(pod.Status.Phase), Events: []api_v1.Event{}}
 		events, err := client.Events(namespace).Search(api.Scheme, &pod)
 		if err != nil {
 			return nil, err
 		}
 
-		reason := []string{}
 		for _, e := range events.Items {
 			if e.Type == "Warning" || pod.Status.Phase != api_v1.PodRunning {
-				reason = append(reason, fmt.Sprintf("%v: %v", e.Reason, e.Message))
+				if len(resState.Events) < 1 {
+					resState.Events = events.Items
+				}
 			}
 		}
-		resState.Reason = strings.Join(reason, "\n")
 		state.ResourceStates = append(state.ResourceStates, resState)
 
 		if _, ok := statusMap[resState.Status]; ok {
