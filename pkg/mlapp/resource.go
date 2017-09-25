@@ -14,4 +14,5 @@ type ResourceAccelerators struct {
 type ResourceReqLim struct {
 	CPU    string `json:"cpu"`
 	Memory string `json:"memory"`
+	GPU    uint   `json:"gpu"`
 }

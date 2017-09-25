@@ -79,8 +79,12 @@ spec:
         {{- if .Resources }}
         resources:
           requests:
-            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+            {{- if and (and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU) (gt .Limits.GPU 0) }}
+            alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
+            {{- else }}
+              {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+              {{- end }}
             {{- end }}
             {{- if .Resources.Requests.CPU }}
             cpu: "{{ .Resources.Requests.CPU }}"
@@ -89,8 +93,12 @@ spec:
             memory: "{{ .Resources.Requests.Memory }}"
             {{- end }}
           limits:
-            {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+            {{- if and (and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU) (gt .Limits.GPU 0) }}
+            alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
+            {{- else }}
+              {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+              {{- end }}
             {{- end }}
             {{- if gt (len .Limits.CPU) 0 }}
             cpu: "{{ .Limits.CPU }}"
@@ -172,8 +180,12 @@ spec:
     {{- if .Resources }}
     resources:
       requests:
-         {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+        {{- if and (and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU) (gt .Limits.GPU 0) }}
+        alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
+        {{- else }}
+          {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+          {{- end }}
         {{- end }}
         {{- if .Resources.Requests.CPU }}
         cpu: "{{ .Resources.Requests.CPU }}"
@@ -182,8 +194,12 @@ spec:
         memory: "{{ .Resources.Requests.Memory }}"
         {{- end }}
       limits:
-        {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
+        {{- if and (and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU) (gt .Limits.GPU 0) }}
+        alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
+        {{- else }}
+          {{- if and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU }}
         alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
+          {{- end }}
         {{- end }}
         {{- if gt (len .Limits.CPU) 0 }}
         cpu: "{{ .Limits.CPU }}"
@@ -628,9 +644,13 @@ func baseEnv(c *Config, r Resource) []Env {
 		})
 	}
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
+		count := r.Resources.Accelerators.GPU
+		if c.ClusterLimits != nil && c.ClusterLimits.GPU > 0 {
+			count = c.ClusterLimits.GPU
+		}
 		envs = append(envs, Env{
-			Name:  strings.ToUpper("GPU_COUNT"),
-			Value: strconv.Itoa(int(r.Resources.Accelerators.GPU)),
+			Name:  "GPU_COUNT",
+			Value: strconv.Itoa(int(count)),
 		})
 	} else {
 		envs = append(envs, Env{
