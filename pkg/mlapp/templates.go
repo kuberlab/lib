@@ -223,6 +223,8 @@ spec:
 {{ toYaml .Volumes | indent 2 }}
 `
 
+const ComponentTypeLabel = "kuberlab.io/component-type"
+
 type TaskResourceGenerator struct {
 	JobID    string
 	Callback string
@@ -299,6 +301,7 @@ func (t TaskResourceGenerator) Workspace() string {
 func (t TaskResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
 	utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
+	labels[ComponentTypeLabel] = "task"
 	return labels
 }
 
@@ -442,6 +445,7 @@ func (ui UIXResourceGenerator) Workspace() string {
 func (ui UIXResourceGenerator) Labels() map[string]string {
 	labels := make(map[string]string, 0)
 	utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
+	labels[ComponentTypeLabel] = "ui"
 	return labels
 }
 
@@ -495,6 +499,7 @@ func (serving ServingResourceGenerator) Env() []Env {
 func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels := serving.UIXResourceGenerator.Labels()
 	labels["kuberlab.io/serving-id"] = serving.Name()
+	labels[ComponentTypeLabel] = "serving"
 	return labels
 }
 func (serving ServingResourceGenerator) GetAppID() string {
