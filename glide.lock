@@ -1,5 +1,5 @@
-hash: d9760d890a4970b60ca7d050c500114d6d77eec82d41d61b280068dddff0da64
-updated: 2017-07-26T10:35:49.709350176+03:00
+hash: 3725dde64861ddd6573e67bf851347c294c6db1b71f1ca3be7bc44771559b71b
+updated: 2017-10-03T14:51:37.196695467+03:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -47,9 +47,18 @@ imports:
 - name: github.com/Masterminds/semver
   version: 517734cc7d6470c0d07130e40fd40bdeb9bcd3fd
 - name: github.com/Masterminds/sprig
-  version: 9526be0327b26ad31aa70296a7b10704883976d5
+  version: 4c164950cd0a8d3724ddb78982e2c56dc7f47112
 - name: github.com/pborman/uuid
-  version: a97ce2ca70fa5a848076093f05e639a89ca34d06
+  version: e790cca94e6cc75c7064b1332e63811d4aae1a53
+- name: github.com/prometheus/client_golang
+  version: 95b6848b5c5bb71e3f68cd512ae5a8153c35e41f
+  subpackages:
+  - api
+  - api/prometheus/v1
+- name: github.com/prometheus/common
+  version: 3e6a7635bac6573d43f49f97b47eb9bda195dba8
+  subpackages:
+  - model
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
@@ -57,7 +66,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/Sirupsen/logrus
-  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+  version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go

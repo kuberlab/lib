@@ -22,3 +22,10 @@ import:
   version: ^2.12
 - package: github.com/Masterminds/semver
   version: v1.3.1
+- package: github.com/prometheus/client_golang
+  subpackages:
+  - api
+  - api/prometheus/v1
+- package: github.com/prometheus/common
+  subpackages:
+  - model
