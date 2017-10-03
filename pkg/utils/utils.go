@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"time"
+
 	"github.com/Sirupsen/logrus"
 )
 
@@ -36,6 +38,14 @@ func JoinMaps(dest map[string]string, srcs ...map[string]string) {
 			dest[k] = v
 		}
 	}
+}
+
+func MustParse(date string) time.Time {
+	t, err := time.ParseInLocation("2006-01-02 15:04:05", date, time.FixedZone("UTC", 0))
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 func RankByWordCount(wordFrequencies map[string]int) PairList {
