@@ -22,6 +22,7 @@ type ComponentMetrics struct {
 
 type Metric struct {
 	Name     string       `json:"name"`
+	Unit     string       `json:"unit"`
 	JoinedBy string       `json:"joined_by,omitempty"`
 	Values   []Value      `json:"values"`
 	Labels   model.Metric `json:"labels"`
