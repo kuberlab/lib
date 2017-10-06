@@ -11,12 +11,14 @@ import (
 	"k8s.io/client-go/pkg/api"
 	api_v1 "k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"regexp"
 )
 
 type ComponentState struct {
 	Type           string           `json:"type"`
 	Name           string           `json:"name"`
 	Status         string           `json:"status"`
+	Reason         string           `json:"reason"`
 	ResourceStates []*ResourceState `json:"resource_states"`
 }
 
@@ -25,6 +27,8 @@ type ResourceState struct {
 	Status string         `json:"status"`
 	Events []api_v1.Event `json:"events"`
 }
+
+var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
 	var namespace, name string
@@ -69,6 +73,12 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 			if e.Type == "Warning" || pod.Status.Phase != api_v1.PodRunning {
 				if len(resState.Events) < 1 {
 					resState.Events = events.Items
+				}
+			}
+			if insufficientPattern.MatchString(e.Message) {
+				groups := insufficientPattern.FindStringSubmatch(e.Message)
+				if len(groups) > 1 {
+					state.Reason = groups[1]
 				}
 			}
 		}
