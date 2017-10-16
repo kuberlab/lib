@@ -29,7 +29,7 @@ type Volume struct {
 
 type VolumeSource struct {
 	HostPath              *v1.HostPathVolumeSource              `json:"hostPath,omitempty" protobuf:"bytes,1,opt,name=hostPath"`
-	GitRepo               *v1.GitRepoVolumeSource               `json:"gitRepo,omitempty" protobuf:"bytes,5,opt,name=gitRepo"`
+	GitRepo               *GitRepoVolumeSource                  `json:"gitRepo,omitempty" protobuf:"bytes,5,opt,name=gitRepo"`
 	NFS                   *v1.NFSVolumeSource                   `json:"nfs,omitempty" protobuf:"bytes,7,opt,name=nfs"`
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty" protobuf:"bytes,10,opt,name=persistentVolumeClaim"`
 	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
@@ -50,6 +50,13 @@ func (v Volume) V1Volume() v1.Volume {
 			FlexVolume:            v.FlexVolume,
 		},
 	}
+}
+
+type GitRepoVolumeSource struct {
+	v1.GitRepoVolumeSource
+	AccountId string `json:"accountId,omitempty" protobuf:"bytes,4,opt,name=accountId"`
+	PrivateKey  string `json:"private_key" protobuf:"bytes,5,opt,name=private_key"`
+	AccessToken string `json:"access_token" protobuf:"bytes,6,opt,name=access_token"`
 }
 
 type S3BucketSource struct {
