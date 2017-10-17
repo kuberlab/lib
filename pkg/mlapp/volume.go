@@ -43,7 +43,7 @@ func (v Volume) V1Volume() v1.Volume {
 		Name: v.Name,
 		VolumeSource: v1.VolumeSource{
 			HostPath:              v.HostPath,
-			GitRepo:               v.GitRepo,
+			GitRepo:               v.GitRepo.GitRepoVolumeSource,
 			NFS:                   v.NFS,
 			EmptyDir:              v.EmptyDir,
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
