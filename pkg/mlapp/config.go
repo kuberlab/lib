@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"os/user"
 )
 
 const (
@@ -238,12 +239,10 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 			checkout := ""
 			dir := "/gitdata/"+getGitRepoName(v.GitRepo.Repository)
 			if v.GitRepo.Revision != "" {
-				checkout = fmt.Sprintf(" && cd %s && git checkout %", dir, v.GitRepo.Revision)
+				checkout = fmt.Sprintf(" && git checkout %", v.GitRepo.Revision)
 			}
-			settingUser := fmt.Sprintf(` && cd %s && git config --local user.name kuberlab-robot`,
-				dir)
-			settingMail := fmt.Sprintf(` && cd %s && git config --local user.email robot@kuberlab.com`,
-				dir)
+			settingUser := " && git config --local user.name kuberlab-robot"
+			settingMail := " && git config --local user.email robot@kuberlab.com"
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      v.Name,
 				MountPath: "/gitdata",
@@ -255,8 +254,8 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 				},
 				Name:    m.Name,
 				Image:   "kuberlab/board-init",
-				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s%s%s%s']`,
-					v.GitRepo.Repository,settingMail,settingUser, checkout),
+				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s && cd %s%s%s%s']`,
+					v.GitRepo.Repository,dir,settingMail,settingUser, checkout),
 			})
 		}
 
