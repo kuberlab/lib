@@ -215,7 +215,7 @@ type InitContainers struct {
 	Image   string
 	Command string
 	Name    string
-	Mounts  []v1.VolumeMount
+	Mounts  map[string]interface{}
 }
 
 func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
@@ -246,7 +246,9 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 				ReadOnly:  false,
 			})
 			inits = append(inits, InitContainers{
-				Mounts:  vmounts,
+				Mounts: map[string]interface{}{
+					"volumeMounts": vmounts,
+				},
 				Name:    m.Name,
 				Image:   "kuberlab/board-init",
 				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s%s']`, v.GitRepo.Repository, checkout),
