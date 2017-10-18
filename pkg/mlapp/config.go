@@ -297,7 +297,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			ReadOnly:  m.ReadOnly,
 		})
 	}
-	for len(c.Secrets) > 0 {
+	if len(c.Secrets) > 0 {
 		v1, v2, err := getSecretVolumes(c.Secrets)
 		if err != nil {
 			return nil, nil, err
