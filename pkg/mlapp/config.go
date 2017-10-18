@@ -240,9 +240,9 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 			if v.GitRepo.Revision != "" {
 				checkout = fmt.Sprintf(" && cd %s && git checkout %", dir, v.GitRepo.Revision)
 			}
-			settingUser := fmt.Sprintf(` && cd %s && git config --local user.name 'kuberlab-robot'`,
+			settingUser := fmt.Sprintf(` && cd %s && git config --local user.name kuberlab-robot`,
 				dir)
-			settingMail := fmt.Sprintf(` && cd %s && git config --local user.email 'robot@kuberlab.com'`,
+			settingMail := fmt.Sprintf(` && cd %s && git config --local user.email robot@kuberlab.com`,
 				dir)
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      v.Name,
