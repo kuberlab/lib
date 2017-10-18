@@ -42,6 +42,15 @@ spec:
       {{- end }}
       {{- end }}
     spec:
+      {{- if gt (len .InitContainers) 0 }}
+      initContainers:
+      {{- range $i, $value := .InitContainers }}
+      - name: {{ $value.Name }}
+        image: {{ $value.Image }}
+        command: {{ $value.Command }}
+{{ toYaml $value.Mounts | indent 8 }}
+      {{- end }}
+      {{- end }}
       containers:
       - name: {{ .AppName }}-{{ .Name }}
         {{- if .Command }}
@@ -151,6 +160,15 @@ spec:
   hostname: "{{ .BuildName }}"
   subdomain: "{{ .BuildName }}"
   restartPolicy: Never
+  {{- if gt (len .InitContainers) 0 }}
+  initContainers:
+  {{- range $i, $value := .InitContainers }}
+  - name: {{ $value.Name }}
+    image: {{ $value.Image }}
+    command: {{ $value.Command }}
+{{ toYaml $value.Mounts | indent 4 }}
+  {{- end }}
+  {{- end }}
   containers:
   - command: ["/bin/sh", "-c"]
     args:
@@ -234,6 +252,7 @@ type TaskResourceGenerator struct {
 	once    sync.Once
 	volumes []v1.Volume
 	mounts  []v1.VolumeMount
+	InitContainers []InitContainers
 }
 
 func (t TaskResourceGenerator) Limits() ResourceReqLim {
@@ -317,7 +336,10 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
-
+		initContainers, err := c.KubeInits(r.Volumes)
+		if err != nil {
+			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
+		}
 		g := TaskResourceGenerator{
 			c:            c,
 			task:         task,
@@ -325,6 +347,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			mounts:       mounts,
 			volumes:      volumes,
 			JobID:        jobID,
+			InitContainers: initContainers,
 		}
 		res, err := kubernetes.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
 		if err != nil {
@@ -400,8 +423,9 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 type UIXResourceGenerator struct {
 	c *Config
 	Uix
-	volumes []v1.Volume
-	mounts  []v1.VolumeMount
+	volumes        []v1.Volume
+	mounts         []v1.VolumeMount
+	InitContainers []InitContainers
 }
 
 func (ui UIXResourceGenerator) Limits() ResourceReqLim {
@@ -460,7 +484,11 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
-		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes}
+		initContainers, err := c.KubeInits(uix.Volumes)
+		if err != nil {
+			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
+		}
+		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
 		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, uix.Name+":resource", g)
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", uix.Name, err)
@@ -515,14 +543,19 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
+	initContainers, err := c.KubeInits(serving.Volumes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
+	}
 	g := ServingResourceGenerator{
 		TaskName: serving.TaskName,
 		Build:    serving.Build,
 		UIXResourceGenerator: UIXResourceGenerator{
-			c:       c,
-			Uix:     serving.Uix,
-			mounts:  mounts,
-			volumes: volumes,
+			c:              c,
+			Uix:            serving.Uix,
+			mounts:         mounts,
+			volumes:        volumes,
+			InitContainers: initContainers,
 		},
 	}
 	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, serving.Name+":resource", g)

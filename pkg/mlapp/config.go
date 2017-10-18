@@ -53,9 +53,11 @@ type Spec struct {
 }
 
 type Secret struct {
-	Name string            `json:"name,omitempty"`
-	Data map[string]string `json:"data,omitempty"`
-	Type string            `json:"type,omitempty"`
+	Name   string            `json:"name,omitempty"`
+	Data   map[string]string `json:"data,omitempty"`
+	Type   string            `json:"type,omitempty"`
+	Mounts map[string]string `json:"mounts,omitempty"`
+	Path   string            `json:"path,omitempty"`
 }
 type Packages struct {
 	Names   []string `json:"names"`
@@ -209,6 +211,55 @@ func (c *Config) LibVolume() (*v1.Volume, *v1.VolumeMount) {
 	return nil, nil
 }
 
+type InitContainers struct {
+	Image   string
+	Command string
+	Name    string
+	Mounts  []v1.VolumeMount
+}
+
+func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
+	inits := []InitContainers{}
+	added := map[string]bool{}
+	_, vmounts, err := getSecretVolumes(c.Secrets)
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range mounts {
+		added[m.Name] = true
+		if _, ok := added[m.Name]; ok {
+			continue
+		}
+		v := c.VolumeByName(m.Name)
+		if v == nil {
+			return nil, fmt.Errorf("Source '%s' not found", m.Name)
+		}
+		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
+			checkout := ""
+			if v.GitRepo.Revision != "" {
+				repo := getGitRepoName(v.GitRepo.Repository)
+				checkout = fmt.Sprintf(" && cd /gitdata/%s && git checkout %", repo, v.GitRepo.Revision)
+			}
+			vmounts = append(vmounts, v1.VolumeMount{
+				Name:      v.Name,
+				MountPath: "/gitdata",
+				ReadOnly:  false,
+			})
+			inits = append(inits, InitContainers{
+				Mounts:  vmounts,
+				Name:    m.Name,
+				Image:   "kuberlab/board-init",
+				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s%s']`, v.GitRepo.Repository, checkout),
+			})
+		}
+
+	}
+	return inits, nil
+}
+func getGitRepoName(repo string) string {
+	p := strings.Split(repo, "/")
+	return strings.TrimSuffix(p[len(p)-1], ".git")
+}
 func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
 	added := make(map[string]bool)
 	kvolumes := make([]v1.Volume, 0)
@@ -245,6 +296,52 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			MountPath: mountPath,
 			ReadOnly:  m.ReadOnly,
 		})
+	}
+	for len(c.Secrets) > 0 {
+		v1, v2, err := getSecretVolumes(c.Secrets)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(v1) > 0 {
+			kvolumes = append(kvolumes, v1...)
+		}
+		if len(v2) > 0 {
+			kvolumesMount = append(kvolumesMount, v2...)
+		}
+	}
+	return kvolumes, kvolumesMount, nil
+}
+
+func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
+	kvolumes := make([]v1.Volume, 0)
+	kvolumesMount := make([]v1.VolumeMount, 0)
+	for _, s := range secrets {
+		if len(s.Mounts) > 0 {
+			items := make([]v1.KeyToPath, len(s.Mounts))
+			i := 0
+			for k, m := range s.Mounts {
+				items[i] = v1.KeyToPath{
+					Key:  k,
+					Path: m,
+				}
+				i += 1
+			}
+			v := v1.Volume{
+				Name: s.Name,
+				VolumeSource: v1.VolumeSource{
+					Secret: &v1.SecretVolumeSource{
+						SecretName: s.Name,
+						Items:      items,
+					},
+				},
+			}
+			kvolumes = append(kvolumes, v)
+			kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+				Name:      s.Name,
+				MountPath: s.Name,
+				ReadOnly:  false,
+			})
+		}
 	}
 	return kvolumes, kvolumesMount, nil
 }

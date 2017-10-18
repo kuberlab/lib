@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"github.com/kuberlab/lib/pkg/mlapp"
 )
 
 func main() {
-	resp, err := http.Get("https://dev.kuberlab.io")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(resp.StatusCode)
+	c := &mlapp.Config{}
+	c.KubeInits(nil)
 }

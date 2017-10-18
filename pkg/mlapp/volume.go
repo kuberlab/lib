@@ -38,18 +38,24 @@ type VolumeSource struct {
 }
 
 func (v Volume) V1Volume() v1.Volume {
-	// TODO convert S3Bucket to k8s API structure
-	return v1.Volume{
+	r := v1.Volume{
 		Name: v.Name,
 		VolumeSource: v1.VolumeSource{
 			HostPath:              v.HostPath,
-			GitRepo:               &v.GitRepo.GitRepoVolumeSource,
 			NFS:                   v.NFS,
 			EmptyDir:              v.EmptyDir,
 			PersistentVolumeClaim: v.PersistentVolumeClaim,
 			FlexVolume:            v.FlexVolume,
 		},
 	}
+	if v.GitRepo != nil {
+		if v.GitRepo.AccountId != "" {
+			r.EmptyDir = &v1.EmptyDirVolumeSource{}
+		} else {
+			r.GitRepo = &v.GitRepo.GitRepoVolumeSource
+		}
+	}
+	return r
 }
 
 type GitRepoVolumeSource struct {
