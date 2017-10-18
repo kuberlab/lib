@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"os/user"
 )
 
 const (
