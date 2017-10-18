@@ -33,8 +33,9 @@ type VolumeSource struct {
 	NFS                   *v1.NFSVolumeSource                   `json:"nfs,omitempty" protobuf:"bytes,7,opt,name=nfs"`
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim,omitempty" protobuf:"bytes,10,opt,name=persistentVolumeClaim"`
 	EmptyDir              *v1.EmptyDirVolumeSource              `json:"emptyDir,omitempty" protobuf:"bytes,2,opt,name=emptyDir"`
-	S3Bucket              *S3BucketSource                       `json:"s3bucket,omitempty" protobuf:"bytes,99,opt,name=s3bucket"`
+	S3Bucket              *S3BucketSource                       `json:"s3bucket,omitempty" protobuf:"bytes,98,opt,name=s3bucket"`
 	FlexVolume            *v1.FlexVolumeSource                  `json:"flexVolume,omitempty" protobuf:"bytes,12,opt,name=flexVolume"`
+	PersistentStorage     *PersistentStorage                    `json:"persistentStorage,omitempty" protobuf:"bytes,99,opt,name=persistentStorage"`
 }
 
 func (v Volume) V1Volume() v1.Volume {
@@ -70,6 +71,10 @@ type S3BucketSource struct {
 	Bucket    string `json:"bucket" protobuf:"bytes,1,opt,name=bucket"`
 	Server    string `json:"server,omitempty" protobuf:"bytes,2,opt,name=server"`
 	AccountId string `json:"accountId,omitempty" protobuf:"bytes,3,opt,name=accountId"`
+}
+
+type PersistentStorage struct {
+	StorageId string `json:"storageId,omitempty" protobuf:"bytes,1,opt,name=storageId"`
 }
 
 func (v Volume) String() string {
