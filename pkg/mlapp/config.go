@@ -319,10 +319,12 @@ func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 		if len(s.Mounts) > 0 {
 			items := make([]v1.KeyToPath, len(s.Mounts))
 			i := 0
+			var mode int32 = 600
 			for k, m := range s.Mounts {
 				items[i] = v1.KeyToPath{
 					Key:  k,
 					Path: m,
+					Mode: &mode,
 				}
 				i += 1
 			}
