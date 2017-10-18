@@ -338,7 +338,7 @@ func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 			kvolumes = append(kvolumes, v)
 			kvolumesMount = append(kvolumesMount, v1.VolumeMount{
 				Name:      s.Name,
-				MountPath: s.Name,
+				MountPath: s.Path,
 				ReadOnly:  false,
 			})
 		}
