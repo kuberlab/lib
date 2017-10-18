@@ -1,8 +1,9 @@
-FROM ubuntu:latest
+FROM ubuntu:16.04
 MAINTAINER Alexander Gunin <agunin@kuberlab.com>
 
 # Add git client
 RUN apt-get -qq update && apt-get install --no-install-recommends -qqy \
     curl \
     ca-certificates \
-    git
+    git \
+    ssh
