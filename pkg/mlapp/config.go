@@ -226,10 +226,10 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 		return nil, err
 	}
 	for _, m := range mounts {
-		added[m.Name] = true
 		if _, ok := added[m.Name]; ok {
 			continue
 		}
+		added[m.Name] = true
 		v := c.VolumeByName(m.Name)
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
