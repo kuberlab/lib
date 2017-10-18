@@ -74,7 +74,7 @@ type S3BucketSource struct {
 }
 
 type PersistentStorage struct {
-	StorageId string `json:"storageId,omitempty" protobuf:"bytes,1,opt,name=storageId"`
+	StorageName string `json:"storageName,omitempty" protobuf:"bytes,1,opt,name=storageName"`
 }
 
 func (v Volume) String() string {
