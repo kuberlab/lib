@@ -29,11 +29,14 @@ type Config struct {
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
-func (c Config) UseSharedNamespace() bool {
+func UseSharedNamespace() bool {
 	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); v=="" || strings.ToLower(v) == "true" {
 		return true
 	}
 	return false
+}
+func (c Config) UseSharedNamespace() bool {
+	return UseSharedNamespace()
 }
 func (c Config) GetNamespace() string {
 	if c.UseSharedNamespace() {
