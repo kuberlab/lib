@@ -30,7 +30,7 @@ type Config struct {
 }
 
 func (c Config) UseSharedNamespace() bool {
-	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); strings.ToLower(v) == "true" {
+	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); v=="" || strings.ToLower(v) == "true" {
 		return true
 	}
 	return false
