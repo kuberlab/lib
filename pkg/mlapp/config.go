@@ -7,15 +7,18 @@ import (
 
 	"github.com/ghodss/yaml"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"os"
 )
 
 const (
 	KUBELAB_WS_LABEL    = "kuberlab.io/workspace"
 	KUBELAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
+	KUBELAB_PROJECT_ID  = "kuberlab.io/project-id"
 )
 
 type Config struct {
@@ -26,6 +29,19 @@ type Config struct {
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
+func (c Config) UseSharedNamespace() bool {
+	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); strings.ToLower(v) == "true" {
+		return true
+	}
+	return false
+}
+func (c Config) GetNamespace() string {
+	if c.UseSharedNamespace() {
+		return c.WorkspaceID + "-" + c.Workspace
+	} else {
+		return c.WorkspaceID + "-" + c.Name
+	}
+}
 func (c Config) GetAppID() string {
 	return c.WorkspaceID + "-" + c.Name
 }
@@ -236,7 +252,7 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 		}
 		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
 			checkout := ""
-			dir := "/gitdata/"+getGitRepoName(v.GitRepo.Repository)
+			dir := "/gitdata/" + getGitRepoName(v.GitRepo.Repository)
 			if v.GitRepo.Revision != "" {
 				checkout = fmt.Sprintf(" && git checkout %", v.GitRepo.Revision)
 			}
@@ -251,10 +267,10 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 				Mounts: map[string]interface{}{
 					"volumeMounts": vmounts,
 				},
-				Name:    m.Name,
-				Image:   "kuberlab/board-init",
+				Name:  m.Name,
+				Image: "kuberlab/board-init",
 				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s && cd %s%s%s%s']`,
-					v.GitRepo.Repository,dir,settingMail,settingUser, checkout),
+					v.GitRepo.Repository, dir, settingMail, settingUser, checkout),
 			})
 		}
 
@@ -421,23 +437,45 @@ func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOp
 	}
 }
 
-func BuildOption(workspaceID, workspaceName, appName string) func(c *Config) (res *Config, err error) {
+func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
 		res = c
-		res.Name = appName
+		res.Name = projectName
 		res.Workspace = workspaceName
 		res.WorkspaceID = workspaceID
 		if res.Labels == nil {
 			res.Labels = make(map[string]string)
 		}
-		res.Labels[KUBELAB_WS_LABEL] = workspaceName
-		res.Labels[KUBELAB_WS_ID_LABEL] = workspaceID
+		utils.JoinMaps(res.Labels, c.ResourceLabels())
 		for i := range res.Uix {
 			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",
-				workspaceName, appName, res.Uix[i].Name)
+				workspaceName, projectName, res.Uix[i].Name)
 		}
 		return
 	}
+}
+
+func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
+	l1 := map[string]string{
+		KUBELAB_WS_LABEL:    c.Workspace,
+		KUBELAB_WS_ID_LABEL: c.WorkspaceID,
+		KUBELAB_PROJECT_ID:  c.Name,
+	}
+	for _, m := range l {
+		for k, v := range m {
+			l1[k] = v
+		}
+	}
+	return l1
+}
+func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
+	l1 := c.ResourceLabels(l...)
+	var labelSelector = make([]string, 0)
+	for k, v := range l1 {
+		labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))
+	}
+	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}
+
 }
 
 func (c Config) ToYaml() ([]byte, error) {

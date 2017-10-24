@@ -18,13 +18,11 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: "{{ .Name }}"
-  namespace: "{{ .GetAppID }}"
+  namespace: "{{ .Namespace }}"
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: "{{ $value }}"
     {{- end }}
-    workspace: "{{ .AppName }}"
-    component: "{{ .Name }}"
 spec:
   replicas: {{ .Replicas }}
   template:
@@ -33,8 +31,6 @@ spec:
         {{- range $key, $value := .Labels }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
-        workspace: "{{ .AppName }}"
-        component: "{{ .Name }}"
       {{- if .Resources }}
       {{- if gt .Resources.Accelerators.GPU 0 }}
       annotations:
@@ -136,15 +132,11 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ .BuildName }}"
-  namespace: {{ .GetAppID }}
+  namespace: {{ .Namespace }}
   labels:
     {{- range $key, $value := .Labels }}
     {{ $key }}: "{{ $value }}"
     {{- end }}
-    workspace: "{{ .AppName }}"
-    component: "{{ .Task }}-{{ .Name }}"
-    kuberlab.io/job-id: "{{ .JobID }}"
-    kuberlab.io/task: "{{ .Task }}"
   {{- if .Resources }}
   {{- if gt .Resources.Accelerators.GPU 0 }}
   annotations:
@@ -249,9 +241,9 @@ type TaskResourceGenerator struct {
 	c        *Config
 	task     Task
 	TaskResource
-	once    sync.Once
-	volumes []v1.Volume
-	mounts  []v1.VolumeMount
+	once           sync.Once
+	volumes        []v1.Volume
+	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
 }
 
@@ -275,7 +267,7 @@ func (t TaskResourceGenerator) Env() []Env {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
 			serviceName := fmt.Sprintf("%s-%s-%s", t.task.Name, r.Name, t.JobID)
-			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.GetAppID())
+			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.Namespace())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
 			}
@@ -308,8 +300,8 @@ func (t TaskResourceGenerator) Volumes() interface{} {
 		"volumes": t.volumes,
 	}
 }
-func (t TaskResourceGenerator) GetAppID() string {
-	return t.c.GetAppID()
+func (t TaskResourceGenerator) Namespace() string {
+	return t.c.GetNamespace()
 }
 func (t TaskResourceGenerator) AppName() string {
 	return t.c.Name
@@ -318,7 +310,11 @@ func (t TaskResourceGenerator) Workspace() string {
 	return t.c.Workspace
 }
 func (t TaskResourceGenerator) Labels() map[string]string {
-	labels := make(map[string]string, 0)
+	labels := map[string]string{"workspace": t.AppName(),
+		"component":          t.task.Name + "-" + t.TaskResource.Name,
+		"kuberlab.io/job-id": t.JobID,
+		"kuberlab.io/task":   t.task.Name,
+	}
 	utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 	labels[ComponentTypeLabel] = "task"
 	return labels
@@ -341,12 +337,12 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}
 		g := TaskResourceGenerator{
-			c:            c,
-			task:         task,
-			TaskResource: r,
-			mounts:       mounts,
-			volumes:      volumes,
-			JobID:        jobID,
+			c:              c,
+			task:           task,
+			TaskResource:   r,
+			mounts:         mounts,
+			volumes:        volumes,
+			JobID:          jobID,
 			InitContainers: initContainers,
 		}
 		res, err := kubernetes.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
@@ -358,7 +354,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			ResourceName: r.Name,
 			TaskName:     task.Name,
 			AppName:      c.Name,
-			Namespace:    c.GetAppID(),
+			Namespace:    c.GetNamespace(),
 			JobID:        jobID,
 			AllowFail:    r.AllowFail,
 			MaxRestarts:  r.MaxRestartCount,
@@ -384,11 +380,8 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 }
 
 func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
-	labels := map[string]string{
-		"kuberlab.io/job-id": g.JobID,
-		"component":          g.task.Name + "-" + g.TaskResource.Name,
-		"kuberlab.io/task":   g.task.Name,
-	}
+	labels := g.Labels()
+	utils.JoinMaps(labels, g.c.Labels)
 	svc := &v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
@@ -396,7 +389,7 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      g.BuildName(),
-			Namespace: g.c.GetAppID(),
+			Namespace: g.c.GetNamespace(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
@@ -457,8 +450,8 @@ func (ui UIXResourceGenerator) Volumes() interface{} {
 		"volumes": ui.volumes,
 	}
 }
-func (t UIXResourceGenerator) GetAppID() string {
-	return t.c.GetAppID()
+func (t UIXResourceGenerator) Namespace() string {
+	return t.c.GetNamespace()
 }
 func (ui UIXResourceGenerator) AppName() string {
 	return ui.c.Name
@@ -467,7 +460,7 @@ func (ui UIXResourceGenerator) Workspace() string {
 	return ui.c.Workspace
 }
 func (ui UIXResourceGenerator) Labels() map[string]string {
-	labels := make(map[string]string, 0)
+	labels := map[string]string{"workspace": ui.AppName(), "component": ui.Name}
 	utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
 	labels[ComponentTypeLabel] = "ui"
 	return labels
@@ -530,9 +523,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 	labels[ComponentTypeLabel] = "serving"
 	return labels
 }
-func (serving ServingResourceGenerator) GetAppID() string {
-	return serving.c.GetAppID()
-}
+
 func (serving ServingResourceGenerator) Name() string {
 	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
 }
@@ -568,11 +559,7 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 }
 
 func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResource {
-	labels := map[string]string{
-		"workspace":              serv.AppName(),
-		"component":              serv.Name(),
-		"kuberlab.io/serving-id": serv.Name(),
-	}
+	labels := serv.Labels()
 	svc := &v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
@@ -580,7 +567,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      serv.Name(),
-			Namespace: serv.GetAppID(),
+			Namespace: serv.Namespace(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
@@ -608,10 +595,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 	}
 }
 func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
-	labels := map[string]string{
-		"workspace": ui.AppName(),
-		"component": ui.Name,
-	}
+	labels := ui.Labels()
 	svc := &v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
@@ -619,7 +603,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      ui.Name,
-			Namespace: ui.GetAppID(),
+			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
 		Spec: v1.ServiceSpec{
@@ -627,7 +611,6 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Type:     v1.ServiceTypeClusterIP,
 		},
 	}
-
 	for _, p := range ui.Ports {
 		svc.Spec.Ports = append(
 			svc.Spec.Ports,
