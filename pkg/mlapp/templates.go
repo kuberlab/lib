@@ -421,6 +421,9 @@ type UIXResourceGenerator struct {
 	InitContainers []InitContainers
 }
 
+func (ui UIXResourceGenerator) Name() ResourceReqLim {
+	return ui.c.GetAppID()+"-"+ui.Uix.Name
+}
 func (ui UIXResourceGenerator) Limits() ResourceReqLim {
 	if ui.c.ClusterLimits != nil {
 		return *ui.c.ClusterLimits
@@ -482,9 +485,9 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
-		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, uix.Name+":resource", g)
+		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
 		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", uix.Name, err)
+			return nil, fmt.Errorf("Failed parse template '%s': %v",g.Name(), err)
 		}
 
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
@@ -525,7 +528,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 }
 
 func (serving ServingResourceGenerator) Name() string {
-	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
+	return fmt.Sprintf("%v-%v-%v-%v",serving.c.GetAppID(),serving.Uix.Name, serving.TaskName, serving.Build)
 }
 
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
@@ -602,7 +605,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.Name,
+			Name:      ui.Name(),
 			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
@@ -624,7 +627,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 	groupKind := svc.GroupVersionKind()
 	return &kubernetes.KubeResource{
-		Name:   ui.Name + ":service",
+		Name:   ui.Name() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
 	}
