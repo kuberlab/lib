@@ -68,7 +68,7 @@ spec:
           value: '{{ .Value }}'
         {{- end }}
         - name: URL_PREFIX
-          value: "/api/v1/ml2-proxy/{{ .Workspace }}/{{ .AppName }}/{{ .Name }}/"
+          value: "{{ .ProxyURL }}"
         {{- if .Ports }}
         ports:
         {{- range .Ports }}
@@ -419,6 +419,10 @@ type UIXResourceGenerator struct {
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
+}
+
+func (ui UIXResourceGenerator) ProxyURL() string {
+	return fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",ui.Workspace(),ui.AppName(),ui.Uix.Name)
 }
 
 func (ui UIXResourceGenerator) Name() string {
