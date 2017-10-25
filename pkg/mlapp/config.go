@@ -30,7 +30,7 @@ type Config struct {
 }
 
 func UseSharedNamespace() bool {
-	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); v == "" || strings.ToLower(v) == "true"{
+	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); v == "" || strings.ToLower(v) == "true" {
 		return true
 	}
 	return false
@@ -57,7 +57,7 @@ type Meta struct {
 type DeploymentBasedResource interface {
 	Type() string
 	GetName() string
-	Deployment(client *kubernetes.Clientset, namespace string) (*extv1beta1.Deployment, error)
+	Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error)
 }
 
 type Spec struct {
@@ -121,8 +121,8 @@ func (uix *Uix) GetName() string {
 	return uix.Name
 }
 
-func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace string) (*extv1beta1.Deployment, error) {
-	return client.ExtensionsV1beta1().Deployments(namespace).Get(uix.Name, meta_v1.GetOptions{})
+func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error) {
+	return client.ExtensionsV1beta1().Deployments(namespace).Get(appName+"-"+uix.Name, meta_v1.GetOptions{})
 }
 
 type Serving struct {
