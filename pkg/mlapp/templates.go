@@ -8,6 +8,7 @@ import (
 
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
+	"io"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
@@ -266,7 +267,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
-			serviceName := fmt.Sprintf("%s-%s-%s-%s",t.c.Name, t.task.Name, r.Name, t.JobID)
+			serviceName := fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, r.Name, t.JobID)
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.Namespace())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
@@ -288,7 +289,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	return envs
 }
 func (t TaskResourceGenerator) BuildName() string {
-	return fmt.Sprintf("%s-%s-%s-%s",t.c.Name, t.task.Name, t.TaskResource.Name, t.JobID)
+	return fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.TaskResource.Name, t.JobID)
 }
 func (t TaskResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
@@ -310,14 +311,12 @@ func (t TaskResourceGenerator) Workspace() string {
 	return t.c.Workspace
 }
 func (t TaskResourceGenerator) Labels() map[string]string {
-	labels := map[string]string{"workspace": t.AppName(),
+	labels := t.c.ResourceLabels(map[string]string{"workspace": t.AppName(),
 		"component":          t.task.Name + "-" + t.TaskResource.Name,
 		"kuberlab.io/job-id": t.JobID,
 		"kuberlab.io/task":   t.task.Name,
-	}
-	utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
-	labels[ComponentTypeLabel] = "task"
-	return labels
+		ComponentTypeLabel:   "task"})
+	return utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 }
 
 func (t TaskResourceGenerator) Args() string {
@@ -422,11 +421,11 @@ type UIXResourceGenerator struct {
 }
 
 func (ui UIXResourceGenerator) ProxyURL() string {
-	return fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",ui.Workspace(),ui.AppName(),ui.Uix.Name)
+	return fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/", ui.Workspace(), ui.AppName(), ui.Uix.Name)
 }
 
 func (ui UIXResourceGenerator) Name() string {
-	return ui.c.Name+"-"+ui.Uix.Name
+	return ui.c.Name + "-" + ui.Uix.Name
 }
 func (ui UIXResourceGenerator) Limits() ResourceReqLim {
 	if ui.c.ClusterLimits != nil {
@@ -467,10 +466,11 @@ func (ui UIXResourceGenerator) Workspace() string {
 	return ui.c.Workspace
 }
 func (ui UIXResourceGenerator) Labels() map[string]string {
-	labels := map[string]string{"workspace": ui.AppName(), "component": ui.Uix.Name}
-	utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
-	labels[ComponentTypeLabel] = "ui"
-	return labels
+	labels := ui.c.ResourceLabels(map[string]string{"workspace": ui.AppName(),
+		"component":        ui.Uix.Name,
+		ComponentTypeLabel: "ui"})
+	return utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
+
 }
 
 func (ui UIXResourceGenerator) Args() string {
@@ -491,7 +491,7 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
 		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
 		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v",g.Name(), err)
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
 		}
 
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
@@ -532,7 +532,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 }
 
 func (serving ServingResourceGenerator) Name() string {
-	return fmt.Sprintf("%v-%v-%v-%v",serving.c.Name,serving.Uix.Name, serving.TaskName, serving.Build)
+	return fmt.Sprintf("%v-%v-%v-%v", serving.c.Name, serving.Uix.Name, serving.TaskName, serving.Build)
 }
 
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
