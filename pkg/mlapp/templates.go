@@ -608,7 +608,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.Name(),
+			Name:      ui.c.Name+"-"+ui.Name(),
 			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
