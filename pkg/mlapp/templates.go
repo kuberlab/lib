@@ -17,7 +17,7 @@ const DeploymentTpl = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .Name }}"
+  name: "{{ .AppName }}-{{ .Name }}"
   namespace: "{{ .Namespace }}"
   labels:
     {{- range $key, $value := .Labels }}
@@ -424,7 +424,7 @@ func (ui UIXResourceGenerator) ProxyURL() string {
 }
 
 func (ui UIXResourceGenerator) Name() string {
-	return ui.c.Name + "-" + ui.Uix.Name
+	return ui.Uix.Name
 }
 func (ui UIXResourceGenerator) Limits() ResourceReqLim {
 	if ui.c.ClusterLimits != nil {
