@@ -8,6 +8,7 @@ import (
 
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
@@ -495,6 +496,46 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
 		resources = append(resources, res)
+	}
+	return resources, nil
+}
+
+func (c *Config) GeneratePVC() ([]*kubernetes.KubeResource, error) {
+	resources := []*kubernetes.KubeResource{}
+	labels := map[string]string{
+		KUBELAB_WS_LABEL:    c.Workspace,
+		KUBELAB_WS_ID_LABEL: c.WorkspaceID,
+	}
+	for _, v := range c.Volumes {
+		if v.PersistentStorage != nil {
+			q, err := resource.ParseQuantity(v.PersistentStorage.Size)
+			if err != nil {
+				return nil, fmt.Errorf("Invalid kuberlab storage size %v", err)
+			}
+			storageClass := "glusterfs"
+			pvc := &v1.PersistentVolumeClaim{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      v.PersistentStorage.StorageName,
+					Namespace: c.GetNamespace(),
+					Labels:    labels,
+				},
+				Spec: v1.PersistentVolumeClaimSpec{
+					AccessModes:      []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
+					StorageClassName: &storageClass,
+					Resources: v1.ResourceRequirements{
+						Requests: map[v1.ResourceName]resource.Quantity{
+							v1.ResourceStorage: q,
+						},
+					},
+				},
+			}
+			groupKind := pvc.GroupVersionKind()
+			resources = append(resources, &kubernetes.KubeResource{
+				Name:   v.PersistentStorage.StorageName + ":pvc",
+				Object: pvc,
+				Kind:   &groupKind,
+			})
+		}
 	}
 	return resources, nil
 }

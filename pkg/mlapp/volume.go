@@ -49,6 +49,11 @@ func (v Volume) V1Volume() v1.Volume {
 			FlexVolume:            v.FlexVolume,
 		},
 	}
+	if v.PersistentStorage != nil {
+		r.PersistentVolumeClaim = &v1.PersistentVolumeClaimVolumeSource{
+			ClaimName: v.PersistentStorage.StorageName,
+		}
+	}
 	if v.GitRepo != nil {
 		if v.GitRepo.AccountId != "" {
 			r.EmptyDir = &v1.EmptyDirVolumeSource{}

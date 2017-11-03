@@ -310,6 +310,9 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
 			}
 		}
+		if v.PersistentStorage != nil {
+
+		}
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)
 		}
