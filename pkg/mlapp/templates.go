@@ -743,6 +743,8 @@ func baseEnv(c *Config, r Resource) []Env {
 
 	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
 	envs = append(envs, Env{Name: "APP_NAME", Value: c.Name})
+	envs = append(envs, Env{Name: "WORKSPACE_ID", Value: c.WorkspaceID})
+	envs = append(envs, Env{Name: "APP_ID", Value: fmt.Sprintf("%v-%v", c.WorkspaceID, c.Name)})
 
 	return envs
 }
