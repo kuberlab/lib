@@ -456,8 +456,8 @@ func (ui UIXResourceGenerator) Volumes() interface{} {
 		"volumes": ui.volumes,
 	}
 }
-func (t UIXResourceGenerator) Namespace() string {
-	return t.c.GetNamespace()
+func (ui UIXResourceGenerator) Namespace() string {
+	return ui.c.GetNamespace()
 }
 func (ui UIXResourceGenerator) AppName() string {
 	return ui.c.Name
