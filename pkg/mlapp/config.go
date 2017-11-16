@@ -295,6 +295,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		}
 		id := v.CommonID()
 		if _, ok := added[id]; !ok {
+			added[id] = true
 			kVolumes = append(kVolumes, v.V1Volume())
 		}
 		mountPath := v.MountPath

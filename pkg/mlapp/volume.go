@@ -40,7 +40,7 @@ type VolumeSource struct {
 
 func (v Volume) CommonID() string {
 	if v.PersistentStorage != nil {
-		return "ps_" + v.PersistentStorage.StorageName
+		return "ps-" + v.PersistentStorage.StorageName
 	}
 	return v.Name
 }
