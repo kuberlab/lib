@@ -444,10 +444,12 @@ func CollapsePersistentStorage(c *Config) (*Config, error) {
 	prefix := ""
 	exists := map[string]bool{}
 	oldToNew := map[string]string{}
+	oldToNewMountPaths := map[string]string{}
 	collapsed := []Volume{}
 	for _, v := range c.Spec.Volumes {
 		if v.PersistentStorage != nil {
 			oldToNew[v.Name] = v.PersistentStorage.StorageName
+			oldToNewMountPaths[v.Name] = v.MountPath
 			if _, ok := exists[v.PersistentStorage.StorageName]; ok {
 				continue
 			}
@@ -458,9 +460,11 @@ func CollapsePersistentStorage(c *Config) (*Config, error) {
 	}
 	c.Spec.Volumes = collapsed
 	var f = func(r *Resource) {
-		return
 		for i := range r.Volumes {
 			if n, ok := oldToNew[r.Volumes[i].Name]; ok {
+				if len(r.Volumes[i].MountPath) == 0 {
+					r.Volumes[i].MountPath = oldToNewMountPaths[r.Volumes[i].Name]
+				}
 				r.Volumes[i].Name = prefix + n
 			}
 		}
