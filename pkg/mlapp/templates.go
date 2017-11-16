@@ -94,9 +94,13 @@ spec:
             {{- end }}
             {{- if .Resources.Requests.CPU }}
             cpu: "{{ .Resources.Requests.CPU }}"
+            {{- else }}
+            cpu: 50m
             {{- end }}
             {{- if .Resources.Requests.Memory }}
             memory: "{{ .Resources.Requests.Memory }}"
+            {{- else }}
+            memory: 64Mi
             {{- end }}
           limits:
             {{- if and (and (gt .Resources.Accelerators.GPU 0) .Resources.Accelerators.DedicatedGPU) (gt .Limits.GPU 0) }}

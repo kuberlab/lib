@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"k8s.io/client-go/pkg/api/v1"
+	"encoding/base64"
+	"strings"
 )
 
 type VolumeMount struct {
@@ -40,9 +42,16 @@ type VolumeSource struct {
 
 func (v Volume) CommonID() string {
 	if v.PersistentStorage != nil {
-		return "ps-" + v.PersistentStorage.StorageName
+		return "kps-" + v.PersistentStorage.StorageName
+	} else if v.NFS!=nil{
+		m := "rw"
+		if v.NFS.ReadOnly{
+			m = "r"
+		}
+		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server+"-"+v.NFS.Path+"-"+m))
+		return "nfs-"+strings.Replace(server,"_","-",-1)
 	}
-	return v.Name
+	return "org-"+v.Name
 }
 func (v Volume) V1Volume() v1.Volume {
 	r := v1.Volume{
