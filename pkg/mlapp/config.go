@@ -84,17 +84,36 @@ type Packages struct {
 }
 
 type Resource struct {
-	Replicas   int              `json:"replicas"`
-	Resources  *ResourceRequest `json:"resources,omitempty"`
-	Images     Images           `json:"images"`
-	Command    string           `json:"command"`
-	WorkDir    string           `json:"workDir"`
-	RawArgs    string           `json:"args,omitempty"`
-	Env        []Env            `json:"env"`
-	Volumes    []VolumeMount    `json:"volumes"`
-	NodesLabel string           `json:"nodes"`
+	Replicas                int              `json:"replicas"`
+	Resources               *ResourceRequest `json:"resources,omitempty"`
+	Images                  Images           `json:"images"`
+	Command                 string           `json:"command"`
+	WorkDir                 string           `json:"workDir"`
+	RawArgs                 string           `json:"args,omitempty"`
+	Env                     []Env            `json:"env"`
+	Volumes                 []VolumeMount    `json:"volumes"`
+	NodesLabel              string           `json:"nodes"`
+	UseDefaultVolumeMapping bool             `json:"default_volume_mapping"`
+	DefaultMountPath        string           `json:"default_mount_path"`
 }
 
+func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
+	if r.UseDefaultVolumeMapping {
+		path := "/"
+		if len(r.DefaultMountPath) > 0 {
+			path = r.DefaultMountPath
+		}
+		mounts := []VolumeMount{}
+		for _, v := range volumes {
+			mpath := path + "/" + strings.TrimPrefix(v.MountPath, "/")
+			mounts = append(mounts, VolumeMount{
+				Name: v.Name, ReadOnly: false, MountPath: mpath,
+			})
+		}
+		return mounts
+	}
+	return r.Volumes
+}
 func (r Resource) Image() string {
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
 		if len(r.Images.GPU) == 0 {
@@ -311,10 +330,10 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			} else if len(subPath) > 0 {
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
 			}
-		} else if v.PersistentStorage!=nil{
+		} else if v.PersistentStorage != nil {
 			if strings.HasPrefix(subPath, "/") {
 				subPath = strings.TrimPrefix(subPath, "/")
-			} else{
+			} else {
 				subPath = c.Name + "/" + subPath
 			}
 		}

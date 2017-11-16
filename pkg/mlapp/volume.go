@@ -49,7 +49,7 @@ func (v Volume) CommonID() string {
 			m = "r"
 		}
 		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server+"-"+v.NFS.Path+"-"+m))
-		return "nfs-"+strings.Replace(server,"_","-",-1)
+		return "nfs-"+strings.ToLower(strings.Replace(server,"_","-",-1))
 	}
 	return "org-"+v.Name
 }

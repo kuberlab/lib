@@ -331,7 +331,7 @@ func (t TaskResourceGenerator) Args() string {
 func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
 	for _, r := range task.Resources {
-		volumes, mounts, err := c.KubeVolumesSpec(r.Volumes)
+		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.Volumes))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
@@ -484,7 +484,7 @@ func (ui UIXResourceGenerator) Args() string {
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
-		volumes, mounts, err := c.KubeVolumesSpec(uix.Volumes)
+		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.Volumes))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
@@ -581,7 +581,7 @@ func (serving ServingResourceGenerator) Name() string {
 
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
-	volumes, mounts, err := c.KubeVolumesSpec(serving.Volumes)
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
@@ -653,7 +653,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.c.Name+"-"+ui.Name(),
+			Name:      ui.c.Name + "-" + ui.Name(),
 			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
