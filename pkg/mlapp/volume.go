@@ -38,9 +38,15 @@ type VolumeSource struct {
 	PersistentStorage     *PersistentStorage                    `json:"persistentStorage,omitempty" protobuf:"bytes,99,opt,name=persistentStorage"`
 }
 
+func (v Volume) CommonID() string {
+	if v.PersistentStorage != nil {
+		return "ps_" + v.PersistentStorage.StorageName
+	}
+	return v.Name
+}
 func (v Volume) V1Volume() v1.Volume {
 	r := v1.Volume{
-		Name: v.Name,
+		Name: v.CommonID(),
 		VolumeSource: v1.VolumeSource{
 			HostPath:              v.HostPath,
 			NFS:                   v.NFS,

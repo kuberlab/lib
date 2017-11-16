@@ -293,7 +293,8 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		if v == nil {
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
-		if _, ok := added[v.Name]; !ok {
+		id := v.CommonID()
+		if _, ok := added[id]; !ok {
 			kVolumes = append(kVolumes, v.V1Volume())
 		}
 		mountPath := v.MountPath
@@ -315,7 +316,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		}
 		subPath = strings.TrimPrefix(subPath, "/")
 		kVolumesMount = append(kVolumesMount, v1.VolumeMount{
-			Name:      m.Name,
+			Name:      id,
 			SubPath:   subPath,
 			MountPath: mountPath,
 			ReadOnly:  m.ReadOnly,
@@ -438,45 +439,6 @@ func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOp
 		err := c.SetupClusterStorage(mapping)
 		return c, err
 	}
-}
-func CollapsePersistentStorage(c *Config) (*Config, error) {
-	//prefix := "kuberlab-"
-	prefix := ""
-	exists := map[string]bool{}
-	oldToNew := map[string]string{}
-	collapsed := []Volume{}
-	for _, v := range c.Spec.Volumes {
-		if v.PersistentStorage != nil {
-			oldToNew[v.Name] = v.PersistentStorage.StorageName
-			if _, ok := exists[v.PersistentStorage.StorageName]; ok {
-				continue
-			}
-			exists[v.PersistentStorage.StorageName] = true
-			v.Name = prefix + v.PersistentStorage.StorageName
-		}
-		collapsed = append(collapsed, v)
-	}
-	c.Spec.Volumes = collapsed
-	var f = func(r *Resource) {
-		return
-		for i := range r.Volumes {
-			if n, ok := oldToNew[r.Volumes[i].Name]; ok {
-				r.Volumes[i].Name = prefix + n
-			}
-		}
-	}
-	for i := range c.Spec.Uix {
-		f(&c.Spec.Uix[i].Resource)
-	}
-	for i := range c.Spec.Serving {
-		f(&c.Spec.Serving[i].Resource)
-	}
-	for i := range c.Spec.Tasks {
-		for j := range c.Spec.Tasks[i].Resources {
-			f(&c.Spec.Tasks[i].Resources[j].Resource)
-		}
-	}
-	return c, nil
 }
 
 func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config) (res *Config, err error) {
