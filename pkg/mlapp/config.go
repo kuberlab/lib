@@ -257,7 +257,7 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 			checkout := ""
 			dir := "/gitdata/" + getGitRepoName(v.GitRepo.Repository)
 			if v.GitRepo.Revision != "" {
-				checkout = fmt.Sprintf(" && git checkout %", v.GitRepo.Revision)
+				checkout = fmt.Sprintf(" && git checkout %s", v.GitRepo.Revision)
 			}
 			settingUser := " && git config --local user.name kuberlab-robot"
 			settingMail := " && git config --local user.email robot@kuberlab.com"
@@ -286,22 +286,22 @@ func getGitRepoName(repo string) string {
 }
 func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
 	added := make(map[string]bool)
-	kvolumes := make([]v1.Volume, 0)
-	kvolumesMount := make([]v1.VolumeMount, 0)
+	kVolumes := make([]v1.Volume, 0)
+	kVolumesMount := make([]v1.VolumeMount, 0)
 	for _, m := range mounts {
 		v := c.VolumeByName(m.Name)
 		if v == nil {
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
 		if _, ok := added[v.Name]; !ok {
-			kvolumes = append(kvolumes, v.V1Volume())
+			kVolumes = append(kVolumes, v.V1Volume())
 		}
 		mountPath := v.MountPath
 		if len(m.MountPath) > 0 {
 			mountPath = m.MountPath
 		}
 		subPath := v.SubPath
-		if v.NFS != nil{
+		if v.NFS != nil {
 			if strings.HasPrefix(subPath, "/shared/") {
 				subPath = strings.TrimPrefix(subPath, "/")
 			} else if strings.HasPrefix(subPath, "/") {
@@ -314,7 +314,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			subPath = filepath.Join(subPath, m.SubPath)
 		}
 		subPath = strings.TrimPrefix(subPath, "/")
-		kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+		kVolumesMount = append(kVolumesMount, v1.VolumeMount{
 			Name:      m.Name,
 			SubPath:   subPath,
 			MountPath: mountPath,
@@ -322,18 +322,18 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		})
 	}
 	if len(c.Secrets) > 0 {
-		v1, v2, err := getSecretVolumes(c.Secrets)
+		vol, vom, err := getSecretVolumes(c.Secrets)
 		if err != nil {
 			return nil, nil, err
 		}
-		if len(v1) > 0 {
-			kvolumes = append(kvolumes, v1...)
+		if len(vol) > 0 {
+			kVolumes = append(kVolumes, vol...)
 		}
-		if len(v2) > 0 {
-			kvolumesMount = append(kvolumesMount, v2...)
+		if len(vom) > 0 {
+			kVolumesMount = append(kVolumesMount, vom...)
 		}
 	}
-	return kvolumes, kvolumesMount, nil
+	return kVolumes, kVolumesMount, nil
 }
 
 func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
@@ -438,6 +438,45 @@ func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOp
 		err := c.SetupClusterStorage(mapping)
 		return c, err
 	}
+}
+func CollapsePersistentStorage(c *Config) (*Config, error) {
+	//prefix := "kuberlab-"
+	prefix := ""
+	exists := map[string]bool{}
+	oldToNew := map[string]string{}
+	collapsed := []Volume{}
+	for _, v := range c.Spec.Volumes {
+		if v.PersistentStorage != nil {
+			oldToNew[v.Name] = v.PersistentStorage.StorageName
+			if _, ok := exists[v.PersistentStorage.StorageName]; ok {
+				continue
+			}
+			exists[v.PersistentStorage.StorageName] = true
+			v.Name = prefix + v.PersistentStorage.StorageName
+		}
+		collapsed = append(collapsed, v)
+	}
+	c.Spec.Volumes = collapsed
+	var f = func(r *Resource) {
+		return
+		for i := range r.Volumes {
+			if n, ok := oldToNew[r.Volumes[i].Name]; ok {
+				r.Volumes[i].Name = prefix + n
+			}
+		}
+	}
+	for i := range c.Spec.Uix {
+		f(&c.Spec.Uix[i].Resource)
+	}
+	for i := range c.Spec.Serving {
+		f(&c.Spec.Serving[i].Resource)
+	}
+	for i := range c.Spec.Tasks {
+		for j := range c.Spec.Tasks[i].Resources {
+			f(&c.Spec.Tasks[i].Resources[j].Resource)
+		}
+	}
+	return c, nil
 }
 
 func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config) (res *Config, err error) {
