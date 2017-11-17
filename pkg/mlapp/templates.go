@@ -724,7 +724,7 @@ func baseEnv(c *Config, r Resource) []Env {
 			Value: "0",
 		})
 	}
-	for _, v := range r.Volumes {
+	for _, v := range r.VolumeMounts(c.Volumes) {
 		mountPath := v.MountPath
 		if len(mountPath) == 0 {
 			if v := c.VolumeByName(v.Name); v != nil {
