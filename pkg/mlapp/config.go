@@ -40,7 +40,7 @@ func (c Config) UseSharedNamespace() bool {
 }
 func (c Config) GetNamespace() string {
 	if c.UseSharedNamespace() {
-		return c.WorkspaceID + "-" + c.Workspace
+		return c.WorkspaceID + "-" + strings.Replace(c.Workspace,"_","-",-1)
 	} else {
 		return c.WorkspaceID + "-" + c.Name
 	}
