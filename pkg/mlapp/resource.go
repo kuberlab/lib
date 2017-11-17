@@ -8,7 +8,6 @@ type ResourceRequest struct {
 
 type ResourceAccelerators struct {
 	GPU          uint `json:"gpu"`
-	DedicatedGPU bool `json:"dedicated_gpu"`
 }
 
 type ResourceReqLim struct {

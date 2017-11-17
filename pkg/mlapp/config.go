@@ -99,13 +99,9 @@ type Resource struct {
 
 func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 	if r.UseDefaultVolumeMapping {
-		path := "/"
-		if len(r.DefaultMountPath) > 0 {
-			path = r.DefaultMountPath
-		}
 		mounts := []VolumeMount{}
 		for _, v := range volumes {
-			mpath := path + "/" + strings.TrimPrefix(v.MountPath, "/")
+			mpath := r.DefaultMountPath + "/" + strings.TrimPrefix(v.MountPath, "/")
 			mounts = append(mounts, VolumeMount{
 				Name: v.Name, ReadOnly: false, MountPath: mpath,
 			})
