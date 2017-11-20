@@ -576,7 +576,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 }
 
 func (serving ServingResourceGenerator) Name() string {
-	return fmt.Sprintf("%v-%v-%v-%v", serving.c.Name, serving.Uix.Name, serving.TaskName, serving.Build)
+	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
 }
 
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
@@ -617,7 +617,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      serv.Name(),
+			Name:      fmt.Sprintf("%v-%v", serv.c.Name, serv.Name()),
 			Namespace: serv.Namespace(),
 			Labels:    labels,
 		},
