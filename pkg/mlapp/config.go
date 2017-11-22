@@ -265,6 +265,7 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 		}
 		added[m.Name] = true
 		v := c.VolumeByName(m.Name)
+		id := v.CommonID()
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
@@ -277,7 +278,7 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 			settingUser := " && git config --local user.name kuberlab-robot"
 			settingMail := " && git config --local user.email robot@kuberlab.com"
 			vmounts = append(vmounts, v1.VolumeMount{
-				Name:      v.Name,
+				Name:      id,
 				MountPath: "/gitdata",
 				ReadOnly:  false,
 			})
