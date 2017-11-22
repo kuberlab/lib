@@ -6,6 +6,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
@@ -23,9 +24,10 @@ type ComponentState struct {
 }
 
 type ResourceState struct {
-	Name   string         `json:"name"`
-	Status string         `json:"status"`
-	Events []api_v1.Event `json:"events"`
+	Name      string                      `json:"name"`
+	Status    string                      `json:"status"`
+	Resources api_v1.ResourceRequirements `json:"resources"`
+	Events    []api_v1.Event              `json:"events"`
 }
 
 var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
@@ -48,7 +50,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 		name = v.Name
 	case []*WorkerSet:
 		for _, wset := range v {
-			logrus.Infof("Using labelselector = %v", labelSelector(wset.PodTemplate.Labels).LabelSelector)
+			logrus.Debugf("Using labelselector = %v", labelSelector(wset.PodTemplate.Labels).LabelSelector)
 			ps, err := client.Pods(wset.Namespace).List(labelSelector(wset.PodTemplate.Labels))
 			if err != nil {
 				return nil, err
@@ -63,7 +65,12 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	statusMap := make(map[string]int, 0)
 
 	for _, pod := range pods {
-		resState := &ResourceState{Name: pod.Name, Status: string(pod.Status.Phase), Events: []api_v1.Event{}}
+		resState := &ResourceState{
+			Name:      pod.Name,
+			Status:    string(pod.Status.Phase),
+			Events:    []api_v1.Event{},
+			Resources: sumResourceRequests(pod),
+		}
 		events, err := client.Events(namespace).Search(api.Scheme, &pod)
 		if err != nil {
 			return nil, err
@@ -108,4 +115,41 @@ func labelSelector(labels map[string]string) meta_v1.ListOptions {
 		labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))
 	}
 	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}
+}
+
+func sumResourceRequests(pod api_v1.Pod) api_v1.ResourceRequirements {
+	req := api_v1.ResourceRequirements{
+		Requests: make(api_v1.ResourceList),
+		Limits:   make(api_v1.ResourceList),
+	}
+
+	var reqs = make(map[api_v1.ResourceName]*resource.Quantity)
+	var limits = make(map[api_v1.ResourceName]*resource.Quantity)
+	for _, container := range pod.Spec.Containers {
+		for k, v := range container.Resources.Requests {
+			if _, ok := reqs[k]; ok {
+				reqs[k].Add(v)
+			} else {
+				vv := &v
+				reqs[k] = vv.Copy()
+			}
+		}
+		for k, v := range container.Resources.Limits {
+			if _, ok := limits[k]; ok {
+				limits[k].Add(v)
+			} else {
+				vv := &v
+				limits[k] = vv.Copy()
+			}
+		}
+	}
+
+	for k, v := range reqs {
+		req.Requests[k] = *v
+	}
+	for k, v := range limits {
+		req.Limits[k] = *v
+	}
+
+	return req
 }

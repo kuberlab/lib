@@ -3,12 +3,12 @@ package mlapp
 import (
 	"encoding/json"
 
-	"k8s.io/client-go/pkg/api/v1"
 	"encoding/base64"
-	"strings"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api/v1"
+	"strings"
 )
 
 const (
@@ -50,15 +50,15 @@ type VolumeSource struct {
 func (v Volume) CommonID() string {
 	if v.PersistentStorage != nil {
 		return "kps-" + v.PersistentStorage.StorageName
-	} else if v.NFS!=nil{
+	} else if v.NFS != nil {
 		m := "rw"
-		if v.NFS.ReadOnly{
+		if v.NFS.ReadOnly {
 			m = "r"
 		}
-		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server+"-"+v.NFS.Path+"-"+m))
-		return "nfs-"+strings.ToLower(strings.Replace(server,"_","-",-1))
+		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server + "-" + v.NFS.Path + "-" + m))
+		return "nfs-" + strings.ToLower(strings.Replace(server, "_", "-", -1))
 	}
-	return "org-"+v.Name
+	return "org-" + v.Name
 }
 func (v Volume) V1Volume() v1.Volume {
 	r := v1.Volume{
