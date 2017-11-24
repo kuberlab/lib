@@ -194,19 +194,6 @@ type TaskResourceSpec struct {
 	Resource      *kuberlab.KubeResource
 }
 
-func (c *Config) SetClusterStorage(mapping func(name string) (*VolumeSource, error)) error {
-	for i, v := range c.Spec.Volumes {
-		if len(v.ClusterStorage) > 0 {
-			if s, err := mapping(v.ClusterStorage); err == nil {
-				c.Spec.Volumes[i].VolumeSource = *s
-			} else {
-				return fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
-			}
-		}
-	}
-	return nil
-}
-
 func (c *Config) SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) error {
 	for i, v := range c.Spec.Volumes {
 		if s, err := mapping(v); err == nil {
@@ -319,28 +306,23 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			mountPath = m.MountPath
 		}
 		subPath := v.SubPath
-		if v.NFS != nil {
-			if strings.HasPrefix(subPath, "/shared/") {
+		if v.ClusterStorage != "" {
+			if !v.IsWorkspaceLocal && strings.HasPrefix(subPath, "/shared/") {
 				subPath = strings.TrimPrefix(subPath, "/")
 			} else if strings.HasPrefix(subPath, "/") {
-				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + strings.TrimPrefix(subPath, "/")
+				subPath = strings.TrimPrefix(subPath, "/")
+				if len(subPath) > 0 {
+					subPath = c.Workspace + "/" + c.WorkspaceID + "/" + subPath
+				} else {
+					subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name
+				}
 			} else if len(subPath) > 0 {
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
-			}
-		} else if v.PersistentStorage != nil {
-			if strings.HasPrefix(subPath, "/") {
-				subPath = strings.TrimPrefix(subPath, "/")
 			} else {
-				subPath = c.Name + "/" + subPath
+				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name
 			}
-		} else if v.ClusterStorage != "" {
-			if strings.HasPrefix(subPath, "/shared/") {
-				subPath = strings.TrimPrefix(subPath, "/")
-			} else if strings.HasPrefix(subPath, "/") {
-				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + strings.TrimPrefix(subPath, "/")
-			} else if len(subPath) > 0 {
-				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
-			}
+		} else {
+			subPath = strings.TrimPrefix(subPath, "/")
 		}
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)
@@ -456,19 +438,6 @@ func LimitsOption(limits *ResourceReqLim) func(c *Config) (res *Config, err erro
 		res = c
 		res.ClusterLimits = limits
 		return
-	}
-}
-
-func SetClusterStorageOption(mapping func(name string) (*VolumeSource, error)) ConfigOption {
-	return func(c *Config) (*Config, error) {
-		err := c.SetClusterStorage(mapping)
-		return c, err
-	}
-}
-func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOption {
-	return func(c *Config) (*Config, error) {
-		err := c.SetupClusterStorage(mapping)
-		return c, err
 	}
 }
 
