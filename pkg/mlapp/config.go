@@ -333,6 +333,14 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			} else {
 				subPath = c.Name + "/" + subPath
 			}
+		} else if v.ClusterStorage != "" {
+			if strings.HasPrefix(subPath, "/shared/") {
+				subPath = strings.TrimPrefix(subPath, "/")
+			} else if strings.HasPrefix(subPath, "/") {
+				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + strings.TrimPrefix(subPath, "/")
+			} else if len(subPath) > 0 {
+				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
+			}
 		}
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)
