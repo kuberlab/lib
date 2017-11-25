@@ -3,16 +3,8 @@ package mlapp
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"strings"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/api/v1"
-)
-
-const (
-	DefaultStorageClass = "glusterfs"
+	"strings"
 )
 
 type VolumeMount struct {
@@ -127,29 +119,4 @@ func (v Volume) GetBoundID() string {
 		return v.PersistentVolumeClaim.ClaimName
 	}
 	return v.Name
-}
-
-func ParsePVC(v PersistentStorage, namespace string, labels map[string]string) (*v1.PersistentVolumeClaim, error) {
-	q, err := resource.ParseQuantity(v.Size)
-	if err != nil {
-		return nil, fmt.Errorf("Invalid kuberlab storage size %v", err)
-	}
-	//storageClass := DefaultStorageClass
-	pvc := &v1.PersistentVolumeClaim{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      v.StorageName,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Spec: v1.PersistentVolumeClaimSpec{
-			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
-			//StorageClassName: &storageClass,
-			Resources: v1.ResourceRequirements{
-				Requests: map[v1.ResourceName]resource.Quantity{
-					v1.ResourceStorage: q,
-				},
-			},
-		},
-	}
-	return pvc, nil
 }

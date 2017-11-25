@@ -505,29 +505,6 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	return resources, nil
 }
 
-func (c *Config) GeneratePVC() ([]*kubernetes.KubeResource, error) {
-	resources := []*kubernetes.KubeResource{}
-	labels := map[string]string{
-		KUBELAB_WS_LABEL:    c.Workspace,
-		KUBELAB_WS_ID_LABEL: c.WorkspaceID,
-	}
-	for _, v := range c.Volumes {
-		if v.PersistentStorage != nil {
-			pvc, err := ParsePVC(*v.PersistentStorage, c.GetNamespace(), labels)
-			if err != nil {
-				return nil, err
-			}
-			groupKind := pvc.GroupVersionKind()
-			resources = append(resources, &kubernetes.KubeResource{
-				Name:   v.PersistentStorage.StorageName + ":pvc",
-				Object: pvc,
-				Kind:   &groupKind,
-			})
-		}
-	}
-	return resources, nil
-}
-
 type ServingResourceGenerator struct {
 	UIXResourceGenerator
 	TaskName string

@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"os"
 )
 
 const (
@@ -29,21 +28,12 @@ type Config struct {
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
-func UseSharedNamespace() bool {
-	if v := os.Getenv("MLBOARD_SHARED_NAMESPACE"); v == "" || strings.ToLower(v) == "true" {
-		return true
-	}
-	return false
+func NamespaceName(workspaceID, workspaceName string) string {
+	return workspaceID + "-" + strings.Replace(workspaceName, "_", "-", -1)
 }
-func (c Config) UseSharedNamespace() bool {
-	return UseSharedNamespace()
-}
+
 func (c Config) GetNamespace() string {
-	if c.UseSharedNamespace() {
-		return c.WorkspaceID + "-" + strings.Replace(c.Workspace, "_", "-", -1)
-	} else {
-		return c.WorkspaceID + "-" + c.Name
-	}
+	return NamespaceName(c.WorkspaceID, c.Workspace)
 }
 func (c Config) GetAppID() string {
 	return c.WorkspaceID + "-" + c.Name
@@ -203,6 +193,13 @@ func (c *Config) SetupClusterStorage(mapping func(v Volume) (*VolumeSource, erro
 		}
 	}
 	return nil
+}
+
+func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOption {
+	return func(c *Config) (*Config, error) {
+		err := c.SetupClusterStorage(mapping)
+		return c, err
+	}
 }
 
 func (c *Config) VolumeByName(name string) *Volume {
