@@ -236,7 +236,7 @@ type InitContainers struct {
 	Mounts  map[string]interface{}
 }
 
-func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
+func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
 	inits := []InitContainers{}
 	added := map[string]bool{}
 	_, vmounts, err := getSecretVolumes(c.Secrets)
@@ -253,7 +253,7 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
-		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
+		if v.GitRepo != nil /* && v.GitRepo.AccountId != "" */ {
 			checkout := ""
 			dir := "/gitdata/" + getGitRepoName(v.GitRepo.Repository)
 			if v.GitRepo.Revision != "" {
@@ -261,6 +261,15 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 			}
 			settingUser := " && git config --local user.name kuberlab-robot"
 			settingMail := " && git config --local user.email robot@kuberlab.com"
+
+			var submitRef = ""
+			if taskName != nil && build != nil {
+				submitRef = fmt.Sprintf(
+					`; curl http://mlboard-v2.kuberlab:8082/api/v2/submit/%s/%s/%s -H "X-Source: %s" -H "X-Ref: $(git rev-parse HEAD)"`,
+					c.GetAppID(), *taskName, *build, v.Name,
+				)
+			}
+
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      id,
 				MountPath: "/gitdata",
@@ -272,8 +281,9 @@ func (c *Config) KubeInits(mounts []VolumeMount) ([]InitContainers, error) {
 				},
 				Name:  m.Name,
 				Image: "kuberlab/board-init",
-				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s && cd %s%s%s%s']`,
-					v.GitRepo.Repository, dir, settingMail, settingUser, checkout),
+				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s && cd %s%s%s%s%s']`,
+					v.GitRepo.Repository, dir, settingMail, settingUser, checkout, submitRef,
+				),
 			})
 		}
 

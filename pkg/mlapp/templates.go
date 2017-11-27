@@ -336,7 +336,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
-		initContainers, err := c.KubeInits(r.VolumeMounts(c.Volumes))
+		initContainers, err := c.KubeInits(r.VolumeMounts(c.Volumes), &task.Name, &jobID)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}
@@ -489,7 +489,7 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
-		initContainers, err := c.KubeInits(uix.VolumeMounts(c.Volumes))
+		initContainers, err := c.KubeInits(uix.VolumeMounts(c.Volumes), nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
@@ -546,7 +546,7 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
-	initContainers, err := c.KubeInits(serving.VolumeMounts(c.Volumes))
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.Volumes), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
 	}
