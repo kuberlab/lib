@@ -254,36 +254,61 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
 		if v.GitRepo != nil /* && v.GitRepo.AccountId != "" */ {
-			checkout := ""
-			dir := "/gitdata/" + getGitRepoName(v.GitRepo.Repository)
-			if v.GitRepo.Revision != "" {
-				checkout = fmt.Sprintf(" && git checkout %s", v.GitRepo.Revision)
+			// Skip for UIX and already cloned repos.
+			if v.GitRepo.AccountId == "" && taskName == nil && build == nil {
+				return []InitContainers{}, nil
 			}
-			settingUser := " && git config --local user.name kuberlab-robot"
-			settingMail := " && git config --local user.email robot@kuberlab.com"
+			cmd := []string{}
+			repoName := getGitRepoName(v.GitRepo.Repository)
+			baseDir := "/gitdata"
+			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
+			if v.GitRepo.AccountId == "" {
+				apnd := []string{
+					fmt.Sprintf("git clone --no-checkout %v %v/%v.tmp", v.GitRepo.Repository, repoDir, repoName),
+					fmt.Sprintf("rm -rf %v/.git", repoDir),
+					fmt.Sprintf("mv %v/%v.tmp/.git %v/", repoDir, repoName, repoDir),
+					fmt.Sprintf("rmdir %v/%v.tmp", repoDir, repoName),
+					fmt.Sprintf("cd %v", repoDir),
+					"git reset --hard HEAD",
+				}
+				cmd = append(cmd, apnd...)
+			} else {
+				apnd := []string{
+					fmt.Sprintf("cd %v", baseDir),
+					fmt.Sprintf("git clone %v", v.GitRepo.Repository),
+					fmt.Sprintf("cd %v", repoDir),
+				}
+				cmd = append(cmd, apnd...)
+			}
 
+			if v.GitRepo.Revision != "" {
+				cmd = append(cmd, fmt.Sprintf("git checkout %s", v.GitRepo.Revision))
+			}
+			cmd = append(cmd, "git config --local user.name kuberlab-robot")
+			cmd = append(cmd, "git config --local user.email robot@kuberlab.com")
+
+			cmdStr := strings.Join(cmd, " && ")
 			var submitRef = ""
 			if taskName != nil && build != nil {
 				submitRef = fmt.Sprintf(
 					`; curl http://mlboard-v2.kuberlab:8082/api/v2/submit/%s/%s/%s -H "X-Source: %s" -H "X-Ref: $(git rev-parse HEAD)"`,
 					c.GetAppID(), *taskName, *build, v.Name,
 				)
+				cmdStr += submitRef
 			}
 
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      id,
-				MountPath: "/gitdata",
+				MountPath: baseDir,
 				ReadOnly:  false,
 			})
 			inits = append(inits, InitContainers{
 				Mounts: map[string]interface{}{
 					"volumeMounts": vmounts,
 				},
-				Name:  m.Name,
-				Image: "kuberlab/board-init",
-				Command: fmt.Sprintf(`['sh', '-c', 'cd /gitdata && git clone %s && cd %s%s%s%s%s']`,
-					v.GitRepo.Repository, dir, settingMail, settingUser, checkout, submitRef,
-				),
+				Name:    m.Name,
+				Image:   "kuberlab/board-init",
+				Command: fmt.Sprintf(`['sh', '-c', '%v']`, cmdStr),
 			})
 		}
 
