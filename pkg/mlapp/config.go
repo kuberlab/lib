@@ -263,15 +263,19 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			baseDir := "/gitdata"
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
 			if v.GitRepo.AccountId == "" {
-				apnd := []string{
-					fmt.Sprintf("git clone --no-checkout %v %v/%v.tmp", v.GitRepo.Repository, repoDir, repoName),
-					fmt.Sprintf("rm -rf %v/.git", repoDir),
-					fmt.Sprintf("mv %v/%v.tmp/.git %v/", repoDir, repoName, repoDir),
-					fmt.Sprintf("rmdir %v/%v.tmp", repoDir, repoName),
-					fmt.Sprintf("cd %v", repoDir),
-					"git reset --hard HEAD",
-				}
-				cmd = append(cmd, apnd...)
+				// If already cloned.
+
+				//apnd := []string{
+				//	fmt.Sprintf("git clone --no-checkout %v %v/%v.tmp", v.GitRepo.Repository, repoDir, repoName),
+				//	fmt.Sprintf("rm -rf %v/.git", repoDir),
+				//	fmt.Sprintf("mv %v/%v.tmp/.git %v/", repoDir, repoName, repoDir),
+				//	fmt.Sprintf("rmdir %v/%v.tmp", repoDir, repoName),
+				//	fmt.Sprintf("cd %v", repoDir),
+				//	"git reset --hard HEAD",
+				//}
+				//cmd = append(cmd, apnd...)
+
+				cmd = append(cmd, fmt.Sprintf("cd %v", repoDir))
 			} else {
 				apnd := []string{
 					fmt.Sprintf("cd %v", baseDir),
