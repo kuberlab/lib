@@ -73,7 +73,9 @@ func (v Volume) V1Volume() v1.Volume {
 		if v.GitRepo.AccountId != "" {
 			r.EmptyDir = &v1.EmptyDirVolumeSource{}
 		} else {
-			r.GitRepo = &v.GitRepo.GitRepoVolumeSource
+			// Copy git repo to not allow change it in the future.
+			git := v.GitRepo.GitRepoVolumeSource
+			r.GitRepo = &git
 		}
 	}
 	return r
