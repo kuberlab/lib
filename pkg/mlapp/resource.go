@@ -11,7 +11,14 @@ type ResourceAccelerators struct {
 	GPU uint `json:"gpu,omitempty"`
 }
 
-func ResourceSpec(r ResourceRequest,limitVal ResourceReqLim,defaultReq ResourceReqLim) ResourceRequest{
+func ResourceSpec(r ResourceRequest,limitVal *ResourceReqLim,defaultReq ResourceReqLim) ResourceRequest{
+	var gpuLimitCluster *resource.Quantity
+	if limitVal==nil{
+		limitVal = &ResourceReqLim{}
+		gpuLimitCluster = nil
+	} else{
+		gpuLimitCluster = quantityUint(limitVal.GPU)
+	}
 	cpuRequest := quantityString(r.Requests.CPU)
 	cpuDefault := quantityString(defaultReq.CPU)
 	cpuLimit := quantityString(r.Limits.CPU)
@@ -24,72 +31,31 @@ func ResourceSpec(r ResourceRequest,limitVal ResourceReqLim,defaultReq ResourceR
 	memoryLimitCluster := quantityString(limitVal.Memory)
 	memory1,memory2 := setQuantity(memoryRequest,memoryDefault,memoryLimit,memoryLimitCluster)
 
-}
-func (r ResourceRequest) limit(limitVal *ResourceReqLim,defaultReq ResourceReqLim) *ResourceRequest{
-	var limits *ResourceReqLim
-	var requests *ResourceReqLim
-	if r.Limits!=nil{
-		limits = r.Limits.limit(limitVal)
-	} else if limitVal!=nil{
-		limits = &ResourceReqLim{
-			CPU: limitVal.CPU,
-			Memory: limitVal.Memory,
-		}
-	}
+	gpuRequest := quantityUint(r.Accelerators.GPU)
+	gpuDefault := quantityUint(0)
+	gpuLimit := quantityUint(0)
+	gpu1,_ := setQuantity(gpuRequest,gpuDefault,gpuLimit,gpuLimitCluster)
 
-	if limits!=nil{
-		if r.Requests==nil{
-			requests = &defaultReq
-		} else{
-			requests = &ResourceReqLim{
-				CPU: r.Requests.CPU,
-				Memory: r.Requests.Memory,
-			}
-			if requests.CPUQuantity()==nil{
-				requests.CPU = defaultReq.CPU
-			}
-			if requests.MemoryQuantity()==nil{
-				requests.Memory = defaultReq.Memory
-			}
-		}
-	} else {
-		requests = r.Requests
+	return ResourceRequest{
+		Accelerators:ResourceAccelerators{
+			GPU: quantity2Uint(gpu1),
+		},
+		Limits:ResourceReqLim{
+			CPU:quantity2String(cpu2),
+			Memory:quantity2String(memory2),
+		},
+		Requests:ResourceReqLim{
+			CPU:quantity2String(cpu1),
+			Memory:quantity2String(memory1),
+		},
 	}
-	var gpu *uint
-	if r.Accelerators!=nil && r.Accelerators.GPU!=nil{
-		gpu = r.Accelerators.GPU
-	}
-	if gpu!=nil && limitVal!=nil && limitVal.GPU!=nil && (*limitVal.GPU)<(*gpu){
-		gpu = limitVal.GPU
-	}
-	if gpu!=nil || isNotEmptyResource(limits) || isNotEmptyResource(requests){
-		return &ResourceRequest{
-			Accelerators: &ResourceAccelerators{
-				GPU: gpu,
-			},
-			Limits: limits,
-			Requests: requests,
-		}
-	}
-	return nil
 }
+
+
 type ResourceReqLim struct {
 	CPU    string `json:"cpu"`
 	Memory string `json:"memory"`
 	GPU    uint   `json:"gpu"`
-}
-
-func (r ResourceReqLim) CPUQuantity() *resource.Quantity{
-	return quantityString(r.CPU)
-}
-func (r ResourceReqLim) MemoryQuantity() *resource.Quantity{
-	return quantityString(r.Memory)
-}
-func isNotEmptyResource(val *ResourceReqLim) bool{
-	if val==nil{
-		return false
-	}
-	return val.CPU!=nil || val.Memory!=nil
 }
 
 
@@ -127,6 +93,19 @@ func minQuantity(val *resource.Quantity,limit *resource.Quantity) *resource.Quan
 	}
 }
 
+func quantity2Uint(v *resource.Quantity) uint{
+	if v==nil{
+		return 0
+	}
+	i,_ :=v.AsInt64()
+	return uint(i)
+}
+func quantity2String(v *resource.Quantity) string{
+	if v==nil{
+		return ""
+	}
+	return v.String()
+}
 func quantityUint(v uint) *resource.Quantity{
 	if v==0{
 		return nil
