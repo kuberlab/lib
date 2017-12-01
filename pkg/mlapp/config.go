@@ -39,7 +39,7 @@ func (c Config) GetNamespace() string {
 }
 
 func (c Config) GetAppID() string {
-	return c.WorkspaceID + "-" + c.ProjectID
+	return c.WorkspaceID + "-" + c.Name
 }
 
 type Meta struct {
