@@ -2,14 +2,14 @@ package mlapp
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
 	"net/url"
+	"strconv"
+	"strings"
 )
 
 const DeploymentTpl = `
@@ -117,7 +117,7 @@ func (ui UIXResourceGenerator) ProxyURL() string {
 
 //Name for component
 func (ui UIXResourceGenerator) ComponentName() string {
-	return utils.KubeEncode(ui.c.Name + "-" + ui.Uix.Name)
+	return utils.KubeDeploymentEncode(ui.c.Name + "-" + ui.Uix.Name)
 }
 
 //Use NameSpace
@@ -125,11 +125,15 @@ func (ui UIXResourceGenerator) Namespace() string {
 	return ui.c.GetNamespace()
 }
 
-
 //Setup limits
 func (ui UIXResourceGenerator) ResourceSpec() *ResourceRequest {
-	return ResourceSpec(ui.Resources,ui.c.ClusterLimits,ResourceReqLim{CPU:utils.StrPtr("100m"),Memory:utils.StrPtr("64Mi")})
+	var uiReqs = ResourceRequest{}
+	if ui.Resources != nil {
+		uiReqs = *ui.Resources
+	}
+	return ResourceSpec(uiReqs, ui.c.ClusterLimits, ResourceReqLim{CPU: "100m", Memory: "64Mi"})
 }
+
 //Replica count
 func (ui UIXResourceGenerator) Replicas() int {
 	if ui.Resource.Replicas > 0 {
@@ -137,16 +141,19 @@ func (ui UIXResourceGenerator) Replicas() int {
 	}
 	return 1
 }
+
 //Env
 func (ui UIXResourceGenerator) Env() []Env {
 	return baseEnv(ui.c, ui.Resource)
 }
+
 //Mounts
 func (ui UIXResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
 		"volumeMounts": ui.mounts,
 	}
 }
+
 //Volumes
 func (ui UIXResourceGenerator) Volumes() interface{} {
 	return map[string]interface{}{
@@ -179,9 +186,9 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
-		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
+		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.ComponentName()+":resource", g)
 		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 		}
 
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
@@ -295,7 +302,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.c.Name + "-" + ui.Name(),
+			Name:      ui.c.Name + "-" + ui.ComponentName(),
 			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
@@ -317,7 +324,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 	groupKind := svc.GroupVersionKind()
 	return &kubernetes.KubeResource{
-		Name:   ui.Name() + ":service",
+		Name:   ui.ComponentName() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
 	}

@@ -30,12 +30,11 @@ type Config struct {
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
-
 func NamespaceName(workspaceID, workspaceName string) string {
-	return utils.KubeEncode("kubeia-"+workspaceID + "-" + workspaceName)
+	return utils.KubeNamespaceEncode("kubeia-" + workspaceID + "-" + workspaceName)
 }
 func (c Config) GetNamespace() string {
-	return NamespaceName(c.WorkspaceID,c.Workspace)
+	return NamespaceName(c.WorkspaceID, c.Workspace)
 }
 
 func (c Config) GetAppID() string {

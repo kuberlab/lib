@@ -2,16 +2,18 @@ package utils
 
 import (
 	"fmt"
+	"hash/fnv"
 	"os"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"hash/adler32"
-	"strconv"
 )
+
+var charNotFitToKube = regexp.MustCompile("[^-a-z0-9]+")
 
 func IntPtr(i int) *int {
 	return &i
@@ -76,22 +78,37 @@ func (p PairList) Len() int           { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func IsGoodSymbol(r int32) bool {
-	if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')  || r == '-'{
-		return true
-	}
-	return false
+func hash(s string) string {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	//return h.Sum32()
+	return strconv.FormatUint(uint64(h.Sum32()), 16)
 }
-func KubeEncode(v string)string{
-	r := []int32(strings.ToLower(v))
-	h := []int32(strconv.FormatUint(uint64(adler32.Checksum([]byte(v))),16))
-	for i,c := range r{
-		if !IsGoodSymbol(c){
-			r[i] = '-'
-		}
-		if i == 52{
-			return string(append(append(r[0:i+1],'-'),h...))
-		}
+
+func KubeEncode(v string, lengthLimit int) string {
+	res := strings.ToLower(v)
+	res = strings.Replace(res, "_", "-", -1)
+	res = charNotFitToKube.ReplaceAllString(res, "")
+
+	h := hash(v)
+	hashLen := len(h) + 1
+
+	var edge = lengthLimit - hashLen
+	if len(res) < edge {
+		edge = len(res)
 	}
-	return string(append(append(r,'-'),h...))
+
+	return res[:edge] + "-" + h
+}
+
+func KubeNamespaceEncode(v string) string {
+	return KubeEncode(v, 63)
+}
+
+func KubeDeploymentEncode(v string) string {
+	return KubeEncode(v, 120)
+}
+
+func KubePodNameEncode(v string) string {
+	return KubeEncode(v, 253)
 }
