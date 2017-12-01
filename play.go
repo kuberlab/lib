@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/kuberlab/lib/pkg/mlapp"
+	"github.com/kuberlab/lib/pkg/utils"
+	"fmt"
 )
 
 func main() {
-	c := &mlapp.Config{}
-	c.KubeInits(nil)
+	fmt.Println(utils.KubeEncode("gSj_s+0-priner213.5"))
 }

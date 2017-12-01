@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"hash/adler32"
+	"strconv"
 )
 
 func IntPtr(i int) *int {
@@ -70,3 +72,26 @@ type PairList []Pair
 func (p PairList) Len() int           { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func IsGoodSymbol(r int32) bool {
+	if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')  || r == '-'{
+		return true
+	}
+	return false
+}
+func KubeEncode(v string)string{
+	h := []int32(strconv.FormatUint(uint64(adler32.Checksum([]byte(v))),16))
+	if len(h)>6{
+		h = h[0:8]
+	}
+	r := make([]int32,0,len(v)+len(h)+1)
+	for _,c := range strings.ToLower(v){
+		if IsGoodSymbol(c){
+			r = append(r,c)
+		} else{
+			r = append(r,'-')
+		}
+	}
+	r = append(append(r,'-'),h...)
+	return string(r)
+}

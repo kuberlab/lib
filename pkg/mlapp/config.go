@@ -15,28 +15,27 @@ import (
 )
 
 const (
-	KUBELAB_WS_LABEL    = "kuberlab.io/workspace"
-	KUBELAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
-	KUBELAB_PROJECT_ID  = "kuberlab.io/project-id"
+	KUBERLAB_WS_NAME     = "kuberlab.io/workspace"
+	KUBERLAB_WS_ID       = "kuberlab.io/workspace-id"
+	KUBELAB_PROJECT_NAME = "kuberlab.io/workspace-id"
+	KUBELAB_PROJECT_ID   = "kuberlab.io/project-id"
 )
 
 type Config struct {
 	Kind        string `json:"kind"`
 	Meta        `json:"metadata"`
 	Spec        `json:"spec,omitempty"`
+	ProjectID   string `json:"project_id,omitempty"`
 	Workspace   string `json:"workspace,omitempty"`
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
-func NamespaceName(workspaceID, workspaceName string) string {
-	return workspaceID + "-" + strings.Replace(workspaceName, "_", "-", -1)
+func (c Config) GetNamespace() string {
+	return "kubeia-" + c.WorkspaceID
 }
 
-func (c Config) GetNamespace() string {
-	return NamespaceName(c.WorkspaceID, c.Workspace)
-}
 func (c Config) GetAppID() string {
-	return c.WorkspaceID + "-" + c.Name
+	return c.WorkspaceID + "-" + c.ProjectID
 }
 
 type Meta struct {
@@ -477,7 +476,7 @@ func LimitsOption(limits *ResourceReqLim) func(c *Config) (res *Config, err erro
 	}
 }
 
-func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config) (res *Config, err error) {
+func BuildOption(workspaceID, workspaceName, projectID, projectName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
 		res = c
 		res.Name = projectName
@@ -488,8 +487,8 @@ func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config)
 		}
 		utils.JoinMaps(res.Labels, c.ResourceLabels())
 		for i := range res.Uix {
-			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",
-				workspaceName, projectName, res.Uix[i].Name)
+			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/project-proxy/%s/%s/%s/",
+				workspaceID, projectID, res.Uix[i].Name)
 		}
 		return
 	}
@@ -497,9 +496,10 @@ func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config)
 
 func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
-		KUBELAB_WS_LABEL:    c.Workspace,
-		KUBELAB_WS_ID_LABEL: c.WorkspaceID,
-		KUBELAB_PROJECT_ID:  c.Name,
+		KUBERLAB_WS_NAME:     c.Workspace,
+		KUBERLAB_WS_ID:       c.WorkspaceID,
+		KUBELAB_PROJECT_ID:   c.ProjectID,
+		KUBELAB_PROJECT_NAME: c.Name,
 	}
 	for _, m := range l {
 		for k, v := range m {
@@ -521,3 +521,4 @@ func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }
+
