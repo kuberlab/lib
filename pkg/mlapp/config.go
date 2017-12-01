@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	KUBELAB_WS_LABEL    = "kuberlab.io/workspace"
-	KUBELAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
-	KUBELAB_PROJECT_ID  = "kuberlab.io/project-id"
+	KUBERLAB_WS_LABEL    = "kuberlab.io/workspace"
+	KUBERLAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
+	KUBERLAB_PROJECT_ID  = "kuberlab.io/project-id"
 )
 
 type Config struct {
@@ -33,10 +33,14 @@ func NamespaceName(workspaceID, workspaceName string) string {
 }
 
 func (c Config) GetNamespace() string {
-	return NamespaceName(c.WorkspaceID, c.Workspace)
+	return utils.KubeNamespaceEncode(NamespaceName(c.WorkspaceID, c.Workspace))
 }
 func (c Config) GetAppID() string {
-	return c.WorkspaceID + "-" + c.Name
+	return utils.KubeNamespaceEncode(c.WorkspaceID + "-" + c.Name)
+}
+
+func (c Config) GetAppName() string {
+	return utils.KubeNamespaceEncode(c.Name)
 }
 
 type Meta struct {
@@ -123,11 +127,13 @@ func (uix *Uix) Type() string {
 }
 
 func (uix *Uix) GetName() string {
-	return uix.Name
+	return utils.KubeDeploymentEncode(uix.Name)
 }
 
 func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error) {
-	return client.ExtensionsV1beta1().Deployments(namespace).Get(appName+"-"+uix.Name, meta_v1.GetOptions{})
+	return client.ExtensionsV1beta1().Deployments(namespace).Get(
+		utils.KubeDeploymentEncode(appName+"-"+uix.Name), meta_v1.GetOptions{},
+	)
 }
 
 type Serving struct {
@@ -497,9 +503,9 @@ func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config)
 
 func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
-		KUBELAB_WS_LABEL:    c.Workspace,
-		KUBELAB_WS_ID_LABEL: c.WorkspaceID,
-		KUBELAB_PROJECT_ID:  c.Name,
+		KUBERLAB_WS_LABEL:    c.Workspace,
+		KUBERLAB_WS_ID_LABEL: c.WorkspaceID,
+		KUBERLAB_PROJECT_ID:  utils.KubeNamespaceEncode(c.Name),
 	}
 	for _, m := range l {
 		for k, v := range m {

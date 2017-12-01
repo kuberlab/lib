@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/kuberlab/lib/pkg/utils"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api/v1"
 )
@@ -24,6 +25,16 @@ type WorkerSet struct {
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
+
+func (ws *WorkerSet) LabelSelector() meta_v1.ListOptions {
+	return meta_v1.ListOptions{LabelSelector: fmt.Sprintf(
+		"kuberlab.io/job-id==%s,kuberlab.io/component==%s-%s",
+		ws.JobID,
+		utils.KubeNamespaceEncode(ws.TaskName),
+		utils.KubeNamespaceEncode(ws.ResourceName),
+	)}
+}
+
 func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	p := *ws.PodTemplate
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)

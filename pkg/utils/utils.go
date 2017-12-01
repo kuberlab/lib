@@ -2,17 +2,25 @@ package utils
 
 import (
 	"fmt"
+	"hash/fnv"
 	"os"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/Sirupsen/logrus"
 )
 
+var charNotFitToKube = regexp.MustCompile("[^-a-z0-9]+")
+var charNotFitToEnv = regexp.MustCompile("[^_A-Za-z0-9]+")
+
 func IntPtr(i int) *int {
 	return &i
+}
+func StrPtr(s string) *string {
+	return &s
 }
 
 func LogExit(status int) {
@@ -35,7 +43,7 @@ func GetCallback() (string, error) {
 func JoinMaps(dest map[string]string, srcs ...map[string]string) map[string]string {
 	for _, src := range srcs {
 		for k, v := range src {
-			dest[k] = v
+			dest[k] = KubePodNameEncode(v)
 		}
 	}
 	return dest
@@ -70,3 +78,45 @@ type PairList []Pair
 func (p PairList) Len() int           { return len(p) }
 func (p PairList) Less(i, j int) bool { return p[i].Value < p[j].Value }
 func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func EnvConvert(v string) string {
+	res := strings.ToUpper(v)
+	res = strings.Replace(res, "-", "_", -1)
+	res = charNotFitToEnv.ReplaceAllString(res, "")
+	return res
+}
+
+func hash(s string) string {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	//return h.Sum32()
+	return strconv.FormatUint(uint64(h.Sum32()), 16)
+}
+
+func KubeEncode(v string, lengthLimit int) string {
+	res := strings.ToLower(v)
+	res = strings.Replace(res, "_", "-", -1)
+	res = charNotFitToKube.ReplaceAllString(res, "")
+
+	h := hash(v)
+	hashLen := len(h) + 1
+
+	if len(res) < lengthLimit {
+		return res
+	} else {
+		edge := lengthLimit - hashLen
+		return res[:edge] + "-" + h
+	}
+}
+
+func KubeNamespaceEncode(v string) string {
+	return KubeEncode(v, 63)
+}
+
+func KubeDeploymentEncode(v string) string {
+	return KubeEncode(v, 120)
+}
+
+func KubePodNameEncode(v string) string {
+	return KubeEncode(v, 253)
+}

@@ -17,7 +17,7 @@ const DeploymentTpl = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .AppName }}-{{ .Name }}"
+  name: "{{ .ComponentName }}"
   namespace: "{{ .Namespace }}"
   labels:
     {{- range $key, $value := .Labels }}
@@ -48,7 +48,7 @@ spec:
       {{- end }}
       {{- end }}
       containers:
-      - name: {{ .AppName }}-{{ .Name }}
+      - name: {{ .ComponentName }}
         {{- if .Command }}
         command: ["/bin/sh", "-c"]
         imagePullPolicy: Always
@@ -239,6 +239,7 @@ spec:
 
 const (
 	ComponentTypeLabel = "kuberlab.io/component-type"
+	ComponentLabel     = "kuberlab.io/component"
 )
 
 type TaskResourceGenerator struct {
@@ -264,7 +265,7 @@ func (t TaskResourceGenerator) Limits() ResourceReqLim {
 }
 
 func (t TaskResourceGenerator) Task() string {
-	return t.task.Name
+	return utils.KubeNamespaceEncode(t.task.Name)
 }
 
 func (t TaskResourceGenerator) Env() []Env {
@@ -272,14 +273,14 @@ func (t TaskResourceGenerator) Env() []Env {
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
-			serviceName := fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, r.Name, t.JobID)
+			serviceName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, r.Name, t.JobID))
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.Namespace())
 			if r.Port > 0 {
 				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
 			}
 		}
 		envs = append(envs, Env{
-			Name:  strings.ToUpper(r.Name + "_NODES"),
+			Name:  strings.ToUpper(utils.EnvConvert(r.Name) + "_NODES"),
 			Value: strings.Join(hosts, ","),
 		})
 	}
@@ -294,7 +295,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	return envs
 }
 func (t TaskResourceGenerator) BuildName() string {
-	return fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.TaskResource.Name, t.JobID)
+	return utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.TaskResource.Name, t.JobID))
 }
 func (t TaskResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
@@ -307,20 +308,22 @@ func (t TaskResourceGenerator) Volumes() interface{} {
 	}
 }
 func (t TaskResourceGenerator) Namespace() string {
-	return t.c.GetNamespace()
+	return utils.KubeNamespaceEncode(t.c.GetNamespace())
 }
 func (t TaskResourceGenerator) AppName() string {
-	return t.c.Name
+	return utils.KubeNamespaceEncode(t.c.Name)
 }
 func (t TaskResourceGenerator) Workspace() string {
 	return t.c.Workspace
 }
 func (t TaskResourceGenerator) Labels() map[string]string {
-	labels := t.c.ResourceLabels(map[string]string{"workspace": t.AppName(),
-		"component":          t.task.Name + "-" + t.TaskResource.Name,
-		"kuberlab.io/job-id": t.JobID,
-		"kuberlab.io/task":   t.task.Name,
-		ComponentTypeLabel:   "task"})
+	labels := t.c.ResourceLabels(map[string]string{
+		"workspace":             t.AppName(),
+		"kuberlab.io/component": utils.KubePodNameEncode(t.task.Name + "-" + t.TaskResource.Name),
+		"kuberlab.io/job-id":    t.JobID,
+		"kuberlab.io/task":      utils.KubePodNameEncode(t.task.Name),
+		ComponentTypeLabel:      "task",
+	})
 	return utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 }
 
@@ -481,18 +484,25 @@ func (ui UIXResourceGenerator) Volumes() interface{} {
 	}
 }
 func (ui UIXResourceGenerator) Namespace() string {
-	return ui.c.GetNamespace()
+	return utils.KubeNamespaceEncode(ui.c.GetNamespace())
 }
+
+func (ui UIXResourceGenerator) ComponentName() string {
+	return utils.KubeDeploymentEncode(fmt.Sprintf("%v-%v", ui.c.Name, ui.Name()))
+}
+
 func (ui UIXResourceGenerator) AppName() string {
-	return ui.c.Name
+	return utils.KubeNamespaceEncode(ui.c.Name)
 }
 func (ui UIXResourceGenerator) Workspace() string {
 	return ui.c.Workspace
 }
 func (ui UIXResourceGenerator) Labels() map[string]string {
-	labels := ui.c.ResourceLabels(map[string]string{"workspace": ui.AppName(),
-		"component":        ui.Uix.Name,
-		ComponentTypeLabel: "ui"})
+	labels := ui.c.ResourceLabels(map[string]string{
+		"workspace":        ui.AppName(),
+		ComponentLabel:     utils.KubePodNameEncode(ui.Uix.Name),
+		ComponentTypeLabel: "ui",
+	})
 	return utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
 
 }
@@ -513,9 +523,9 @@ func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
-		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
+		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.ComponentName()+":resource", g)
 		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 		}
 
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
@@ -559,6 +569,10 @@ func (serving ServingResourceGenerator) Name() string {
 	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
 }
 
+func (serving ServingResourceGenerator) ComponentName() string {
+	return utils.KubeDeploymentEncode(fmt.Sprintf("%v-%v", serving.c.Name, serving.Name()))
+}
+
 func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
@@ -580,9 +594,9 @@ func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeRe
 			InitContainers: initContainers,
 		},
 	}
-	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
+	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.ComponentName()+":resource", g)
 	if err != nil {
-		return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
+		return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 	}
 	res.Deps = []*kubernetes.KubeResource{generateServingService(g)}
 	resources = append(resources, res)
@@ -597,7 +611,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v", serv.c.Name, serv.Name()),
+			Name:      serv.ComponentName(),
 			Namespace: serv.Namespace(),
 			Labels:    labels,
 		},
@@ -620,7 +634,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 	}
 	groupKind := svc.GroupVersionKind()
 	return &kubernetes.KubeResource{
-		Name:   serv.Name() + ":service",
+		Name:   serv.ComponentName() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
 	}
@@ -633,7 +647,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 			Kind:       "Service",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.c.Name + "-" + ui.Name(),
+			Name:      ui.ComponentName(),
 			Namespace: ui.Namespace(),
 			Labels:    labels,
 		},
@@ -655,7 +669,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 	groupKind := svc.GroupVersionKind()
 	return &kubernetes.KubeResource{
-		Name:   ui.Name() + ":service",
+		Name:   ui.ComponentName() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
 	}
