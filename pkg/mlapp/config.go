@@ -17,7 +17,7 @@ import (
 const (
 	KUBERLAB_WS_NAME     = "kuberlab.io/workspace"
 	KUBERLAB_WS_ID       = "kuberlab.io/workspace-id"
-	KUBELAB_PROJECT_NAME = "kuberlab.io/workspace-id"
+	KUBELAB_PROJECT_NAME = "kuberlab.io/project"
 	KUBELAB_PROJECT_ID   = "kuberlab.io/project-id"
 )
 
@@ -521,4 +521,3 @@ func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }
-

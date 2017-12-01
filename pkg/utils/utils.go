@@ -16,6 +16,9 @@ import (
 func IntPtr(i int) *int {
 	return &i
 }
+func StrPtr(s string) *string {
+	return &s
+}
 
 func LogExit(status int) {
 	logrus.Infof("Exiting with status: %v", status)
@@ -80,18 +83,15 @@ func IsGoodSymbol(r int32) bool {
 	return false
 }
 func KubeEncode(v string)string{
+	r := []int32(strings.ToLower(v))
 	h := []int32(strconv.FormatUint(uint64(adler32.Checksum([]byte(v))),16))
-	if len(h)>6{
-		h = h[0:8]
-	}
-	r := make([]int32,0,len(v)+len(h)+1)
-	for _,c := range strings.ToLower(v){
-		if IsGoodSymbol(c){
-			r = append(r,c)
-		} else{
-			r = append(r,'-')
+	for i,c := range r{
+		if !IsGoodSymbol(c){
+			r[i] = '-'
+		}
+		if i == 52{
+			return string(append(append(r[0:i+1],'-'),h...))
 		}
 	}
-	r = append(append(r,'-'),h...)
-	return string(r)
+	return string(append(append(r,'-'),h...))
 }

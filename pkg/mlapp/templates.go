@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
-
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/pkg/api/v1"
+	"net/url"
 )
 
 const DeploymentTpl = `
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: "{{ .AppName }}-{{ .Name }}"
+  name: "{{ .ComponentName }}"
   namespace: "{{ .Namespace }}"
   labels:
     {{- range $key, $value := .Labels }}
@@ -31,12 +30,6 @@ spec:
         {{- range $key, $value := .Labels }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
-      {{- if .Resources }}
-      {{- if gt .Resources.Accelerators.GPU 0 }}
-      annotations:
-        experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
-      {{- end }}
-      {{- end }}
     spec:
       {{- if gt (len .InitContainers) 0 }}
       initContainers:
@@ -81,55 +74,254 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
-        {{- if .Resources }}
+        {{- if .ResourceSpec }}
         resources:
+          {{- if .ResourceSpec.Requests }}
           requests:
-            {{- if and (gt .Resources.Accelerators.GPU 0) (gt .Limits.GPU 0) }}
-            alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
-            {{- else }}
-              {{- if gt .Resources.Accelerators.GPU 0 }}
-            alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
-              {{- end }}
+            {{- if .ResourceSpec.Requests.CPU }}
+            cpu: "{{ .ResourceSpec.Requests.CPU }}"
+            {{ -end }}
+            {{- if .ResourceSpec.Requests.Memory }}
+            memory: "{{ .ResourceSpec.Requests.Memory }}"
             {{- end }}
-            {{- if .Resources.Requests.CPU }}
-            cpu: "{{ .Resources.Requests.CPU }}"
-            {{- else }}
-            cpu: 50m
-            {{- end }}
-            {{- if .Resources.Requests.Memory }}
-            memory: "{{ .Resources.Requests.Memory }}"
-            {{- else }}
-            memory: 64Mi
-            {{- end }}
+          {{ -end }}
+          {{- if .ResourceSpec.Limits }}
           limits:
-            {{- if and (gt .Resources.Accelerators.GPU 0) (gt .Limits.GPU 0) }}
-            alpha.kubernetes.io/nvidia-gpu: "{{ .Limits.GPU }}"
-            {{- else }}
-              {{- if gt .Resources.Accelerators.GPU 0 }}
-            alpha.kubernetes.io/nvidia-gpu: "{{ .Resources.Accelerators.GPU }}"
-              {{- end }}
+            {{- if .ResourceSpec.Limits.GPU }}
+            alpha.kubernetes.io/nvidia-gpu: "{{ .ResourceSpec.Limits.GPU }}"
             {{- end }}
-            {{- if gt (len .Limits.CPU) 0 }}
-            cpu: "{{ .Limits.CPU }}"
+            {{- if .ResourceSpec.Limits.CPU }}
+            cpu: "{{ .ResourceSpec.Limits.CPU }}"
             {{- end }}
-            {{- if gt (len .Limits.Memory) 0 }}
-            memory: "{{ .Limits.Memory }}"
+            {{- if .ResourceSpec.Limits.Memory }}
+            memory: "{{ .ResourceSpec.Limits.Memory }}"
             {{- end }}
-        {{- else }}
-        {{- if or (gt (len .Limits.CPU) 0) (gt (len .Limits.Memory) 0) }}
-        resources:
-          limits:
-            {{- if gt (len .Limits.CPU) 0 }}
-            cpu: "{{ .Limits.CPU }}"
-            {{- end }}
-            {{- if gt (len .Limits.Memory) 0 }}
-            memory: "{{ .Limits.Memory }}"
-            {{- end }}
-        {{- end }}
+          {{- end }}
         {{- end }}
 {{ toYaml .Mounts | indent 8 }}
 {{ toYaml .Volumes | indent 6 }}
 `
+
+type UIXResourceGenerator struct {
+	c *Config
+	Uix
+	volumes        []v1.Volume
+	mounts         []v1.VolumeMount
+	InitContainers []InitContainers
+}
+
+//proxy
+func (ui UIXResourceGenerator) ProxyURL() string {
+	return fmt.Sprintf("/api/v1/project-proxy/%s/%s/%s/", ui.c.Workspace, ui.c.Name, url.PathEscape(ui.Uix.Name))
+}
+
+//Name for component
+func (ui UIXResourceGenerator) ComponentName() string {
+	return utils.KubeEncode(ui.c.Name + "-" + ui.Uix.Name)
+}
+
+//Use NameSpace
+func (ui UIXResourceGenerator) Namespace() string {
+	return ui.c.GetNamespace()
+}
+
+
+//Setup limits
+func (ui UIXResourceGenerator) ResourceSpec() *ResourceRequest {
+	return ResourceSpec(ui.Resources,ui.c.ClusterLimits,ResourceReqLim{CPU:utils.StrPtr("100m"),Memory:utils.StrPtr("64Mi")})
+}
+//Replica count
+func (ui UIXResourceGenerator) Replicas() int {
+	if ui.Resource.Replicas > 0 {
+		return ui.Resource.Replicas
+	}
+	return 1
+}
+//Env
+func (ui UIXResourceGenerator) Env() []Env {
+	return baseEnv(ui.c, ui.Resource)
+}
+//Mounts
+func (ui UIXResourceGenerator) Mounts() interface{} {
+	return map[string]interface{}{
+		"volumeMounts": ui.mounts,
+	}
+}
+//Volumes
+func (ui UIXResourceGenerator) Volumes() interface{} {
+	return map[string]interface{}{
+		"volumes": ui.volumes,
+	}
+}
+
+//Label for pod
+func (ui UIXResourceGenerator) Labels() map[string]string {
+	labels := ui.c.ResourceLabels(map[string]string{
+		ComponentNameLabel: ui.Uix.Name,
+		ComponentTypeLabel: "ui"})
+	return utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
+
+}
+
+func (ui UIXResourceGenerator) Args() string {
+	return ui.Resource.RawArgs
+}
+
+func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
+	resources := []*kubernetes.KubeResource{}
+	for _, uix := range c.Uix {
+		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.Volumes))
+		if err != nil {
+			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
+		}
+		initContainers, err := c.KubeInits(uix.VolumeMounts(c.Volumes), nil, nil)
+		if err != nil {
+			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
+		}
+		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
+		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
+		if err != nil {
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
+		}
+
+		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
+		resources = append(resources, res)
+	}
+	return resources, nil
+}
+
+type ServingResourceGenerator struct {
+	UIXResourceGenerator
+	TaskName string
+	Build    string
+}
+
+func (serving ServingResourceGenerator) Env() []Env {
+	envs := baseEnv(serving.c, serving.Resource)
+	envs = append(envs,
+		Env{
+			Name:  "BUILD_ID",
+			Value: serving.Build,
+		},
+		Env{
+			Name:  "TASK_ID",
+			Value: serving.TaskName,
+		},
+	)
+	return envs
+}
+func (serving ServingResourceGenerator) Labels() map[string]string {
+	labels := serving.UIXResourceGenerator.Labels()
+	labels["kuberlab.io/serving-id"] = serving.Name()
+	labels[ComponentTypeLabel] = "serving"
+	return labels
+}
+
+func (serving ServingResourceGenerator) Name() string {
+	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
+}
+
+func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
+	resources := []*kubernetes.KubeResource{}
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
+	if err != nil {
+		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
+	}
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.Volumes), nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
+	}
+	g := ServingResourceGenerator{
+		TaskName: serving.TaskName,
+		Build:    serving.Build,
+		UIXResourceGenerator: UIXResourceGenerator{
+			c:              c,
+			Uix:            serving.Uix,
+			mounts:         mounts,
+			volumes:        volumes,
+			InitContainers: initContainers,
+		},
+	}
+	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
+	if err != nil {
+		return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
+	}
+	res.Deps = []*kubernetes.KubeResource{generateServingService(g)}
+	resources = append(resources, res)
+	return resources, nil
+}
+
+func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResource {
+	labels := serv.Labels()
+	svc := &v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-%v", serv.c.Name, serv.Name()),
+			Namespace: serv.Namespace(),
+			Labels:    labels,
+		},
+		Spec: v1.ServiceSpec{
+			Selector: labels,
+			Type:     v1.ServiceTypeClusterIP,
+		},
+	}
+
+	for _, p := range serv.Ports {
+		svc.Spec.Ports = append(
+			svc.Spec.Ports,
+			v1.ServicePort{
+				Name:       p.Name,
+				TargetPort: intstr.FromInt(int(p.TargetPort)),
+				Protocol:   v1.Protocol(p.Protocol),
+				Port:       p.Port,
+			},
+		)
+	}
+	groupKind := svc.GroupVersionKind()
+	return &kubernetes.KubeResource{
+		Name:   serv.Name() + ":service",
+		Object: svc,
+		Kind:   &groupKind,
+	}
+}
+func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
+	labels := ui.Labels()
+	svc := &v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      ui.c.Name + "-" + ui.Name(),
+			Namespace: ui.Namespace(),
+			Labels:    labels,
+		},
+		Spec: v1.ServiceSpec{
+			Selector: labels,
+			Type:     v1.ServiceTypeClusterIP,
+		},
+	}
+	for _, p := range ui.Ports {
+		svc.Spec.Ports = append(
+			svc.Spec.Ports,
+			v1.ServicePort{
+				Name:       p.Name,
+				TargetPort: intstr.FromInt(int(p.TargetPort)),
+				Protocol:   v1.Protocol(p.Protocol),
+				Port:       p.Port,
+			},
+		)
+	}
+	groupKind := svc.GroupVersionKind()
+	return &kubernetes.KubeResource{
+		Name:   ui.Name() + ":service",
+		Object: svc,
+		Kind:   &groupKind,
+	}
+}
 
 const ResourceTpl = `
 apiVersion: v1
@@ -141,12 +333,6 @@ metadata:
     {{- range $key, $value := .Labels }}
     {{ $key }}: "{{ $value }}"
     {{- end }}
-  {{- if .Resources }}
-  {{- if gt .Resources.Accelerators.GPU 0 }}
-  annotations:
-    experimental.kubernetes.io/nvidia-gpu-driver: "http://127.0.0.1:3476/v1.0/docker/cli/json"
-  {{- end }}
-  {{- end }}
 spec:
   terminationGracePeriodSeconds: 10
   #{{- if .NodesLabel }}
@@ -239,6 +425,7 @@ spec:
 
 const (
 	ComponentTypeLabel = "kuberlab.io/component-type"
+	ComponentNameLabel = "kuberlab.io/component"
 )
 
 type TaskResourceGenerator struct {
@@ -247,7 +434,6 @@ type TaskResourceGenerator struct {
 	c        *Config
 	task     Task
 	TaskResource
-	once           sync.Once
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
@@ -436,231 +622,6 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 	}
 }
 
-type UIXResourceGenerator struct {
-	c *Config
-	Uix
-	volumes        []v1.Volume
-	mounts         []v1.VolumeMount
-	InitContainers []InitContainers
-}
-
-func (ui UIXResourceGenerator) ProxyURL() string {
-	return fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/", ui.Workspace(), ui.AppName(), ui.Uix.Name)
-}
-
-func (ui UIXResourceGenerator) Name() string {
-	return ui.Uix.Name
-}
-func (ui UIXResourceGenerator) Limits() ResourceReqLim {
-	if ui.c.ClusterLimits != nil {
-		return *ui.c.ClusterLimits
-	}
-	if ui.Uix.Resource.Resources != nil {
-		return ui.Uix.Resources.Limits
-	}
-	return ResourceReqLim{}
-}
-
-func (ui UIXResourceGenerator) Replicas() int {
-	if ui.Resource.Replicas > 0 {
-		return ui.Resource.Replicas
-	}
-	return 1
-}
-func (ui UIXResourceGenerator) Env() []Env {
-	return baseEnv(ui.c, ui.Resource)
-}
-func (ui UIXResourceGenerator) Mounts() interface{} {
-	return map[string]interface{}{
-		"volumeMounts": ui.mounts,
-	}
-}
-func (ui UIXResourceGenerator) Volumes() interface{} {
-	return map[string]interface{}{
-		"volumes": ui.volumes,
-	}
-}
-func (ui UIXResourceGenerator) Namespace() string {
-	return ui.c.GetNamespace()
-}
-func (ui UIXResourceGenerator) AppName() string {
-	return ui.c.Name
-}
-func (ui UIXResourceGenerator) Workspace() string {
-	return ui.c.Workspace
-}
-func (ui UIXResourceGenerator) Labels() map[string]string {
-	labels := ui.c.ResourceLabels(map[string]string{"workspace": ui.AppName(),
-		"component":        ui.Uix.Name,
-		ComponentTypeLabel: "ui"})
-	return utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
-
-}
-
-func (ui UIXResourceGenerator) Args() string {
-	return ui.Resource.RawArgs
-}
-
-func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
-	resources := []*kubernetes.KubeResource{}
-	for _, uix := range c.Uix {
-		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.Volumes))
-		if err != nil {
-			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
-		}
-		initContainers, err := c.KubeInits(uix.VolumeMounts(c.Volumes), nil, nil)
-		if err != nil {
-			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
-		}
-		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
-		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
-		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
-		}
-
-		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
-		resources = append(resources, res)
-	}
-	return resources, nil
-}
-
-type ServingResourceGenerator struct {
-	UIXResourceGenerator
-	TaskName string
-	Build    string
-}
-
-func (serving ServingResourceGenerator) Limits() ResourceReqLim {
-	return serving.UIXResourceGenerator.Limits()
-}
-
-func (serving ServingResourceGenerator) Env() []Env {
-	envs := baseEnv(serving.c, serving.Resource)
-	envs = append(envs,
-		Env{
-			Name:  "BUILD_ID",
-			Value: serving.Build,
-		},
-		Env{
-			Name:  "TASK_ID",
-			Value: serving.TaskName,
-		},
-	)
-	return envs
-}
-func (serving ServingResourceGenerator) Labels() map[string]string {
-	labels := serving.UIXResourceGenerator.Labels()
-	labels["kuberlab.io/serving-id"] = serving.Name()
-	labels[ComponentTypeLabel] = "serving"
-	return labels
-}
-
-func (serving ServingResourceGenerator) Name() string {
-	return fmt.Sprintf("%v-%v-%v", serving.Uix.Name, serving.TaskName, serving.Build)
-}
-
-func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
-	resources := []*kubernetes.KubeResource{}
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
-	if err != nil {
-		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
-	}
-	initContainers, err := c.KubeInits(serving.VolumeMounts(c.Volumes), nil, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
-	}
-	g := ServingResourceGenerator{
-		TaskName: serving.TaskName,
-		Build:    serving.Build,
-		UIXResourceGenerator: UIXResourceGenerator{
-			c:              c,
-			Uix:            serving.Uix,
-			mounts:         mounts,
-			volumes:        volumes,
-			InitContainers: initContainers,
-		},
-	}
-	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.Name()+":resource", g)
-	if err != nil {
-		return nil, fmt.Errorf("Failed parse template '%s': %v", g.Name(), err)
-	}
-	res.Deps = []*kubernetes.KubeResource{generateServingService(g)}
-	resources = append(resources, res)
-	return resources, nil
-}
-
-func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResource {
-	labels := serv.Labels()
-	svc := &v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%v", serv.c.Name, serv.Name()),
-			Namespace: serv.Namespace(),
-			Labels:    labels,
-		},
-		Spec: v1.ServiceSpec{
-			Selector: labels,
-			Type:     v1.ServiceTypeClusterIP,
-		},
-	}
-
-	for _, p := range serv.Ports {
-		svc.Spec.Ports = append(
-			svc.Spec.Ports,
-			v1.ServicePort{
-				Name:       p.Name,
-				TargetPort: intstr.FromInt(int(p.TargetPort)),
-				Protocol:   v1.Protocol(p.Protocol),
-				Port:       p.Port,
-			},
-		)
-	}
-	groupKind := svc.GroupVersionKind()
-	return &kubernetes.KubeResource{
-		Name:   serv.Name() + ":service",
-		Object: svc,
-		Kind:   &groupKind,
-	}
-}
-func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
-	labels := ui.Labels()
-	svc := &v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      ui.c.Name + "-" + ui.Name(),
-			Namespace: ui.Namespace(),
-			Labels:    labels,
-		},
-		Spec: v1.ServiceSpec{
-			Selector: labels,
-			Type:     v1.ServiceTypeClusterIP,
-		},
-	}
-	for _, p := range ui.Ports {
-		svc.Spec.Ports = append(
-			svc.Spec.Ports,
-			v1.ServicePort{
-				Name:       p.Name,
-				TargetPort: intstr.FromInt(int(p.TargetPort)),
-				Protocol:   v1.Protocol(p.Protocol),
-				Port:       p.Port,
-			},
-		)
-	}
-	groupKind := svc.GroupVersionKind()
-	return &kubernetes.KubeResource{
-		Name:   ui.Name() + ":service",
-		Object: svc,
-		Kind:   &groupKind,
-	}
-}
-
 func baseEnv(c *Config, r Resource) []Env {
 	envs := make([]Env, 0, len(r.Env))
 	path := make([]string, 0)
@@ -720,9 +681,8 @@ func baseEnv(c *Config, r Resource) []Env {
 	}
 
 	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
-	envs = append(envs, Env{Name: "APP_NAME", Value: c.Name})
+	envs = append(envs, Env{Name: "PROJECT_NAME", Value: c.Name})
+	envs = append(envs, Env{Name: "PROJECT_ID", Value: c.ProjectID})
 	envs = append(envs, Env{Name: "WORKSPACE_ID", Value: c.WorkspaceID})
-	envs = append(envs, Env{Name: "APP_ID", Value: fmt.Sprintf("%v-%v", c.WorkspaceID, c.Name)})
-
 	return envs
 }
