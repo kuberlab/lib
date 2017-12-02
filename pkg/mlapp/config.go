@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"bytes"
 	"github.com/ghodss/yaml"
+	"github.com/kuberlab/lib/pkg/apputil"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +15,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"net/url"
+	"text/template"
 )
 
 const (
@@ -99,7 +102,13 @@ func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 	if r.UseDefaultVolumeMapping {
 		mounts := []VolumeMount{}
 		for _, v := range volumes {
-			mpath := r.DefaultMountPath + "/" + strings.TrimPrefix(v.MountPath, "/")
+			mpath := v.MountPath
+			if strings.HasPrefix(r.DefaultMountPath, "[") {
+				tmp := strings.TrimSuffix(strings.TrimPrefix(r.DefaultMountPath, "["), "]")
+				mpath = execTemplate(tmp, v.MountPath)
+			} else if r.DefaultMountPath != "" {
+				mpath = r.DefaultMountPath + "/" + strings.TrimPrefix(v.MountPath, "/")
+			}
 			mounts = append(mounts, VolumeMount{
 				Name: v.Name, ReadOnly: false, MountPath: mpath,
 			})
@@ -107,6 +116,20 @@ func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 		return mounts
 	}
 	return r.Volumes
+}
+func execTemplate(tmp, v string) string {
+	t := template.New("gotpl")
+	t = t.Funcs(apputil.FuncMap())
+	t, err := t.Parse(tmp)
+	if err != nil {
+		return v
+	}
+	buffer := bytes.NewBuffer(make([]byte, 0))
+
+	if err := t.ExecuteTemplate(buffer, "gotpl", map[string]string{"Value": v}); err != nil {
+		return v
+	}
+	return buffer.String()
 }
 func (r Resource) Image() string {
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
