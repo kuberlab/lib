@@ -168,7 +168,7 @@ type TaskResource struct {
 	Meta            `json:",inline"`
 	RestartPolicy   string `json:"restartPolicy"`
 	MaxRestartCount int    `json:"maxRestartCount"`
-	AllowFail       bool   `json:"allowFail"`
+	AllowFail       *bool  `json:"allowFail,omitempty"`
 	Port            int32  `json:"port,omitempty"`
 	DoneCondition   string `json:"doneCondition,omitempty"`
 	Resource        `json:",inline"`
@@ -187,7 +187,6 @@ type Env struct {
 type TaskResourceSpec struct {
 	PodsNumber    int
 	DoneCondition string
-	AllowFail     bool
 	TaskName      string
 	ResourceName  string
 	NodeAllocator string

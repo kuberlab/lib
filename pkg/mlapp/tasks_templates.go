@@ -189,6 +189,10 @@ func (c *Config) GenerateTaskResources(task Task, jobID string, gitRefs map[stri
 		if err != nil {
 			return nil, err
 		}
+		allowFail := true
+		if r.AllowFail != nil {
+			allowFail = *r.AllowFail
+		}
 		res.Object = &kubernetes.WorkerSet{
 			PodTemplate:  res.Object.(*v1.Pod),
 			ResourceName: r.Name,
@@ -196,7 +200,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string, gitRefs map[stri
 			ProjectName:  c.Name,
 			Namespace:    c.GetNamespace(),
 			JobID:        jobID,
-			AllowFail:    r.AllowFail,
+			AllowFail:    allowFail,
 			MaxRestarts:  r.MaxRestartCount,
 			Replicas:     int(r.Replicas),
 			Selector: c.ResourceSelector(map[string]string{
@@ -214,7 +218,6 @@ func (c *Config) GenerateTaskResources(task Task, jobID string, gitRefs map[stri
 			DoneCondition: r.DoneCondition,
 			TaskName:      task.Name,
 			ResourceName:  r.Name,
-			AllowFail:     r.AllowFail,
 			PodsNumber:    int(r.Replicas),
 			Resource:      res,
 			NodeAllocator: r.NodesLabel,
