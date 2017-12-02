@@ -270,7 +270,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			}
 			cmd := []string{}
 			repoName := getGitRepoName(v.GitRepo.Repository)
-			baseDir := fmt.Sprintf("/gitdata/%d",j)
+			baseDir := fmt.Sprintf("/gitdata/%d", j)
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
 			if v.GitRepo.AccountId == "" {
 				// If already cloned.
@@ -508,17 +508,25 @@ func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	}
 	return l1
 }
+
 func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
-	l1 := map[string]string{
-		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
-		KUBERLAB_PROJECT_ID:   c.ProjectID,
+	l1 := []map[string]string{{
+		KUBERLAB_WS_ID_LABEL: c.WorkspaceID,
+		KUBERLAB_PROJECT_ID:  c.ProjectID,
+	},
 	}
+	l1 = append(l1, l...)
+	return resourceSelector(l1...)
+}
+
+func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 	var labelSelector = make([]string, 0)
-	for k, v := range l1 {
-		labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))
+	for _, m := range l {
+		for k, v := range m {
+			labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))
+		}
 	}
 	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}
-
 }
 
 func (c Config) ToYaml() ([]byte, error) {
