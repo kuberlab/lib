@@ -12,12 +12,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"net/url"
 )
 
 const (
-	KUBERLAB_WS_LABEL    = "kuberlab.io/workspace"
-	KUBERLAB_WS_ID_LABEL = "kuberlab.io/workspace-id"
-	KUBERLAB_PROJECT_ID  = "kuberlab.io/project-id"
+	KUBERLAB_WS_LABEL     = "kuberlab.io/workspace"
+	KUBERLAB_WS_ID_LABEL  = "kuberlab.io/workspace-id"
+	KUBERLAB_PROJECT_ID   = "kuberlab.io/project-id"
+	KUBERLAB_PROJECT_NAME = "kuberlab.io/project"
+	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
 type Config struct {
@@ -26,17 +29,18 @@ type Config struct {
 	Spec        `json:"spec,omitempty"`
 	Workspace   string `json:"workspace,omitempty"`
 	WorkspaceID string `json:"workspace_id,omitempty"`
+	ProjectID   string `json:"project_id,omitempty"`
 }
 
 func NamespaceName(workspaceID, workspaceName string) string {
-	return workspaceID + "-" + strings.Replace(workspaceName, "_", "-", -1)
+	return utils.KubeNamespaceEncode(workspaceID + "-" + workspaceName)
 }
 
 func (c Config) GetNamespace() string {
-	return utils.KubeNamespaceEncode(NamespaceName(c.WorkspaceID, c.Workspace))
+	return NamespaceName(c.WorkspaceID, c.Workspace)
 }
 func (c Config) GetAppID() string {
-	return utils.KubeNamespaceEncode(c.WorkspaceID + "-" + c.Name)
+	return c.WorkspaceID + "-" + c.Name
 }
 
 func (c Config) GetAppName() string {
@@ -270,17 +274,6 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
 			if v.GitRepo.AccountId == "" {
 				// If already cloned.
-
-				//apnd := []string{
-				//	fmt.Sprintf("git clone --no-checkout %v %v/%v.tmp", v.GitRepo.Repository, repoDir, repoName),
-				//	fmt.Sprintf("rm -rf %v/.git", repoDir),
-				//	fmt.Sprintf("mv %v/%v.tmp/.git %v/", repoDir, repoName, repoDir),
-				//	fmt.Sprintf("rmdir %v/%v.tmp", repoDir, repoName),
-				//	fmt.Sprintf("cd %v", repoDir),
-				//	"git reset --hard HEAD",
-				//}
-				//cmd = append(cmd, apnd...)
-
 				cmd = append(cmd, fmt.Sprintf("cd %v", repoDir))
 			} else {
 				apnd := []string{
@@ -483,19 +476,19 @@ func LimitsOption(limits *ResourceReqLim) func(c *Config) (res *Config, err erro
 	}
 }
 
-func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config) (res *Config, err error) {
+func BuildOption(workspaceID, workspaceName, projectID, projectName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
 		res = c
 		res.Name = projectName
 		res.Workspace = workspaceName
 		res.WorkspaceID = workspaceID
+		res.ProjectID = projectID
 		if res.Labels == nil {
 			res.Labels = make(map[string]string)
 		}
 		utils.JoinMaps(res.Labels, c.ResourceLabels())
 		for i := range res.Uix {
-			res.Uix[i].FrontAPI = fmt.Sprintf("/api/v1/ml2-proxy/%s/%s/%s/",
-				workspaceName, projectName, res.Uix[i].Name)
+			res.Uix[i].FrontAPI = res.ProxyURL(res.Uix[i].Name)
 		}
 		return
 	}
@@ -503,9 +496,10 @@ func BuildOption(workspaceID, workspaceName, projectName string) func(c *Config)
 
 func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
-		KUBERLAB_WS_LABEL:    c.Workspace,
-		KUBERLAB_WS_ID_LABEL: c.WorkspaceID,
-		KUBERLAB_PROJECT_ID:  utils.KubeNamespaceEncode(c.Name),
+		KUBERLAB_WS_LABEL:     c.Workspace,
+		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
+		KUBERLAB_PROJECT_NAME: c.Name,
+		KUBERLAB_PROJECT_ID:   c.ProjectID,
 	}
 	for _, m := range l {
 		for k, v := range m {
@@ -526,4 +520,16 @@ func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
 
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
+}
+
+func (c Config) ProxyURL(path string) string {
+	return ProxyURL([]string{c.Workspace, c.Name, path})
+}
+
+func ProxyURL(path []string) string {
+	for i, p := range path {
+		path[i] = url.PathEscape(p)
+	}
+	return fmt.Sprintf("/api/v1/ml2-proxy/%s/",
+		strings.Join(path, "/"))
 }

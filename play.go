@@ -6,5 +6,5 @@ import (
 
 func main() {
 	c := &mlapp.Config{}
-	c.KubeInits(nil)
+	c.KubeInits(nil, nil, nil)
 }

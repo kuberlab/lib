@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -11,7 +12,7 @@ import (
 )
 
 type WorkerSet struct {
-	AppName      string
+	ProjectName  string
 	Namespace    string
 	TaskName     string
 	ResourceName string
@@ -20,6 +21,7 @@ type WorkerSet struct {
 	MaxRestarts  int
 	AllowFail    bool
 	PodTemplate  *v1.Pod
+	Selector     meta_v1.ListOptions
 }
 
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
@@ -27,12 +29,7 @@ func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 }
 
 func (ws *WorkerSet) LabelSelector() meta_v1.ListOptions {
-	return meta_v1.ListOptions{LabelSelector: fmt.Sprintf(
-		"kuberlab.io/job-id==%s,kuberlab.io/component==%s-%s",
-		ws.JobID,
-		utils.KubeNamespaceEncode(ws.TaskName),
-		utils.KubeNamespaceEncode(ws.ResourceName),
-	)}
+	return ws.Selector
 }
 
 func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
@@ -47,9 +44,9 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	if node != "" {
 		labels := make(map[string]string)
 		utils.JoinMaps(labels, p.Labels)
-		labels["kuberlab.io/ml-node"] = node
+		labels[types.KuberlabMLNodeLabel] = node
 		p.Labels = labels
-		p.Spec.NodeSelector = map[string]string{"kuberlab.io/ml-node": node}
+		p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: node}
 	}
 	for j, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))

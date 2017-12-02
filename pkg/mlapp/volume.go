@@ -3,6 +3,7 @@ package mlapp
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/client-go/pkg/api/v1"
 	"strings"
 )
@@ -66,7 +67,7 @@ func (v Volume) V1Volume() v1.Volume {
 	}
 	if v.PersistentStorage != nil {
 		r.PersistentVolumeClaim = &v1.PersistentVolumeClaimVolumeSource{
-			ClaimName: v.PersistentStorage.StorageName,
+			ClaimName: utils.KubeDeploymentEncode(v.PersistentStorage.StorageName),
 		}
 	}
 	if v.GitRepo != nil {
