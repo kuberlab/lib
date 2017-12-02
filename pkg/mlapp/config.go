@@ -253,7 +253,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 	if err != nil {
 		return nil, err
 	}
-	for _, m := range mounts {
+	for j, m := range mounts {
 		if _, ok := added[m.Name]; ok {
 			continue
 		}
@@ -270,7 +270,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			}
 			cmd := []string{}
 			repoName := getGitRepoName(v.GitRepo.Repository)
-			baseDir := "/gitdata"
+			baseDir := fmt.Sprintf("/gitdata/%d",j)
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
 			if v.GitRepo.AccountId == "" {
 				// If already cloned.
