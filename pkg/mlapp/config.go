@@ -509,7 +509,10 @@ func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	return l1
 }
 func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
-	l1 := c.ResourceLabels(l...)
+	l1 := map[string]string{
+		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
+		KUBERLAB_PROJECT_ID:   c.ProjectID,
+	}
 	var labelSelector = make([]string, 0)
 	for k, v := range l1 {
 		labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))

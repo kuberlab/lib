@@ -24,6 +24,7 @@ metadata:
     {{- end }}
 spec:
   replicas: {{ .Replicas }}
+  revisionHistoryLimit: 1
   template:
     metadata:
       labels:
