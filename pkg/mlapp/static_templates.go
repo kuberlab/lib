@@ -142,12 +142,10 @@ func (ui UIXResourceGenerator) ComponentName() string {
 }
 
 func (ui UIXResourceGenerator) Labels() map[string]string {
-	labels := ui.c.ResourceLabels(map[string]string{
+	return ui.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
 	})
-	return utils.JoinMaps(labels, ui.c.Labels, ui.Uix.Labels)
-
 }
 
 func (ui UIXResourceGenerator) Args() string {
@@ -198,12 +196,11 @@ func (serving ServingResourceGenerator) Env() []Env {
 	return envs
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
-	labels := serving.c.ResourceLabels(map[string]string{
+	return serving.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     serving.Uix.Name,
 		types.ComponentTypeLabel: "serving",
 		types.ServingIDLabel:     serving.Name(),
 	})
-	return utils.JoinMaps(labels, serving.c.Labels, serving.Uix.Labels)
 }
 
 func (serving ServingResourceGenerator) Name() string {

@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"net/url"
+	"regexp"
 	"text/template"
 )
 
@@ -26,6 +27,9 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
+var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][_a-z0-9]+[a-z0-9]$")
+var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][\\-a-z0-9]+[a-z0-9]$")
+
 type Config struct {
 	Kind        string `json:"kind"`
 	Meta        `json:"metadata"`
@@ -33,6 +37,39 @@ type Config struct {
 	Workspace   string `json:"workspace,omitempty"`
 	WorkspaceID string `json:"workspace_id,omitempty"`
 	ProjectID   string `json:"project_id,omitempty"`
+}
+
+func (c Config) ValidateConfig() error {
+	res := func(n, r string) error {
+		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), and alphanumerics between", r, n)
+	}
+	if !validNames.MatchString(c.Name) {
+		return res(c.Name, "project")
+	}
+	for _, u := range c.Uix {
+		if !validNames.MatchString(u.Name) {
+			return res(u.Name, "uix component")
+		}
+	}
+	for _, t := range c.Tasks {
+		if !validNames.MatchString(t.Name) {
+			return res(t.Name, "task")
+		}
+		for _, r := range t.Resources {
+			if !validNames.MatchString(r.Name) {
+				return res(r.Name, "task resource")
+			}
+		}
+	}
+	res = func(n, r string) error {
+		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an lower case alphanumeric character ([a-z0-9]) with dashes (-) and lower case alphanumerics between", r, n)
+	}
+	for _, v := range c.Volumes {
+		if !validVolumes.MatchString(v.Name) {
+			return res(v.Name, "volume")
+		}
+	}
+	return nil
 }
 
 func NamespaceName(workspaceID, workspaceName string) string {
@@ -154,7 +191,7 @@ func (uix *Uix) Type() string {
 }
 
 func (uix *Uix) GetName() string {
-	return utils.KubeDeploymentEncode(uix.Name)
+	return uix.Name
 }
 
 func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error) {
@@ -508,7 +545,6 @@ func BuildOption(workspaceID, workspaceName, projectID, projectName string) func
 		if res.Labels == nil {
 			res.Labels = make(map[string]string)
 		}
-		utils.JoinMaps(res.Labels, c.ResourceLabels())
 		for i := range res.Uix {
 			res.Uix[i].FrontAPI = res.ProxyURL(res.Uix[i].Name)
 		}
@@ -518,14 +554,14 @@ func BuildOption(workspaceID, workspaceName, projectID, projectName string) func
 
 func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
-		KUBERLAB_WS_LABEL:     c.Workspace,
+		KUBERLAB_WS_LABEL:     utils.KubeLabelEncode(c.Workspace),
 		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
-		KUBERLAB_PROJECT_NAME: c.Name,
+		KUBERLAB_PROJECT_NAME: utils.KubeLabelEncode(c.Name),
 		KUBERLAB_PROJECT_ID:   c.ProjectID,
 	}
 	for _, m := range l {
 		for k, v := range m {
-			l1[k] = v
+			l1[k] = utils.KubeLabelEncode(v)
 		}
 	}
 	return l1
@@ -545,7 +581,7 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 	var labelSelector = make([]string, 0)
 	for _, m := range l {
 		for k, v := range m {
-			labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, v))
+			labelSelector = append(labelSelector, fmt.Sprintf("%v=%v", k, utils.KubeLabelEncode(v)))
 		}
 	}
 	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}

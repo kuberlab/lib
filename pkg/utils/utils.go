@@ -13,8 +13,9 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-var charNotFitToKube = regexp.MustCompile("[^-a-z0-9]+")
-var charNotFitToEnv = regexp.MustCompile("[^_A-Za-z0-9]+")
+var charNotFitToKube = regexp.MustCompile("[^-a-z0-9]")
+var charNotFitToLabel = regexp.MustCompile("[^-a-zA-Z0-9_]")
+var charNotFitToEnv = regexp.MustCompile("[^_A-Z0-9]")
 
 func IntPtr(i int) *int {
 	return &i
@@ -43,7 +44,7 @@ func GetCallback() (string, error) {
 func JoinMaps(dest map[string]string, srcs ...map[string]string) map[string]string {
 	for _, src := range srcs {
 		for k, v := range src {
-			dest[k] = KubePodNameEncode(v)
+			dest[k] = v
 		}
 	}
 	return dest
@@ -82,7 +83,7 @@ func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func EnvConvert(v string) string {
 	res := strings.ToUpper(v)
 	res = strings.Replace(res, "-", "_", -1)
-	res = charNotFitToEnv.ReplaceAllString(res, "")
+	res = charNotFitToEnv.ReplaceAllString(res, "_")
 	return res
 }
 
@@ -93,30 +94,36 @@ func hash(s string) string {
 	return strconv.FormatUint(uint64(h.Sum32()), 16)
 }
 
-func KubeEncode(v string, lengthLimit int) string {
-	res := strings.ToLower(v)
-	res = strings.Replace(res, "_", "-", -1)
-	res = charNotFitToKube.ReplaceAllString(res, "")
+func KubeEncode(v string, lower bool, regexp *regexp.Regexp, lengthLimit int) string {
+	res := v
+	if lower {
+		res = strings.ToLower(res)
+	}
+	res = regexp.ReplaceAllString(res, "-")
 
 	h := hash(v)
-	hashLen := len(h) + 1
+	hlen := len(h) + 1
 
-	if len(res) < lengthLimit {
+	if len < lengthLimit {
 		return res
 	} else {
-		edge := lengthLimit - hashLen
+		edge := lengthLimit - hlen
 		return res[:edge] + "-" + h
 	}
 }
 
 func KubeNamespaceEncode(v string) string {
-	return KubeEncode(v, 63)
+	return KubeEncode(v, true, charNotFitToKube, 63)
 }
 
 func KubeDeploymentEncode(v string) string {
-	return KubeEncode(v, 120)
+	return KubeEncode(v, true, charNotFitToKube, 120)
 }
 
 func KubePodNameEncode(v string) string {
-	return KubeEncode(v, 253)
+	return KubeEncode(v, true, charNotFitToKube, 253)
+}
+
+func KubeLabelEncode(v string) string {
+	return KubeEncode(v, false, charNotFitToLabel, 63)
 }

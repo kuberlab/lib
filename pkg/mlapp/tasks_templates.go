@@ -146,13 +146,12 @@ func (t TaskResourceGenerator) Namespace() string {
 }
 
 func (t TaskResourceGenerator) Labels() map[string]string {
-	labels := t.c.ResourceLabels(map[string]string{
+	return t.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     t.task.Name + "-" + t.TaskResource.Name,
 		types.TASK_ID_LABEL:      t.JobID,
 		types.TASK_NAME_LABEL:    t.task.Name,
 		types.ComponentTypeLabel: "task",
 	})
-	return utils.JoinMaps(labels, t.c.Labels, t.task.Labels, t.TaskResource.Labels)
 }
 
 func (t TaskResourceGenerator) Args() string {
