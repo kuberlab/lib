@@ -27,8 +27,8 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
-var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][\\-a-z0-9]+[a-z0-9]$")
-var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][\\-a-z0-9]+[a-z0-9]$")
+var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]*[a-z0-9]$")
+var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]*[a-z0-9]$")
 
 type Config struct {
 	Kind        string `json:"kind"`
