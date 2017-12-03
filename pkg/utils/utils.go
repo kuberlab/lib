@@ -104,7 +104,7 @@ func KubeEncode(v string, lower bool, regexp *regexp.Regexp, lengthLimit int) st
 	h := hash(v)
 	hlen := len(h) + 1
 
-	if len < lengthLimit {
+	if len(res) < lengthLimit {
 		return res
 	} else {
 		edge := lengthLimit - hlen
