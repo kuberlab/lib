@@ -27,7 +27,7 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
-var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][_a-z0-9]+[a-z0-9]$")
+var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][\\-a-z0-9]+[a-z0-9]$")
 var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][\\-a-z0-9]+[a-z0-9]$")
 
 type Config struct {
@@ -41,7 +41,7 @@ type Config struct {
 
 func (c Config) ValidateConfig() error {
 	res := func(n, r string) error {
-		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), and alphanumerics between", r, n)
+		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an lower case alphanumeric character ([a-z0-9]) with dashes (-) and lower case alphanumerics between", r, n)
 	}
 	for _, u := range c.Uix {
 		if !validNames.MatchString(u.Name) {
