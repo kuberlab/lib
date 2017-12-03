@@ -43,9 +43,6 @@ func (c Config) ValidateConfig() error {
 	res := func(n, r string) error {
 		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an alphanumeric character ([a-z0-9A-Z]) with dashes (-), underscores (_), and alphanumerics between", r, n)
 	}
-	if !validNames.MatchString(c.Name) {
-		return res(c.Name, "project")
-	}
 	for _, u := range c.Uix {
 		if !validNames.MatchString(u.Name) {
 			return res(u.Name, "uix component")
