@@ -117,7 +117,7 @@ func KubeNamespaceEncode(v string) string {
 }
 
 func KubeDeploymentEncode(v string) string {
-	return KubeEncode(v, true, charNotFitToKube, 120)
+	return KubeEncode(v, true, charNotFitToKube, 63)
 }
 
 func KubePodNameEncode(v string) string {
