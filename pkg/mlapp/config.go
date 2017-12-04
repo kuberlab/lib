@@ -305,7 +305,7 @@ type InitContainers struct {
 func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
 	inits := []InitContainers{}
 	added := map[string]bool{}
-	_, vmounts, err := getSecretVolumes(c.Secrets)
+	_, vmounts, err := c.getSecretVolumes(c.Secrets)
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +427,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		})
 	}
 	if len(c.Secrets) > 0 {
-		vol, vom, err := getSecretVolumes(c.Secrets)
+		vol, vom, err := c.getSecretVolumes(c.Secrets)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -441,7 +441,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 	return kVolumes, kVolumesMount, nil
 }
 
-func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
+func (c *Config) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 	kvolumes := make([]v1.Volume, 0)
 	kvolumesMount := make([]v1.VolumeMount, 0)
 	for _, s := range secrets {
@@ -461,7 +461,7 @@ func getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 				Name: s.Name,
 				VolumeSource: v1.VolumeSource{
 					Secret: &v1.SecretVolumeSource{
-						SecretName: s.Name,
+						SecretName: c.GetSecretName(s),
 						Items:      items,
 					},
 				},
@@ -547,6 +547,10 @@ func BuildOption(workspaceID, workspaceName, projectID, projectName string) func
 		}
 		return
 	}
+}
+
+func (c *Config) GetSecretName(secret Secret) string {
+	return utils.KubeLabelEncode(c.Name + "-" + secret.Name)
 }
 
 func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
