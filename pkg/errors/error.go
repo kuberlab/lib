@@ -10,8 +10,9 @@ const (
 )
 
 type Error struct {
-	Status  int    `json:"status"`
-	Message string `json:"message,omitempty"`
+	Status     int    `json:"status"`
+	Message    string `json:"message,omitempty"`
+	dbNotFound bool
 }
 
 func (e *Error) Error() string {
@@ -45,7 +46,11 @@ func Smart(args ...interface{}) error {
 			if errSet {
 				continue
 			}
-			if !statusSet {
+			if a.dbNotFound {
+				err.Status = http.StatusNotFound
+				err.dbNotFound = true
+				statusSet = true
+			} else if !statusSet {
 				err.Status = a.Status
 			}
 			if !messageSet {
@@ -58,6 +63,7 @@ func Smart(args ...interface{}) error {
 			}
 			if a == gorm.ErrRecordNotFound {
 				err.Status = http.StatusNotFound
+				err.dbNotFound = true
 				if !messageSet {
 					err.Message = a.Error()
 				}

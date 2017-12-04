@@ -87,6 +87,18 @@ func TestErrorSmart(t *testing.T) {
 	err10e := err10.(*Error)
 	isEqual(http.StatusBadGateway, err10e.HttpStatus(), t)
 
+	errDbNotFound := &Error{Message: "db not found", Status: http.StatusNotFound, dbNotFound: true}
+
+	err11 := Smart(http.StatusBadRequest, errDbNotFound)
+	isEqual(errDbNotFound.Error(), err11.Error(), t)
+	err11e := err11.(*Error)
+	isEqual(http.StatusNotFound, err11e.HttpStatus(), t)
+
+	err12 := Smart(errDbNotFound, http.StatusBadRequest)
+	isEqual(errDbNotFound.Error(), err12.Error(), t)
+	err12e := err12.(*Error)
+	isEqual(http.StatusNotFound, err12e.HttpStatus(), t)
+
 }
 
 func isEqual(want, got interface{}, t *testing.T) {
