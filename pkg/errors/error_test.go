@@ -99,6 +99,22 @@ func TestErrorSmart(t *testing.T) {
 	err12e := err12.(*Error)
 	isEqual(http.StatusNotFound, err12e.HttpStatus(), t)
 
+	errWithReason := NewStatusReason(http.StatusBadRequest, "our err", "ext err")
+
+	err13 := Smart(http.StatusBadGateway, errWithReason)
+	isEqual("our err", err13.Error(), t)
+	err13e := err13.(*Error)
+	isEqual(http.StatusBadGateway, err13e.HttpStatus(), t)
+	isEqual("ext err", string(err13e.Reason), t)
+
+	err14 := Smart(Reason("another reason"), errWithReason)
+	err14e := err14.(*Error)
+	isEqual("another reason", string(err14e.Reason), t)
+
+	err15 := Smart(errWithReason, Reason("another reason"))
+	err15e := err15.(*Error)
+	isEqual("ext err", string(err15e.Reason), t)
+
 }
 
 func isEqual(want, got interface{}, t *testing.T) {
