@@ -12,9 +12,9 @@ const (
 type errorReason string
 
 type Error struct {
-	Status     int    `json:"status"`
-	Message    string `json:"message,omitempty"`
-	Reason     errorReason
+	Status     int         `json:"status"`
+	Message    string      `json:"message,omitempty"`
+	Reason     errorReason `json:"reason,omitempty"`
 	dbNotFound bool
 }
 
