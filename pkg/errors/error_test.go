@@ -120,13 +120,13 @@ func TestErrorSmart(t *testing.T) {
 
 func TestErrorPrefix(t *testing.T) {
 
-	err1 := AddPrefix(NewStatusReason(http.StatusBadRequest, "error", "reason"), "prefix: ")
+	err1 := AddPrefix("prefix: ", NewStatusReason(http.StatusBadRequest, "error", "reason"))
 	isEqual("prefix: error", err1.Error(), t)
 	err1e := err1.(*Error)
 	isEqual(http.StatusBadRequest, err1e.HttpStatus(), t)
 	isEqual("reason", string(err1e.Reason), t)
 
-	err2 := AddPrefix(errors.New("std error"), "new prefix: ")
+	err2 := AddPrefix("new prefix: ", errors.New("std error"))
 	isEqual("new prefix: std error", err2.Error(), t)
 
 }
