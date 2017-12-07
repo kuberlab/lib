@@ -112,3 +112,13 @@ func Smart(args ...interface{}) error {
 	}
 	return err
 }
+
+func AddPrefix(err error, prefix string) error {
+	switch e := err.(type) {
+	case *Error:
+		e.Message = prefix + e.Message
+		return e
+	default:
+		return New(prefix + e.Error())
+	}
+}

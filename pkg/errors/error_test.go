@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"reflect"
@@ -114,6 +115,19 @@ func TestErrorSmart(t *testing.T) {
 	err15 := Smart(errWithReason, Reason("another reason"))
 	err15e := err15.(*Error)
 	isEqual("ext err", string(err15e.Reason), t)
+
+}
+
+func TestErrorPrefix(t *testing.T) {
+
+	err1 := AddPrefix(NewStatusReason(http.StatusBadRequest, "error", "reason"), "prefix: ")
+	isEqual("prefix: error", err1.Error(), t)
+	err1e := err1.(*Error)
+	isEqual(http.StatusBadRequest, err1e.HttpStatus(), t)
+	isEqual("reason", string(err1e.Reason), t)
+
+	err2 := AddPrefix(errors.New("std error"), "new prefix: ")
+	isEqual("new prefix: std error", err2.Error(), t)
 
 }
 
