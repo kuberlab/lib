@@ -8,12 +8,14 @@ import (
 	"bytes"
 	"github.com/ghodss/yaml"
 	"github.com/kuberlab/lib/pkg/apputil"
+	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	"net/http"
 	"net/url"
 	"regexp"
 	"text/template"
@@ -27,8 +29,8 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
-var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]*[a-z0-9]$")
-var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]*[a-z0-9]$")
+var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
+var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 type Config struct {
 	Kind        string `json:"kind"`
@@ -40,30 +42,42 @@ type Config struct {
 }
 
 func (c Config) ValidateConfig() error {
-	res := func(n, r string) error {
-		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an lower case alphanumeric character ([a-z0-9]) with dashes (-) and lower case alphanumerics between", r, n)
+	resNameErr := func(n, r string) error {
+		return errors.NewStatusReason(
+			http.StatusBadRequest,
+			fmt.Sprintf("Invalid %s name: '%s'. ", r, n),
+			"Valid name must be 63 characters or less "+
+				"and must begin and end with an lower case alphanumeric character ([a-z0-9]) "+
+				"with dashes (-) and lower case alphanumerics between",
+		)
 	}
 	for _, u := range c.Uix {
 		if !validNames.MatchString(u.Name) {
-			return res(u.Name, "uix component")
+			return resNameErr(u.Name, "uix component")
 		}
 	}
 	for _, t := range c.Tasks {
 		if !validNames.MatchString(t.Name) {
-			return res(t.Name, "task")
+			return resNameErr(t.Name, "task")
 		}
 		for _, r := range t.Resources {
 			if !validNames.MatchString(r.Name) {
-				return res(r.Name, "task resource")
+				return resNameErr(r.Name, "task resource")
 			}
 		}
 	}
-	res = func(n, r string) error {
-		return fmt.Errorf("Invalid %s name: '%s'. Valid name must be 63 characters or less and must begin and end with an lower case alphanumeric character ([a-z0-9]) with dashes (-) and lower case alphanumerics between", r, n)
+	resVolumeErr := func(n string) error {
+		return errors.NewStatusReason(
+			http.StatusBadRequest,
+			fmt.Sprintf("Invalid volume name: '%s'. ", n),
+			"Valid name must be 63 characters or less "+
+				"and must begin and end with an lower case alphanumeric character ([a-z0-9]) "+
+				"with dashes (-) and lower case alphanumerics between",
+		)
 	}
 	for _, v := range c.Volumes {
 		if !validVolumes.MatchString(v.Name) {
-			return res(v.Name, "volume")
+			return resVolumeErr(v.Name)
 		}
 	}
 	return nil
