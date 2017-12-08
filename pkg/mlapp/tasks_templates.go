@@ -159,7 +159,7 @@ func (t TaskResourceGenerator) Args() string {
 	return t.RawArgs
 }
 
-func (c *Config) GenerateTaskResources(task Task, jobID string, gitRefs map[string]string) ([]TaskResourceSpec, error) {
+func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
 	for _, r := range task.Resources {
 		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.Volumes))
@@ -167,9 +167,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string, gitRefs map[stri
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
 
-		if gitRefs != nil {
-			c.setGitRefs(volumes, gitRefs)
-		}
+		c.setGitRefs(volumes, r)
 
 		initContainers, err := c.KubeInits(r.VolumeMounts(c.Volumes), &task.Name, &jobID)
 		if err != nil {

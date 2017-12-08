@@ -157,8 +157,14 @@ func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 			} else if r.DefaultMountPath != "" {
 				mpath = r.DefaultMountPath + "/" + strings.TrimPrefix(v.MountPath, "/")
 			}
+
+			var rev *string = nil
+			if v.GitRepo != nil {
+				rev = &v.GitRepo.Revision
+			}
+
 			mounts = append(mounts, VolumeMount{
-				Name: v.Name, ReadOnly: false, MountPath: mpath,
+				Name: v.Name, ReadOnly: false, MountPath: mpath, GitRevision: rev,
 			})
 		}
 		return mounts

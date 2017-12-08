@@ -4,16 +4,19 @@ import (
 	"k8s.io/client-go/pkg/api/v1"
 )
 
-func (c *Config) setGitRefs(volumes []v1.Volume, gitRefs map[string]string) {
-	for source, ref := range gitRefs {
-		fromConfig := c.VolumeByName(source)
-		if fromConfig == nil {
-			continue
-		}
+func (c *Config) setGitRefs(volumes []v1.Volume, taskRes TaskResource) {
+	setRevision := func(vName string, rev string) {
+		fromConfig := c.VolumeByName(vName)
 		for i, v := range volumes {
 			if v.Name == fromConfig.CommonID() && v.GitRepo != nil {
-				volumes[i].GitRepo.Revision = ref
+				volumes[i].GitRepo.Revision = rev
 			}
+		}
+	}
+
+	for _, tv := range taskRes.Volumes {
+		if tv.GitRevision != nil {
+			setRevision(tv.Name, *tv.GitRevision)
 		}
 	}
 }
