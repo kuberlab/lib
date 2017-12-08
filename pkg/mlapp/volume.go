@@ -13,7 +13,7 @@ type VolumeMount struct {
 	MountPath   string  `json:"mountPath"`
 	ReadOnly    bool    `json:"readOnly,omitempty"`
 	SubPath     string  `json:"subPath"`
-	GitRevision *string `json:"gitRevision"`
+	GitRevision *string `json:"gitRevision,omitempty"`
 }
 type Volume struct {
 	// as in v1.Volume
