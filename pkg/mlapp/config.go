@@ -230,6 +230,7 @@ type Port struct {
 
 type Task struct {
 	Meta           `json:",inline"`
+	ParentTask     string         `json:"parentTask,omitempty"`
 	Version        string         `json:"version,omitempty"`
 	TimeoutMinutes uint           `json:"timeoutMinutes,omitempty"`
 	Resources      []TaskResource `json:"resources"`

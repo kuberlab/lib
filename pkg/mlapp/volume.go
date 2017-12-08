@@ -9,10 +9,11 @@ import (
 )
 
 type VolumeMount struct {
-	Name      string `json:"name"`
-	MountPath string `json:"mountPath"`
-	ReadOnly  bool   `json:"readOnly,omitempty"`
-	SubPath   string `json:"subPath"`
+	Name        string  `json:"name"`
+	MountPath   string  `json:"mountPath"`
+	ReadOnly    bool    `json:"readOnly,omitempty"`
+	SubPath     string  `json:"subPath"`
+	GitRevision *string `json:"gitRevision"`
 }
 type Volume struct {
 	// as in v1.Volume
