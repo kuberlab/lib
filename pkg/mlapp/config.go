@@ -33,7 +33,8 @@ var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z
 var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 type Config struct {
-	Kind        string `json:"kind"`
+	Kind        string  `json:"kind"`
+	Parent      *string `json:"parent,omitempty"`
 	Meta        `json:"metadata"`
 	Spec        `json:"spec,omitempty"`
 	Workspace   string `json:"workspace,omitempty"`
