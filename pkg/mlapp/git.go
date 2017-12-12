@@ -7,6 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
@@ -174,4 +175,20 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 		res[c.VolumeByID(id).Name] = rev
 	}
 	return res, nil
+}
+
+func (c *Config) InjectGitRevisions(client *kubernetes.Clientset, task *Task) error {
+	refs, err := c.DetermineGitSourceRevisions(client, *task)
+	if err != nil {
+		return err
+	}
+
+	for i, r := range task.Resources {
+		for iv, v := range r.Volumes {
+			if _, ok := refs[v.Name]; ok {
+				task.Resources[i].Volumes[iv].GitRevision = utils.StrPtr(refs[v.Name])
+			}
+		}
+	}
+	return nil
 }
