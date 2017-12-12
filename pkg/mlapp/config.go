@@ -172,6 +172,17 @@ func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 	}
 	return r.Volumes
 }
+
+func (r Resource) VolumeMountByName(name string) *VolumeMount {
+	for _, vm := range r.Volumes {
+		if vm.Name == name {
+			vv := vm
+			return &vv
+		}
+	}
+	return nil
+}
+
 func execTemplate(tmp, v string) string {
 	t := template.New("gotpl")
 	t = t.Funcs(apputil.FuncMap())
@@ -300,6 +311,16 @@ func (c *Config) VolumeByName(name string) *Volume {
 	return nil
 }
 
+func (c *Config) VolumeByID(commonID string) *Volume {
+	for _, v := range c.Volumes {
+		if v.CommonID() == commonID {
+			res := v
+			return &res
+		}
+	}
+	return nil
+}
+
 func (c *Config) LibVolume() (*v1.Volume, *v1.VolumeMount) {
 	for _, v := range c.Volumes {
 		if v.IsLibDir {
@@ -341,7 +362,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
-		if v.GitRepo != nil /* && v.GitRepo.AccountId != "" */ {
+		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
 			// Skip for UIX and already cloned repos.
 			if v.GitRepo.AccountId == "" && taskName == nil && build == nil {
 				return []InitContainers{}, nil
@@ -369,14 +390,14 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			cmd = append(cmd, "git config --local user.email robot@kuberlab.com")
 
 			cmdStr := strings.Join(cmd, " && ")
-			var submitRef = ""
-			if taskName != nil && build != nil {
-				submitRef = fmt.Sprintf(
-					`; curl http://mlboard-v2.kuberlab:8082/api/v2/submit/%s/%s/%s -H "X-Source: %s" -H "X-Ref: $(git rev-parse HEAD)"`,
-					c.GetAppID(), *taskName, *build, v.Name,
-				)
-				cmdStr += submitRef
-			}
+			//var submitRef = ""
+			//if taskName != nil && build != nil {
+			//	submitRef = fmt.Sprintf(
+			//		`; curl http://mlboard-v2.kuberlab:8082/api/v2/submit/%s/%s/%s -H "X-Source: %s" -H "X-Ref: $(git rev-parse HEAD)"`,
+			//		c.GetAppID(), *taskName, *build, v.Name,
+			//	)
+			//	cmdStr += submitRef
+			//}
 
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      id,

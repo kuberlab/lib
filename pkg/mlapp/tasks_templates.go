@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kuberlab/lib/pkg/kubernetes"
+	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -182,7 +182,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			JobID:          jobID,
 			InitContainers: initContainers,
 		}
-		res, err := kubernetes.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
+		res, err := kuberlab.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +190,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if r.AllowFail != nil {
 			allowFail = *r.AllowFail
 		}
-		res.Object = &kubernetes.WorkerSet{
+		res.Object = &kuberlab.WorkerSet{
 			PodTemplate:  res.Object.(*v1.Pod),
 			ResourceName: r.Name,
 			TaskName:     task.Name,
@@ -209,7 +209,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
 		}
 		if g.Port > 0 {
-			res.Deps = []*kubernetes.KubeResource{generateHeadlessService(g)}
+			res.Deps = []*kuberlab.KubeResource{generateHeadlessService(g)}
 		}
 		taskSpec = append(taskSpec, TaskResourceSpec{
 			DoneCondition: r.DoneCondition,
@@ -223,7 +223,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 	return taskSpec, nil
 }
 
-func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
+func generateHeadlessService(g TaskResourceGenerator) *kuberlab.KubeResource {
 	labels := g.Labels()
 	utils.JoinMaps(labels, g.c.Labels)
 	svc := &v1.Service{
@@ -250,7 +250,7 @@ func generateHeadlessService(g TaskResourceGenerator) *kubernetes.KubeResource {
 		},
 	}
 	groupKind := svc.GroupVersionKind()
-	return &kubernetes.KubeResource{
+	return &kuberlab.KubeResource{
 		Name:   g.BuildName() + ":service",
 		Object: svc,
 		Kind:   &groupKind,
