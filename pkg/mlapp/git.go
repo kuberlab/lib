@@ -9,7 +9,9 @@ func (c *Config) setGitRefs(volumes []v1.Volume, taskRes TaskResource) {
 		fromConfig := c.VolumeByName(vName)
 		for i, v := range volumes {
 			if v.Name == fromConfig.CommonID() && v.GitRepo != nil {
-				volumes[i].GitRepo.Revision = rev
+				if v.GitRepo.Revision == "" {
+					volumes[i].GitRepo.Revision = rev
+				}
 			}
 		}
 	}
