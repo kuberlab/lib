@@ -68,7 +68,7 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 				}
 
 				resVolumeMount := r.VolumeMountByName(c.VolumeByID(v.Name).Name)
-				if resVolumeMount.GitRevision != nil {
+				if resVolumeMount!=nil && resVolumeMount.GitRevision != nil {
 					gitRepos[v.Name].Revision = *resVolumeMount.GitRevision
 					res[resVolumeMount.Name] = *resVolumeMount.GitRevision
 				} else {
