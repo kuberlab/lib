@@ -52,7 +52,7 @@ func GetPodSpec(name string, namespace string, image string, kubeVolume []v1.Vol
 	return pod, nil
 }
 
-func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) error {
+func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) (bool, error) {
 	timeout := time.NewTimer(time.Minute)
 	ticker := time.NewTicker(time.Millisecond * 100)
 
@@ -63,14 +63,17 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) error {
 		case <-ticker.C:
 			p, err := client.Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
 			if err != nil {
-				return err
+				return false, err
 			}
 			if p.Status.Phase == v1.PodRunning {
-				return nil
+				return false, nil
+			}
+			if p.Status.Phase == v1.PodSucceeded || p.Status.Phase == v1.PodFailed {
+				return true, nil
 			}
 		case <-timeout.C:
 			client.Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
-			return fmt.Errorf("Pod %v is not running.", pod.Name)
+			return false, fmt.Errorf("Pod %v is not running.", pod.Name)
 		}
 	}
 }
