@@ -173,16 +173,6 @@ func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 	return r.Volumes
 }
 
-func (r Resource) VolumeMountByName(name string) *VolumeMount {
-	for _, vm := range r.Volumes {
-		if vm.Name == name {
-			vv := vm
-			return &vv
-		}
-	}
-	return nil
-}
-
 func execTemplate(tmp, v string) string {
 	t := template.New("gotpl")
 	t = t.Funcs(apputil.FuncMap())

@@ -49,8 +49,20 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 
 	volumesMap := make(map[string]v1.Volume)
 	volumeMountsMap := make(map[string]v1.VolumeMount)
+
+	volumeMountByName := func(mounts []VolumeMount, name string) *VolumeMount {
+		for _, m := range mounts {
+			if m.Name == name {
+				vm := m
+				return &vm
+			}
+		}
+		return nil
+	}
+
 	for _, r := range task.Resources {
-		vs, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.Volumes))
+		rawMounts := r.VolumeMounts(c.Volumes)
+		vs, mounts, err := c.KubeVolumesSpec(rawMounts)
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
@@ -67,8 +79,8 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 					URL: v.GitRepo.Repository,
 				}
 
-				resVolumeMount := r.VolumeMountByName(c.VolumeByID(v.Name).Name)
-				if resVolumeMount!=nil && resVolumeMount.GitRevision != nil {
+				resVolumeMount := volumeMountByName(rawMounts, c.VolumeByID(v.Name).Name)
+				if resVolumeMount != nil && resVolumeMount.GitRevision != nil {
 					gitRepos[v.Name].Revision = *resVolumeMount.GitRevision
 					res[resVolumeMount.Name] = *resVolumeMount.GitRevision
 				} else {
@@ -182,6 +194,7 @@ func (c *Config) InjectGitRevisions(client *kubernetes.Clientset, task *Task) er
 	if err != nil {
 		return err
 	}
+	logrus.Infof("Revisions: %v", refs)
 
 	for i, r := range task.Resources {
 		for iv, v := range r.Volumes {
