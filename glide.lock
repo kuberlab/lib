@@ -1,5 +1,5 @@
-hash: 11777a5b8a2506efc80cf899db55edcb47f1ba437ec0b9db4d3a7234342b133d
-updated: 2017-12-15T14:01:06.837720489+03:00
+hash: 5ef6f413c596b31ee297cf6fe5df412bad8538ec2b290c53c7cc5515e6116489
+updated: 2017-12-15T15:12:26.685229064+03:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -105,13 +105,10 @@ imports:
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
-  - html
-  - html/atom
   - http2
   - http2/hpack
   - idna
   - lex/httplex
-  - websocket
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
@@ -148,7 +145,6 @@ imports:
   - certificates/v1beta1
   - core/v1
   - extensions/v1beta1
-  - imagepolicy/v1alpha1
   - networking/v1
   - policy/v1beta1
   - rbac/v1
