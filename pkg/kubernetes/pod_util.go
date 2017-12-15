@@ -20,7 +20,7 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-  - name: git-revs
+  - name: {{ .Container }}
     resources:
       requests:
         cpu: "100m"
@@ -29,10 +29,12 @@ spec:
 `
 
 func GetPodSpec(name string, namespace string, image string, kubeVolume []v1.Volume, containerVolume []v1.VolumeMount, cmd, args []string) (*v1.Pod, error) {
+	container := name
 	name = strings.ToLower(fmt.Sprintf("%v-%v", name, uuid.New()))
 	vars := map[string]interface{}{
 		"Image":     image,
 		"Name":      name,
+		"Container": container,
 		"Namespace": namespace,
 	}
 	data, err := GetTemplate(PodTpl, vars)
