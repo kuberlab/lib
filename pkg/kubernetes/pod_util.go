@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/pborman/uuid"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 var PodTpl string = `
@@ -46,6 +46,7 @@ func GetPodSpec(name string, namespace string, image string, kubeVolume []v1.Vol
 		return nil, err
 	}
 	pod := o.Object.(*v1.Pod)
+	pod.DeepCopyObject()
 	pod.Spec.Volumes = kubeVolume
 	pod.Spec.Containers[0].VolumeMounts = containerVolume
 	pod.Spec.Containers[0].Command = cmd
@@ -63,7 +64,7 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) (bool, error) {
 	for {
 		select {
 		case <-ticker.C:
-			p, err := client.Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
+			p, err := client.CoreV1().Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -74,7 +75,7 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) (bool, error) {
 				return true, nil
 			}
 		case <-timeout.C:
-			client.Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
+			client.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
 			return false, fmt.Errorf("Pod %v is not running.", pod.Name)
 		}
 	}
@@ -89,7 +90,7 @@ func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset) error {
 	for {
 		select {
 		case <-ticker.C:
-			p, err := client.Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
+			p, err := client.CoreV1().Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -97,7 +98,7 @@ func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset) error {
 				return nil
 			}
 		case <-timeout.C:
-			client.Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
+			client.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
 			return fmt.Errorf("Pod %v is still running. Killing pod", pod.Name)
 		}
 	}

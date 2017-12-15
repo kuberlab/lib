@@ -8,9 +8,9 @@ import (
 	"github.com/Sirupsen/logrus"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 func (c *Config) setGitRefs(volumes []v1.Volume, taskRes TaskResource) {
@@ -148,11 +148,11 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 	}
 	pod.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
 
-	pod, err = client.Pods(c.GetNamespace()).Create(pod)
+	pod, err = client.CoreV1().Pods(c.GetNamespace()).Create(pod)
 	if err != nil {
 		return nil, err
 	}
-	defer client.Pods(c.GetNamespace()).Delete(pod.Name, &meta_v1.DeleteOptions{})
+	defer client.CoreV1().Pods(c.GetNamespace()).Delete(pod.Name, &meta_v1.DeleteOptions{})
 
 	//if err = kuberlab.WaitPod(pod, client); err != nil {
 	//	return nil, err
@@ -161,7 +161,7 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 		return nil, err
 	}
 
-	logsRaw, err := client.Pods(pod.Namespace).GetLogs(
+	logsRaw, err := client.CoreV1().Pods(pod.Namespace).GetLogs(
 		pod.Name,
 		&v1.PodLogOptions{
 			Follow: true,

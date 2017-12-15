@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	"regexp"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/utils"
+	api_v1 "k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
-	api_v1 "k8s.io/client-go/pkg/api/v1"
-	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"regexp"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type ComponentState struct {
@@ -41,7 +42,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 		namespace = v.Namespace
 		name = v.Name
 	case *extv1beta1.Deployment:
-		ps, err := client.Pods(v.Namespace).List(labelSelector(v.Spec.Template.Labels))
+		ps, err := client.CoreV1().Pods(v.Namespace).List(labelSelector(v.Spec.Template.Labels))
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +52,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	case []*WorkerSet:
 		for _, wset := range v {
 			logrus.Debugf("Using labelselector = %v", labelSelector(wset.PodTemplate.Labels).LabelSelector)
-			ps, err := client.Pods(wset.Namespace).List(labelSelector(wset.PodTemplate.Labels))
+			ps, err := client.CoreV1().Pods(wset.Namespace).List(labelSelector(wset.PodTemplate.Labels))
 			if err != nil {
 				return nil, err
 			}
@@ -71,7 +72,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 			Events:    []api_v1.Event{},
 			Resources: sumResourceRequests(pod),
 		}
-		events, err := client.Events(namespace).Search(api.Scheme, &pod)
+		events, err := client.CoreV1().Events(namespace).Search(scheme.Scheme, &pod)
 		if err != nil {
 			return nil, err
 		}

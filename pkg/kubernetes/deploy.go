@@ -9,17 +9,17 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/apputil"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	batch_v1 "k8s.io/api/batch/v1"
+	api_v1 "k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	rbacv1beta1 "k8s.io/api/rbac/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
-	api_v1 "k8s.io/client-go/pkg/api/v1"
-	appsv1beta1 "k8s.io/client-go/pkg/apis/apps/v1beta1"
-	batch_v1 "k8s.io/client-go/pkg/apis/batch/v1"
-	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	policyv1beta1 "k8s.io/client-go/pkg/apis/policy/v1beta1"
-	rbacv1beta1 "k8s.io/client-go/pkg/apis/rbac/v1beta1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type KubeResource struct {
@@ -46,19 +46,20 @@ func GetTemplate(tpl string, vars interface{}) (string, error) {
 }
 
 func GetKubeResource(name string, data string, tranform func(runtime.Object) error) (*KubeResource, error) {
-	if err := batch_v1.AddToScheme(api.Scheme); err != nil {
+	if err := batch_v1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
-	if err := extv1beta1.AddToScheme(api.Scheme); err != nil {
+	if err := extv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
-	if err := api_v1.AddToScheme(api.Scheme); err != nil {
+	if err := api_v1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
-	if err := rbacv1beta1.AddToScheme(api.Scheme); err != nil {
+	if err := rbacv1beta1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
-	d := api.Codecs.UniversalDeserializer()
+
+	d := scheme.Codecs.UniversalDeserializer()
 	o, i, err := d.Decode([]byte(data), nil, nil)
 	if err != nil {
 		logrus.Infoln("**************")
@@ -109,10 +110,10 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 	logrus.Infof("Apply %v, %v", resource.Name, resource.Kind)
 	switch v := resource.Object.(type) {
 	case *api_v1.Namespace:
-		if _, err := kubeClient.Namespaces().Get(v.Name, meta_v1.GetOptions{}); err == nil {
+		if _, err := kubeClient.CoreV1().Namespaces().Get(v.Name, meta_v1.GetOptions{}); err == nil {
 			return nil
 		} else {
-			_, err := kubeClient.Namespaces().Create(v)
+			_, err := kubeClient.CoreV1().Namespaces().Create(v)
 			return err
 		}
 	case *batch_v1.Job:
@@ -131,49 +132,49 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return nil
 		}
 	case *api_v1.ReplicationController:
-		if _, err := kubeClient.ReplicationControllers(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.ReplicationControllers(v.Namespace).Create(v)
+		if _, err := kubeClient.CoreV1().ReplicationControllers(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().ReplicationControllers(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.ReplicationControllers(v.Namespace).Update(v)
+			_, err := kubeClient.CoreV1().ReplicationControllers(v.Namespace).Update(v)
 			return err
 		}
 	case *appsv1beta1.StatefulSet:
-		if _, err := kubeClient.StatefulSets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.StatefulSets(v.Namespace).Create(v)
+		if _, err := kubeClient.AppsV1beta1().StatefulSets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.AppsV1beta1().StatefulSets(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.StatefulSets(v.Namespace).Update(v)
+			_, err := kubeClient.AppsV1beta1().StatefulSets(v.Namespace).Update(v)
 			return err
 		}
 	case *api_v1.ConfigMap:
-		if _, err := kubeClient.ConfigMaps(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.ConfigMaps(v.Namespace).Create(v)
+		if _, err := kubeClient.CoreV1().ConfigMaps(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().ConfigMaps(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.ConfigMaps(v.Namespace).Update(v)
+			_, err := kubeClient.CoreV1().ConfigMaps(v.Namespace).Update(v)
 			return err
 		}
 	case *policyv1beta1.PodDisruptionBudget:
-		if _, err := kubeClient.PodDisruptionBudgets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.PodDisruptionBudgets(v.Namespace).Create(v)
+		if _, err := kubeClient.PolicyV1beta1().PodDisruptionBudgets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.PolicyV1beta1().PodDisruptionBudgets(v.Namespace).Create(v)
 			return err
 		}
 		return nil
 	case *api_v1.Secret:
-		if _, err := kubeClient.Secrets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.Secrets(v.Namespace).Create(v)
+		if _, err := kubeClient.CoreV1().Secrets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().Secrets(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.Secrets(v.Namespace).Update(v)
+			_, err := kubeClient.CoreV1().Secrets(v.Namespace).Update(v)
 			return err
 		}
 	case *extv1beta1.DaemonSet:
-		if _, err := kubeClient.DaemonSets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.DaemonSets(v.Namespace).Create(v)
+		if _, err := kubeClient.ExtensionsV1beta1().DaemonSets(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.ExtensionsV1beta1().DaemonSets(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.DaemonSets(v.Namespace).Update(v)
+			_, err := kubeClient.ExtensionsV1beta1().DaemonSets(v.Namespace).Update(v)
 			return err
 		}
 	case *extv1beta1.Deployment:
@@ -185,34 +186,34 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return err
 		}
 	case *api_v1.Service:
-		if old, err := kubeClient.Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.Services(v.Namespace).Create(v)
+		if old, err := kubeClient.CoreV1().Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().Services(v.Namespace).Create(v)
 			return err
 		} else {
 			old.Labels = v.Labels
 			old.Spec.Selector = v.Spec.Selector
-			_, err := kubeClient.Services(v.Namespace).Update(old)
+			_, err := kubeClient.CoreV1().Services(v.Namespace).Update(old)
 			return err
 		}
 		return nil
 	case *api_v1.ServiceAccount:
-		if _, err := kubeClient.ServiceAccounts(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.ServiceAccounts(v.Namespace).Create(v)
+		if _, err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Create(v)
 			return err
 		} else {
-			_, err := kubeClient.ServiceAccounts(v.Namespace).Update(v)
+			_, err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Update(v)
 			return err
 		}
 		return nil
 	case *api_v1.PersistentVolumeClaim:
-		if _, err := kubeClient.PersistentVolumeClaims(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.PersistentVolumeClaims(v.Namespace).Create(v)
+		if _, err := kubeClient.CoreV1().PersistentVolumeClaims(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().PersistentVolumeClaims(v.Namespace).Create(v)
 			return err
 		}
 		return nil
 	case *api_v1.PersistentVolume:
-		if _, err := kubeClient.PersistentVolumes().Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.PersistentVolumes().Create(v)
+		if _, err := kubeClient.CoreV1().PersistentVolumes().Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.CoreV1().PersistentVolumes().Create(v)
 			return err
 		}
 		return nil
@@ -258,7 +259,7 @@ func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) er
 	var propagation = meta_v1.DeletePropagationForeground
 	switch v := resource.Object.(type) {
 	case *api_v1.Namespace:
-		if err := kubeClient.Namespaces().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().Namespaces().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *batch_v1.Job:
@@ -266,27 +267,27 @@ func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) er
 			return err
 		}
 	case *api_v1.ReplicationController:
-		if err := kubeClient.ReplicationControllers(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().ReplicationControllers(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *appsv1beta1.StatefulSet:
-		if err := kubeClient.StatefulSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.AppsV1beta1().StatefulSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.ConfigMap:
-		if err := kubeClient.ConfigMaps(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().ConfigMaps(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *policyv1beta1.PodDisruptionBudget:
-		if err := kubeClient.PodDisruptionBudgets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.PolicyV1beta1().PodDisruptionBudgets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.Secret:
-		if err := kubeClient.Secrets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().Secrets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *extv1beta1.DaemonSet:
-		if err := kubeClient.DaemonSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.ExtensionsV1beta1().DaemonSets(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *extv1beta1.Deployment:
@@ -294,19 +295,19 @@ func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) er
 			return err
 		}
 	case *api_v1.Service:
-		if err := kubeClient.Services(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().Services(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.ServiceAccount:
-		if err := kubeClient.ServiceAccounts(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.PersistentVolumeClaim:
-		if err := kubeClient.PersistentVolumeClaims(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().PersistentVolumeClaims(v.Namespace).Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.PersistentVolume:
-		if err := kubeClient.PersistentVolumes().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.CoreV1().PersistentVolumes().Delete(v.Name, &meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *rbacv1beta1.Role:

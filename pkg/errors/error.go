@@ -1,8 +1,9 @@
 package errors
 
 import (
-	"github.com/jinzhu/gorm"
 	"net/http"
+
+	"github.com/jinzhu/gorm"
 )
 
 const (

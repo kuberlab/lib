@@ -6,19 +6,20 @@ import (
 	"strings"
 
 	"bytes"
+	"net/http"
+	"net/url"
+	"regexp"
+	"text/template"
+
 	"github.com/ghodss/yaml"
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
-	extv1beta1 "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"net/http"
-	"net/url"
-	"regexp"
-	"text/template"
 )
 
 const (

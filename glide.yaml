@@ -2,13 +2,15 @@ package: github.com/kuberlab/lib
 import:
 - package: github.com/Sirupsen/logrus
 - package: k8s.io/apimachinery
-  version: 9c89140a45325f83409e90359888133478207c7a
+  version: 9d38e20d609d27e00d4ec18f7b9db67105a2bde0
   subpackages:
   - pkg/apis/meta/v1
   - pkg/runtime
   - pkg/watch
+- package: k8s.io/api
+  version: fe29995db37613b9c5b2a647544cf627bfa8d299
 - package: k8s.io/client-go
-  version: f64a115c809b7dbd30bd787d9557b7926dbba81e
+  version: 9f1049ed58758ba418b1072f24278cd22c5930aa
   subpackages:
   - kubernetes
   - pkg/api
@@ -21,7 +23,7 @@ import:
 - package: github.com/Masterminds/sprig
   version: ^2.12
 - package: github.com/Masterminds/semver
-  version: v1.3.1
+  version: v1.2.2
 - package: github.com/prometheus/client_golang
   subpackages:
   - api

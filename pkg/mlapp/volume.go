@@ -3,9 +3,10 @@ package mlapp
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/kuberlab/lib/pkg/utils"
-	"k8s.io/client-go/pkg/api/v1"
 	"strings"
+
+	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/api/core/v1"
 )
 
 type VolumeMount struct {

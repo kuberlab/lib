@@ -6,9 +6,10 @@ import (
 
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
+	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/pkg/api/v1"
 )
 
 type WorkerSet struct {
@@ -26,6 +27,11 @@ type WorkerSet struct {
 
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
+}
+
+func (ws WorkerSet) DeepCopyObject() runtime.Object {
+	// TODO: Fix
+	return ws
 }
 
 func (ws *WorkerSet) LabelSelector() meta_v1.ListOptions {
