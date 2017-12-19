@@ -421,6 +421,11 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		if v == nil {
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
+		if v.FlexVolume != nil {
+			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" {
+				v.FlexVolume.SecretRef.Name = fmt.Sprintf("%v-%v", c.Name, v.FlexVolume.SecretRef.Name)
+			}
+		}
 		id := v.CommonID()
 		if _, ok := added[id]; !ok {
 			added[id] = true
@@ -452,6 +457,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 		if len(m.SubPath) > 0 {
 			subPath = filepath.Join(subPath, m.SubPath)
 		}
+
 		subPath = strings.TrimPrefix(subPath, "/")
 		kVolumesMount = append(kVolumesMount, v1.VolumeMount{
 			Name:      id,
