@@ -119,6 +119,15 @@ func AddPrefix(prefix string, err error) error {
 	case *Error:
 		e.Message = prefix + e.Message
 		return e
+	case error:
+		ret := &Error{
+			Message: prefix + e.Error(),
+		}
+		if e == gorm.ErrRecordNotFound {
+			ret.Status = http.StatusNotFound
+			ret.dbNotFound = true
+		}
+		return ret
 	default:
 		return New(prefix + e.Error())
 	}
