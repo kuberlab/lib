@@ -41,6 +41,7 @@ type Config struct {
 	Workspace   string `json:"workspace,omitempty"`
 	WorkspaceID string `json:"workspace_id,omitempty"`
 	ProjectID   string `json:"project_id,omitempty"`
+	DealerAPI   string `json:"dealer_api,omitempty"`
 }
 
 func (c Config) ValidateConfig() error {
