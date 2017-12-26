@@ -372,6 +372,7 @@ func baseEnv(c *Config, r Resource) []Env {
 		}
 	}
 
+	envs = append(envs, Env{Name: "CLOUD_DEALER_URL", Value: c.DealerAPI})
 	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
 	envs = append(envs, Env{Name: "PROJECT_NAME", Value: c.Name})
 	envs = append(envs, Env{Name: "PROJECT_ID", Value: c.ProjectID})
