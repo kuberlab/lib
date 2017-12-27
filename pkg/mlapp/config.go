@@ -38,10 +38,11 @@ type Config struct {
 	Parent      *string `json:"parent,omitempty"`
 	Meta        `json:"metadata"`
 	Spec        `json:"spec,omitempty"`
-	Workspace   string `json:"workspace,omitempty"`
-	WorkspaceID string `json:"workspace_id,omitempty"`
-	ProjectID   string `json:"project_id,omitempty"`
-	DealerAPI   string `json:"dealer_api,omitempty"`
+	Workspace   string    `json:"workspace,omitempty"`
+	WorkspaceID string    `json:"workspace_id,omitempty"`
+	ProjectID   string    `json:"project_id,omitempty"`
+	DealerAPI   string    `json:"dealer_api,omitempty"`
+	Revision    *Revision `json:"revision,omitempty"`
 }
 
 func (c Config) ValidateConfig() error {
@@ -110,6 +111,16 @@ type DeploymentBasedResource interface {
 	Type() string
 	GetName() string
 	Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error)
+}
+
+type Revision struct {
+	Branch      string `json:"branch,omitempty"`
+	NewBranch   string `json:"new_branch,omitempty"`
+	Revision    string `json:"revision,omitempty"`
+	Author      string `json:"author,omitempty"`
+	AuthorName  string `json:"author_name,omitempty"`
+	AuthorEmail string `json:"author_email,omitempty"`
+	Comment     string `json:"comment,omitempty"`
 }
 
 type Spec struct {
