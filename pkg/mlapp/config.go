@@ -255,6 +255,7 @@ type Task struct {
 	Version        string         `json:"version,omitempty"`
 	TimeoutMinutes uint           `json:"timeoutMinutes,omitempty"`
 	Resources      []TaskResource `json:"resources"`
+	Revision       *Revision      `json:"revision,omitempty"`
 }
 
 type TaskResource struct {
