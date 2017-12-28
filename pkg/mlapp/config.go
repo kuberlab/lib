@@ -218,6 +218,12 @@ type Uix struct {
 	FrontAPI    string `json:"front_api,omitempty"`
 }
 
+type ModelServing struct {
+	Uix
+	Source   *GitRepoVolumeSource `json:"source,omitempty"`
+	ModelURL string               `json:"model_url,omitempty"`
+}
+
 func (uix *Uix) Type() string {
 	return "UIX"
 }
