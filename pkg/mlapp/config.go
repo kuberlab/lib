@@ -650,6 +650,9 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 func (c Config) ToMiniYaml() ([]byte, error) {
 	c.Revision = nil
 	for i := range c.Tasks {
+		for j := range c.Tasks[i].Resources{
+			c.Tasks[i].Resources[j].Command = strings.TrimSpace(c.Tasks[i].Resources[j].Command)
+		}
 		c.Tasks[i].Revision = nil
 	}
 	return c.ToYaml()
