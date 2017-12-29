@@ -647,6 +647,10 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}
 }
 
+func (c Config) ToMiniYaml() ([]byte, error) {
+	c.Revision = nil
+	return c.ToYaml()
+}
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }
