@@ -649,6 +649,9 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 
 func (c Config) ToMiniYaml() ([]byte, error) {
 	c.Revision = nil
+	for i := range c.Tasks {
+		c.Tasks[i].Revision = nil
+	}
 	return c.ToYaml()
 }
 func (c Config) ToYaml() ([]byte, error) {
