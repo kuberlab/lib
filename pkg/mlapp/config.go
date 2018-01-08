@@ -1,14 +1,13 @@
 package mlapp
 
 import (
-	"fmt"
-	"path/filepath"
-	"strings"
-
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/ghodss/yaml"
@@ -216,12 +215,6 @@ type Uix struct {
 	Ports       []Port `json:"ports,omitempty"`
 	Resource    `json:",inline"`
 	FrontAPI    string `json:"front_api,omitempty"`
-}
-
-type ModelServing struct {
-	Uix
-	Source   *GitRepoVolumeSource `json:"source,omitempty"`
-	ModelURL string               `json:"model_url,omitempty"`
 }
 
 func (uix *Uix) Type() string {
@@ -650,7 +643,7 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 func (c Config) ToMiniYaml() ([]byte, error) {
 	c.Revision = nil
 	for i := range c.Tasks {
-		for j := range c.Tasks[i].Resources{
+		for j := range c.Tasks[i].Resources {
 			c.Tasks[i].Resources[j].Command = strings.TrimSpace(c.Tasks[i].Resources[j].Command)
 		}
 		c.Tasks[i].Revision = nil
