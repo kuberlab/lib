@@ -245,7 +245,7 @@ type Port struct {
 	Name       string `json:"name"`
 	Protocol   string `json:"protocol,omitempty"`
 	Port       int32  `json:"port,omitempty"`
-	TargetPort int32  `targetPort:"name,omitempty"`
+	TargetPort int32  `json:"targetPort,omitempty"`
 }
 
 type Task struct {
