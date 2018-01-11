@@ -34,12 +34,11 @@ type ResourceState struct {
 var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
-	var namespace, name string
+	var name string
 	var pods = make([]api_v1.Pod, 0)
 	switch v := obj.(type) {
 	case *api_v1.Pod:
 		pods = append(pods, *v)
-		namespace = v.Namespace
 		name = v.Name
 	case *extv1beta1.Deployment:
 		ps, err := client.CoreV1().Pods(v.Namespace).List(labelSelector(v.Spec.Template.Labels))
@@ -47,7 +46,6 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 			return nil, err
 		}
 		pods = append(pods, ps.Items...)
-		namespace = v.Namespace
 		name = v.Name
 	case []*WorkerSet:
 		for _, wset := range v {
@@ -57,48 +55,33 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 				return nil, err
 			}
 			pods = append(pods, ps.Items...)
-			namespace = wset.Namespace
 			name = wset.TaskName + "-" + wset.JobID
 		}
 	}
 
 	state := &ComponentState{Type: type_, Name: name, ResourceStates: make([]*ResourceState, 0)}
-	statusMap := make(map[string]int, 0)
 
 	for _, pod := range pods {
-		resState := &ResourceState{
-			Name:      pod.Name,
-			Status:    string(pod.Status.Phase),
-			Events:    []api_v1.Event{},
-			Resources: sumResourceRequests(pod),
-		}
-		events, err := client.CoreV1().Events(namespace).Search(scheme.Scheme, &pod)
+		reason, resState, err := DetermineResourceState(pod, client)
 		if err != nil {
 			return nil, err
 		}
-
-		for _, e := range events.Items {
-			if e.Type == "Warning" || pod.Status.Phase != api_v1.PodRunning {
-				if len(resState.Events) < 1 {
-					resState.Events = events.Items
-				}
-			}
-			if insufficientPattern.MatchString(e.Message) {
-				groups := insufficientPattern.FindStringSubmatch(e.Message)
-				if len(groups) > 1 {
-					state.Reason = groups[1]
-				}
-			}
-		}
+		state.Reason = reason
 		state.ResourceStates = append(state.ResourceStates, resState)
+	}
 
+	return state, nil
+}
+
+func SetOverallStatus(state *ComponentState) {
+	statusMap := make(map[string]int, 0)
+	for _, resState := range state.ResourceStates {
 		if _, ok := statusMap[resState.Status]; ok {
 			statusMap[resState.Status] = statusMap[resState.Status] + 1
 		} else {
 			statusMap[resState.Status] = 1
 		}
 	}
-
 	// Set overall status
 	overallStatus := utils.RankByWordCount(statusMap)
 	if len(overallStatus) > 0 {
@@ -106,8 +89,34 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	} else {
 		state.Status = "Unknown"
 	}
+}
 
-	return state, nil
+func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reason string, resourceState *ResourceState, err error) {
+	resourceState = &ResourceState{
+		Name:      pod.Name,
+		Status:    string(pod.Status.Phase),
+		Events:    []api_v1.Event{},
+		Resources: sumResourceRequests(pod),
+	}
+	events, err := client.CoreV1().Events(pod.Namespace).Search(scheme.Scheme, &pod)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for _, e := range events.Items {
+		if e.Type == "Warning" || pod.Status.Phase != api_v1.PodRunning {
+			if len(resourceState.Events) < 1 {
+				resourceState.Events = events.Items
+			}
+		}
+		if insufficientPattern.MatchString(e.Message) {
+			groups := insufficientPattern.FindStringSubmatch(e.Message)
+			if len(groups) > 1 {
+				reason = groups[1]
+			}
+		}
+	}
+	return
 }
 
 func labelSelector(labels map[string]string) meta_v1.ListOptions {
