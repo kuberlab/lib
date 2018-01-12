@@ -434,7 +434,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
 		if v.FlexVolume != nil {
-			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" {
+			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" && !strings.HasPrefix(v.FlexVolume.SecretRef.Name, c.Name) {
 				v.FlexVolume.SecretRef.Name = fmt.Sprintf("%v-%v", c.Name, v.FlexVolume.SecretRef.Name)
 			}
 		}
