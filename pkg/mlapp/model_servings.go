@@ -109,7 +109,7 @@ func (c *Config) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeR
 			Name:  "init-model",
 			Image: "kuberlab/board-init",
 			Command: fmt.Sprintf(
-				`["sh", "-c", "mkdir -p %v; curl -o %v/m.tgz %v; cd %v; tar xzvf m.tgz"]`,
+				`["/bin/sh", "-c", "mkdir -p %v; curl -L -o %v/m.tgz %v; cd %v; tar xzvf m.tgz"]`,
 				defaultModelPath, defaultModelPath, serving.ModelURL, defaultModelPath,
 			),
 			Mounts: map[string]interface{}{
