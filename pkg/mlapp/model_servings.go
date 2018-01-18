@@ -21,7 +21,8 @@ const (
 type ModelServing struct {
 	Uix
 	Source      *GitRepoVolumeSource `json:"source,omitempty"`
-	ModelName   string               `json:"model_name,omitempty"`
+	ModelID     string               `json:"model_id,omitempty"`
+	Model       string               `json:"model,omitempty"`
 	ModelURL    string               `json:"model_url,omitempty"`
 	WorkspaceID string               `json:"workspace_id,omitempty"`
 	Workspace   string               `json:"workspace,omitempty"`
