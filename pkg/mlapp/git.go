@@ -43,69 +43,56 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 
 	// volumeName -> repoDir, repoUrl
 	logrus.Info("Determine git source revisions...")
+
 	gitRepos := make(map[string]*RepoInfo)
 	res := make(map[string]string)
 
-	volumesMap := make(map[string]v1.Volume)
-	volumeMountsMap := make(map[string]v1.VolumeMount)
-
-	volumeMountByName := func(mounts []VolumeMount, name string) *VolumeMount {
-		for _, m := range mounts {
-			if m.Name == name {
-				vm := m
-				return &vm
-			}
-		}
-		return nil
+	// Detect explicitly set revisions.
+	for _, taskRev := range task.GitRevisions {
+		res[taskRev.VolumeName] = taskRev.Revision
 	}
 
-	for _, r := range task.Resources {
-		rawMounts := r.VolumeMounts(c.Volumes)
-		vs, mounts, err := c.KubeVolumesSpec(rawMounts)
-		if err != nil {
-			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
-		}
-		for _, vm := range mounts {
-			volumeMountsMap[vm.Name] = vm
-		}
-		repoName := ""
-		for _, v := range vs {
-			volumesMap[v.Name] = v
-			if v.GitRepo != nil {
-				repoName = getGitRepoName(v.GitRepo.Repository)
-				gitRepos[v.Name] = &RepoInfo{
-					Dir: fmt.Sprintf("%v/%v", volumeMountsMap[v.Name].MountPath, repoName),
-					URL: v.GitRepo.Repository,
+	volumeUsedInTask := func(name string) bool {
+		for _, res := range task.Resources {
+			if res.UseDefaultVolumeMapping {
+				return true
+			}
+			for _, vm := range res.Volumes {
+				if vm.Name == name {
+					return true
 				}
+			}
+		}
+		return false
+	}
+	volumesMap := make(map[string]*v1.Volume)
 
-				resVolumeMount := volumeMountByName(rawMounts, c.VolumeByID(v.Name).Name)
-				if resVolumeMount != nil && resVolumeMount.GitRevision != nil {
-					gitRepos[v.Name].Revision = *resVolumeMount.GitRevision
-					res[resVolumeMount.Name] = *resVolumeMount.GitRevision
-				} else {
-					gitRepos[v.Name].Revision = "master"
-				}
+	// Add repos to determine their current revisions.
+	for _, v := range c.Volumes {
+		if v.GitRepo == nil {
+			continue
+		}
+		if !volumeUsedInTask(v.Name) {
+			continue
+		}
+		if _, ok := res[v.Name]; !ok {
+			repoName := getGitRepoName(v.GitRepo.Repository)
+			gitRepos[v.Name] = &RepoInfo{
+				Dir: fmt.Sprintf("/rev-detect/%v", repoName),
+				URL: v.GitRepo.Repository,
 			}
-			if v.Secret == nil {
-				// Unneeded.
-				delete(volumesMap, v.Name)
-				delete(volumeMountsMap, v.Name)
-			}
+			vv := v.V1Volume()
+			volumesMap[v.Name] = &vv
+			volumesMap[v.Name].Name = v.Name
 		}
 	}
-
-	if len(gitRepos) == 0 || len(res) == len(gitRepos) {
+	if len(gitRepos) == 0 {
 		return res, nil
 	}
 
 	// Generate script for determining revisions.
 	cmd := []string{"mkdir -p ~/.ssh"}
 	for k, v := range gitRepos {
-		// Skip repos which has explicit revision passed.
-		if _, ok := res[c.VolumeByID(k).Name]; ok {
-			continue
-		}
-
 		if strings.Contains(v.URL, "@") {
 			// SSH.
 			u := v.URL
@@ -125,12 +112,18 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 
 	// Generate Pod, run it and read logs.
 	volumes := make([]v1.Volume, 0)
-	for _, v := range volumesMap {
-		volumes = append(volumes, v)
-	}
 	volumeMounts := make([]v1.VolumeMount, 0)
-	for _, v := range volumeMountsMap {
-		volumeMounts = append(volumeMounts, v)
+	if len(c.Secrets) > 0 {
+		vol, vom, err := c.getSecretVolumes(c.Secrets)
+		if err != nil {
+			return nil, err
+		}
+		if len(vol) > 0 {
+			volumes = append(volumes, vol...)
+		}
+		if len(vom) > 0 {
+			volumeMounts = append(volumeMounts, vom...)
+		}
 	}
 
 	pod, err := kuberlab.GetPodSpec(
@@ -169,7 +162,7 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 	if err != nil {
 		return nil, err
 	}
-
+	logrus.Infof("Result: %v", string(logsRaw))
 	logs := strings.Split(string(logsRaw), "\n")
 
 	for _, l := range logs {
@@ -180,10 +173,10 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 		if len(splitted) != 2 {
 			continue
 		}
-		id := splitted[0]
+		name := splitted[0]
 		rev := splitted[1]
 
-		res[c.VolumeByID(id).Name] = rev
+		res[name] = rev
 	}
 	return res, nil
 }
@@ -209,12 +202,5 @@ func (c *Config) InjectGitRevisions(client *kubernetes.Clientset, task *Task) er
 			task.GitRevisions = append(task.GitRevisions, TaskGitRevision{Revision: ref, VolumeName: name})
 		}
 	}
-	//for i, r := range task.Resources {
-	//	for iv, v := range r.Volumes {
-	//		if _, ok := refs[v.Name]; ok {
-	//			task.Resources[i].Volumes[iv].GitRevision = utils.StrPtr(refs[v.Name])
-	//		}
-	//	}
-	//}
 	return nil
 }
