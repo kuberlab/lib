@@ -7,13 +7,12 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
-	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func (c *Config) setGitRefs(volumes []v1.Volume, taskRes TaskResource) {
+func (c *Config) setGitRefs(volumes []v1.Volume, task Task) {
 	setRevision := func(vName string, rev string) {
 		fromConfig := c.VolumeByName(vName)
 		for i, v := range volumes {
@@ -25,9 +24,9 @@ func (c *Config) setGitRefs(volumes []v1.Volume, taskRes TaskResource) {
 		}
 	}
 
-	for _, tv := range taskRes.Volumes {
-		if tv.GitRevision != nil {
-			setRevision(tv.Name, *tv.GitRevision)
+	for _, gitRev := range task.GitRevisions {
+		if gitRev.Revision != "" {
+			setRevision(gitRev.VolumeName, gitRev.Revision)
 		}
 	}
 }
@@ -196,12 +195,26 @@ func (c *Config) InjectGitRevisions(client *kubernetes.Clientset, task *Task) er
 	}
 	logrus.Infof("Revisions: %v", refs)
 
-	for i, r := range task.Resources {
-		for iv, v := range r.Volumes {
-			if _, ok := refs[v.Name]; ok {
-				task.Resources[i].Volumes[iv].GitRevision = utils.StrPtr(refs[v.Name])
+	revisionExists := func(volumeName string) bool {
+		for _, taskRev := range task.GitRevisions {
+			if taskRev.VolumeName == volumeName {
+				return true
 			}
 		}
+		return false
 	}
+
+	for name, ref := range refs {
+		if !revisionExists(name) {
+			task.GitRevisions = append(task.GitRevisions, TaskGitRevision{Revision: ref, VolumeName: name})
+		}
+	}
+	//for i, r := range task.Resources {
+	//	for iv, v := range r.Volumes {
+	//		if _, ok := refs[v.Name]; ok {
+	//			task.Resources[i].Volumes[iv].GitRevision = utils.StrPtr(refs[v.Name])
+	//		}
+	//	}
+	//}
 	return nil
 }

@@ -167,7 +167,7 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
 
-		c.setGitRefs(volumes, r)
+		c.setGitRefs(volumes, task)
 
 		initContainers, err := c.KubeInits(r.VolumeMounts(c.Volumes), &task.Name, &jobID)
 		if err != nil {
