@@ -251,11 +251,17 @@ type Port struct {
 
 type Task struct {
 	Meta           `json:",inline"`
-	ParentTask     *string        `json:"parentTask,omitempty"`
-	Version        string         `json:"version,omitempty"`
-	TimeoutMinutes uint           `json:"timeoutMinutes,omitempty"`
-	Resources      []TaskResource `json:"resources"`
-	Revision       *Revision      `json:"revision,omitempty"`
+	ParentTask     *string          `json:"parentTask,omitempty"`
+	Version        string           `json:"version,omitempty"`
+	TimeoutMinutes uint             `json:"timeoutMinutes,omitempty"`
+	Resources      []TaskResource   `json:"resources"`
+	Revision       *Revision        `json:"revision,omitempty"`
+	GitRevision    *TaskGitRevision `json:"gitRevision,omitempty"`
+}
+
+type TaskGitRevision struct {
+	VolumeName string `json:"volumeName,omitempty"`
+	Revision   string `json:"revision,omitempty"`
 }
 
 type TaskResource struct {
