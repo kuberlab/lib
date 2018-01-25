@@ -29,8 +29,8 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 )
 
-var validNames *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
-var validVolumes *regexp.Regexp = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
+var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
+var validVolumes = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 type Config struct {
 	Kind        string  `json:"kind"`
@@ -161,7 +161,7 @@ type Resource struct {
 
 func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
 	if r.UseDefaultVolumeMapping {
-		mounts := []VolumeMount{}
+		var mounts []VolumeMount
 		for _, v := range volumes {
 			mpath := v.MountPath
 			if strings.HasPrefix(r.DefaultMountPath, "[") {
@@ -215,6 +215,7 @@ type Uix struct {
 	Ports       []Port `json:"ports,omitempty"`
 	Resource    `json:",inline"`
 	FrontAPI    string `json:"front_api,omitempty"`
+	Enabled     bool   `json:"enabled"`
 }
 
 func (uix *Uix) Type() string {
@@ -349,7 +350,7 @@ type InitContainers struct {
 }
 
 func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
-	inits := []InitContainers{}
+	var inits []InitContainers
 	added := map[string]bool{}
 	_, vmounts, err := c.getSecretVolumes(c.Secrets)
 	if err != nil {
@@ -370,7 +371,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			if v.GitRepo.AccountId == "" && taskName == nil && build == nil {
 				return []InitContainers{}, nil
 			}
-			cmd := []string{}
+			var cmd []string
 			repoName := getGitRepoName(v.GitRepo.Repository)
 			baseDir := fmt.Sprintf("/gitdata/%d", j)
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
