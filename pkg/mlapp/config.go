@@ -215,7 +215,7 @@ type Uix struct {
 	Ports       []Port `json:"ports,omitempty"`
 	Resource    `json:",inline"`
 	FrontAPI    string `json:"front_api,omitempty"`
-	Enabled     bool   `json:"enabled"`
+	Disabled    bool   `json:"disabled"`
 }
 
 func (uix *Uix) Type() string {

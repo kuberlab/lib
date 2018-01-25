@@ -156,6 +156,10 @@ func (ui UIXResourceGenerator) Args() string {
 func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
+		if uix.Disabled {
+			continue
+		}
+
 		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.Volumes))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
