@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/mlapp/ssh"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
@@ -161,6 +162,16 @@ func (t TaskResourceGenerator) Args() string {
 
 func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
+	sshName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s", c.Name, task.Name, jobID))
+	sshSecret, sshVolumes, sshVolumesMount := ssh.TaskSshSupport(sshName, c.GetNamespace(), c.ResourceLabels(map[string]string{
+		types.TASK_ID_LABEL: jobID,
+	}))
+	groupKind := sshSecret.GroupVersionKind()
+	sshSecretResource := kuberlab.KubeResource{
+		Name:   sshName + ":secret",
+		Object: sshSecret,
+		Kind:   &groupKind,
+	}
 	for _, r := range task.Resources {
 		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.Volumes))
 		if err != nil {
@@ -173,6 +184,8 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}
+		volumes = append(volumes, sshVolumes...)
+		mounts = append(mounts, sshVolumesMount...)
 		g := TaskResourceGenerator{
 			c:              c,
 			task:           task,
@@ -208,8 +221,9 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
 		}
+		res.Deps = []*kuberlab.KubeResource{&sshSecretResource}
 		if g.Port > 0 {
-			res.Deps = []*kuberlab.KubeResource{generateHeadlessService(g)}
+			res.Deps = append(res.Deps, generateHeadlessService(g))
 		}
 		taskSpec = append(taskSpec, TaskResourceSpec{
 			DoneCondition: r.DoneCondition,
