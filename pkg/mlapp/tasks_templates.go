@@ -110,12 +110,19 @@ func (t TaskResourceGenerator) Env() []Env {
 		for i := range hosts {
 			serviceName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, r.Name, t.JobID))
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.Namespace())
-			if r.Port > 0 {
-				hosts[i] = hosts[i] + ":" + strconv.Itoa(int(r.Port))
+		}
+		nodes := make([]string, len(hosts))
+		if r.Port > 0 {
+			sp := strconv.Itoa(int(r.Port))
+			for i, h := range hosts {
+				nodes[i] = h + ":" + sp
 			}
 		}
 		envs = append(envs, Env{
 			Name:  strings.ToUpper(utils.EnvConvert(r.Name) + "_NODES"),
+			Value: strings.Join(nodes, ","),
+		}, Env{
+			Name:  strings.ToUpper(utils.EnvConvert(r.Name) + "_HOSTS"),
 			Value: strings.Join(hosts, ","),
 		})
 	}
