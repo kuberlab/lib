@@ -17,9 +17,7 @@ func (c *Config) setGitRefs(volumes []v1.Volume, task Task) {
 		fromConfig := c.VolumeByName(vName)
 		for i, v := range volumes {
 			if v.Name == fromConfig.CommonID() && v.GitRepo != nil {
-				if v.GitRepo.Revision == "" {
-					volumes[i].GitRepo.Revision = rev
-				}
+				volumes[i].GitRepo.Revision = rev
 			}
 		}
 	}
@@ -37,6 +35,26 @@ type RepoInfo struct {
 	Revision string
 }
 
+func (c *Config) existingRevisions(task Task) map[string]string {
+	// First, populate revisions for volumes in config (default).
+	revs := make(map[string]string)
+	for _, v := range c.Volumes {
+		if v.GitRepo != nil && v.GitRepo.Revision != "" {
+			revs[v.Name] = v.GitRepo.Revision
+		}
+	}
+
+	// Next, populate revisions from taskResources.
+	for _, res := range task.Resources {
+		for _, vm := range res.Volumes {
+			if vm.GitRevision != nil {
+				revs[vm.Name] = *vm.GitRevision
+			}
+		}
+	}
+	return revs
+}
+
 func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task Task) (map[string]string, error) {
 	// First, collect all volumes to mount
 	// Also, determine what exactly need to get
@@ -46,6 +64,8 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 
 	gitRepos := make(map[string]*RepoInfo)
 	res := make(map[string]string)
+	defaultRevisions := c.existingRevisions(task)
+	logrus.Debugf("Default revisions: %v", defaultRevisions)
 
 	// Detect explicitly set revisions.
 	for _, taskRev := range task.GitRevisions {
@@ -76,6 +96,12 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 			continue
 		}
 		if _, ok := res[v.Name]; !ok {
+			// Try to pick up default revision.
+			if _, ok := defaultRevisions[v.Name]; ok {
+				res[v.Name] = defaultRevisions[v.Name]
+				continue
+			}
+
 			repoName := getGitRepoName(v.GitRepo.Repository)
 			gitRepos[v.Name] = &RepoInfo{
 				Dir: fmt.Sprintf("/rev-detect/%v", repoName),
