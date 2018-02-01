@@ -33,8 +33,7 @@ var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 var validVolumes = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 type Config struct {
-	Kind        string  `json:"kind"`
-	Parent      *string `json:"parent,omitempty"`
+	Kind        string `json:"kind"`
 	Meta        `json:"metadata"`
 	Spec        `json:"spec,omitempty"`
 	Workspace   string    `json:"workspace,omitempty"`
@@ -42,6 +41,14 @@ type Config struct {
 	ProjectID   string    `json:"project_id,omitempty"`
 	DealerAPI   string    `json:"dealer_api,omitempty"`
 	Revision    *Revision `json:"revision,omitempty"`
+}
+
+type BoardConfig struct {
+	DealerAPI     string          `json:"dealer_api,omitempty"`
+	VolumesData   []Volume        `json:"volumes_data,omitempty"`
+	ClusterLimits *ResourceReqLim `json:"cluster_limits,omitempty"`
+	Secrets       []Secret        `json:"secrets,omitempty"`
+	Config        `json:",inline"`
 }
 
 func (c Config) ValidateConfig() error {
@@ -123,14 +130,12 @@ type Revision struct {
 }
 
 type Spec struct {
-	Tasks                 []Task          `json:"tasks,omitempty"`
-	Uix                   []Uix           `json:"uix,omitempty"`
-	Serving               []Serving       `json:"serving,omitempty"`
-	Volumes               []Volume        `json:"volumes,omitempty"`
-	Packages              []Packages      `json:"packages,omitempty"`
-	DefaultPackageManager string          `json:"package_manager,omitempty"`
-	ClusterLimits         *ResourceReqLim `json:"cluster_limits,omitempty"`
-	Secrets               []Secret        `json:"secrets,omitempty"`
+	Tasks                 []Task     `json:"tasks,omitempty"`
+	Uix                   []Uix      `json:"uix,omitempty"`
+	Serving               []Serving  `json:"serving,omitempty"`
+	Volumes               []Volume   `json:"volumes,omitempty"`
+	Packages              []Packages `json:"packages,omitempty"`
+	DefaultPackageManager string     `json:"package_manager,omitempty"`
 }
 
 type Secret struct {
@@ -251,7 +256,6 @@ type Port struct {
 
 type Task struct {
 	Meta           `json:",inline"`
-	ParentTask     *string           `json:"parentTask,omitempty"`
 	Version        string            `json:"version,omitempty"`
 	TimeoutMinutes uint              `json:"timeoutMinutes,omitempty"`
 	Resources      []TaskResource    `json:"resources"`
@@ -293,26 +297,29 @@ type TaskResourceSpec struct {
 	Resource      *kuberlab.KubeResource
 }
 
-func (c *Config) SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) error {
+func (c Config) GetBoardConfig(mapping func(v Volume) (*VolumeSource, error)) (*BoardConfig,error) {
+	b := BoardConfig{
+		Config: c,
+	}
+	b.VolumesData = make([]Volume, len(c.Spec.Volumes))
 	for i, v := range c.Spec.Volumes {
 		if s, err := mapping(v); err == nil {
-			c.Spec.Volumes[i].VolumeSource = *s
+			v := c.Spec.Volumes[i]
+			v.VolumeSource = *s
+			b.VolumesData[i] = v
 		} else {
-			return fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
+			return nil,fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
 		}
 	}
-	return nil
+	return &b, nil
 }
 
-func SetupClusterStorage(mapping func(v Volume) (*VolumeSource, error)) ConfigOption {
-	return func(c *Config) (*Config, error) {
-		err := c.SetupClusterStorage(mapping)
-		return c, err
-	}
-}
 
-func (c *Config) VolumeByName(name string) *Volume {
-	for _, v := range c.Volumes {
+func (c *BoardConfig) VolumeByName(name string) *Volume {
+	return c.volumeByName(name)
+}
+func (c *BoardConfig) volumeByName(name string) *Volume {
+	for _, v := range c.VolumesData {
 		if v.Name == name {
 			res := v
 			return &res
@@ -321,8 +328,8 @@ func (c *Config) VolumeByName(name string) *Volume {
 	return nil
 }
 
-func (c *Config) VolumeByID(commonID string) *Volume {
-	for _, v := range c.Volumes {
+func (c *BoardConfig) volumeByID(commonID string) *Volume {
+	for _, v := range c.VolumesData {
 		if v.CommonID() == commonID {
 			res := v
 			return &res
@@ -331,8 +338,8 @@ func (c *Config) VolumeByID(commonID string) *Volume {
 	return nil
 }
 
-func (c *Config) LibVolume() (*v1.Volume, *v1.VolumeMount) {
-	for _, v := range c.Volumes {
+func (c *BoardConfig) LibVolume() (*v1.Volume, *v1.VolumeMount) {
+	for _, v := range c.VolumesData {
 		if v.IsLibDir {
 			vols, mounts, err := c.KubeVolumesSpec(
 				[]VolumeMount{
@@ -355,7 +362,7 @@ type InitContainers struct {
 	Mounts  map[string]interface{}
 }
 
-func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
+func (c *BoardConfig) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
 	var inits []InitContainers
 	added := map[string]bool{}
 	_, vmounts, err := c.getSecretVolumes(c.Secrets)
@@ -367,7 +374,7 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			continue
 		}
 		added[m.Name] = true
-		v := c.VolumeByName(m.Name)
+		v := c.volumeByName(m.Name)
 		id := v.CommonID()
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
@@ -400,14 +407,6 @@ func (c *Config) KubeInits(mounts []VolumeMount, taskName, build *string) ([]Ini
 			cmd = append(cmd, "git config --local user.email robot@kuberlab.com")
 
 			cmdStr := strings.Join(cmd, " && ")
-			//var submitRef = ""
-			//if taskName != nil && build != nil {
-			//	submitRef = fmt.Sprintf(
-			//		`; curl http://mlboard-v2.kuberlab:8082/api/v2/submit/%s/%s/%s -H "X-Source: %s" -H "X-Ref: $(git rev-parse HEAD)"`,
-			//		c.GetAppID(), *taskName, *build, v.Name,
-			//	)
-			//	cmdStr += submitRef
-			//}
 
 			vmounts = append(vmounts, v1.VolumeMount{
 				Name:      id,
@@ -431,12 +430,12 @@ func getGitRepoName(repo string) string {
 	p := strings.Split(repo, "/")
 	return strings.TrimSuffix(p[len(p)-1], ".git")
 }
-func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
+func (c *BoardConfig) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.VolumeMount, error) {
 	added := make(map[string]bool)
 	kVolumes := make([]v1.Volume, 0)
 	kVolumesMount := make([]v1.VolumeMount, 0)
 	for _, m := range mounts {
-		v := c.VolumeByName(m.Name)
+		v := c.volumeByName(m.Name)
 		if v == nil {
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
@@ -500,7 +499,7 @@ func (c *Config) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.Volume
 	return kVolumes, kVolumesMount, nil
 }
 
-func (c *Config) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
+func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 	kvolumes := make([]v1.Volume, 0)
 	kvolumesMount := make([]v1.VolumeMount, 0)
 	for _, s := range secrets {
@@ -583,14 +582,6 @@ func ApplyConfigOptions(c *Config, options ...ConfigOption) (res *Config, err er
 	return
 }
 
-func LimitsOption(limits *ResourceReqLim) func(c *Config) (res *Config, err error) {
-	return func(c *Config) (res *Config, err error) {
-		res = c
-		res.ClusterLimits = limits
-		return
-	}
-}
-
 func BuildOption(workspaceID, workspaceName, projectID, projectName string) func(c *Config) (res *Config, err error) {
 	return func(c *Config) (res *Config, err error) {
 		res = c
@@ -608,11 +599,11 @@ func BuildOption(workspaceID, workspaceName, projectID, projectName string) func
 	}
 }
 
-func (c *Config) GetSecretName(secret Secret) string {
+func (c *BoardConfig) GetSecretName(secret Secret) string {
 	return utils.KubeLabelEncode(c.Name + "-" + secret.Name)
 }
 
-func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
+func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
 		KUBERLAB_WS_LABEL:     utils.KubeLabelEncode(c.Workspace),
 		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
@@ -627,7 +618,7 @@ func (c *Config) ResourceLabels(l ...map[string]string) map[string]string {
 	return l1
 }
 
-func (c *Config) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
+func (c *BoardConfig) ResourceSelector(l ...map[string]string) meta_v1.ListOptions {
 	l1 := []map[string]string{{
 		KUBERLAB_WS_ID_LABEL: c.WorkspaceID,
 		KUBERLAB_PROJECT_ID:  c.ProjectID,
@@ -647,7 +638,7 @@ func resourceSelector(l ...map[string]string) meta_v1.ListOptions {
 	return meta_v1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")}
 }
 
-func (c Config) ToMiniYaml() ([]byte, error) {
+func (c BoardConfig) ToMiniYaml() ([]byte, error) {
 	c.Revision = nil
 	for i := range c.Tasks {
 		for j := range c.Tasks[i].Resources {
@@ -660,7 +651,9 @@ func (c Config) ToMiniYaml() ([]byte, error) {
 func (c Config) ToYaml() ([]byte, error) {
 	return yaml.Marshal(c)
 }
-
+func (c BoardConfig) ToYaml() ([]byte, error) {
+	return yaml.Marshal(c)
+}
 func (c Config) ProxyURL(path string) string {
 	return ProxyURL([]string{c.Workspace, c.Name, path})
 }

@@ -44,7 +44,7 @@ spec:
 `
 
 func TestConfig_GenerateUIXResources(t *testing.T) {
-	conf := Config{}
+	conf := BoardConfig{}
 	err := yaml.Unmarshal([]byte(deployTpl), &conf)
 
 	if err != nil {

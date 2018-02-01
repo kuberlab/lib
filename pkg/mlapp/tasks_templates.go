@@ -90,7 +90,7 @@ spec:
 type TaskResourceGenerator struct {
 	JobID    string
 	Callback string
-	c        *Config
+	c        *BoardConfig
 	task     Task
 	TaskResource
 	once           sync.Once
@@ -167,7 +167,7 @@ func (t TaskResourceGenerator) Args() string {
 	return t.RawArgs
 }
 
-func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
+func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
 	/*sshName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s", c.Name, task.Name, jobID))
 	sshSecret, sshVolumes, sshVolumesMount := ssh.TaskSshSupport(sshName, c.GetNamespace(), c.ResourceLabels(map[string]string{
@@ -180,14 +180,14 @@ func (c *Config) GenerateTaskResources(task Task, jobID string) ([]TaskResourceS
 		Kind:   &groupKind,
 	}*/
 	for _, r := range task.Resources {
-		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.Volumes))
+		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.VolumesData))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
 
 		c.setGitRefs(volumes, task)
 
-		initContainers, err := c.KubeInits(r.VolumeMounts(c.Volumes), &task.Name, &jobID)
+		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData), &task.Name, &jobID)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}

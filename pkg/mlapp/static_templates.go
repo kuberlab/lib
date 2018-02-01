@@ -97,7 +97,7 @@ spec:
 `
 
 type UIXResourceGenerator struct {
-	c *Config
+	c *BoardConfig
 	Uix
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
@@ -153,18 +153,18 @@ func (ui UIXResourceGenerator) Args() string {
 	return ui.Resource.RawArgs
 }
 
-func (c *Config) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
+func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
 		if uix.Disabled {
 			continue
 		}
 
-		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.Volumes))
+		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
-		initContainers, err := c.KubeInits(uix.VolumeMounts(c.Volumes), nil, nil)
+		initContainers, err := c.KubeInits(uix.VolumeMounts(c.VolumesData), nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
@@ -216,13 +216,13 @@ func (serving ServingResourceGenerator) ComponentName() string {
 	return utils.KubeDeploymentEncode(fmt.Sprintf("%s-%s", serving.c.Name, serving.Name()))
 }
 
-func (c *Config) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
+func (c *BoardConfig) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
-	initContainers, err := c.KubeInits(serving.VolumeMounts(c.Volumes), nil, nil)
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
 	}
@@ -318,7 +318,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 }
 
-func baseEnv(c *Config, r Resource) []Env {
+func baseEnv(c *BoardConfig, r Resource) []Env {
 	envs := make([]Env, 0, len(r.Env))
 	path := make([]string, 0)
 	for _, e := range r.Env {
@@ -328,8 +328,8 @@ func baseEnv(c *Config, r Resource) []Env {
 			envs = append(envs, e)
 		}
 	}
-	for _, m := range r.VolumeMounts(c.Volumes) {
-		v := c.VolumeByName(m.Name)
+	for _, m := range r.VolumeMounts(c.VolumesData) {
+		v := c.volumeByName(m.Name)
 		if v == nil {
 			continue
 		}
@@ -361,10 +361,10 @@ func baseEnv(c *Config, r Resource) []Env {
 			Value: "0",
 		})
 	}
-	for _, v := range r.VolumeMounts(c.Volumes) {
+	for _, v := range r.VolumeMounts(c.VolumesData) {
 		mountPath := v.MountPath
 		if len(mountPath) == 0 {
-			if v := c.VolumeByName(v.Name); v != nil {
+			if v := c.volumeByName(v.Name); v != nil {
 				mountPath = v.MountPath
 			}
 		}

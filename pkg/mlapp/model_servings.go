@@ -98,10 +98,10 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 	return utils.KubeDeploymentEncode(fmt.Sprintf("%s", serving.Name()))
 }
 
-func (c *Config) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
+func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.Volumes))
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +153,13 @@ func GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, err
 	if err != nil {
 		return nil, err
 	}
-	cfg := &Config{
-		Workspace:   serving.Workspace,
-		WorkspaceID: serving.WorkspaceID,
-		Meta:        Meta{Name: serving.Name},
-		Spec: Spec{
-			Volumes: []Volume{*vol},
+	cfg := &BoardConfig{
+		Config: Config{
+			Workspace:   serving.Workspace,
+			WorkspaceID: serving.WorkspaceID,
+			Meta:        Meta{Name: serving.Name},
 		},
+		VolumesData: []Volume{*vol},
 	}
 	return cfg.GenerateModelServing(serving)
 }

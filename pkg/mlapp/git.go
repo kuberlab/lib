@@ -12,9 +12,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (c *Config) setGitRefs(volumes []v1.Volume, task Task) {
+func (c *BoardConfig) setGitRefs(volumes []v1.Volume, task Task) {
 	setRevision := func(vName string, rev string) {
-		fromConfig := c.VolumeByName(vName)
+		fromConfig := c.volumeByName(vName)
 		for i, v := range volumes {
 			if v.Name == fromConfig.CommonID() && v.GitRepo != nil {
 				if v.GitRepo.Revision == "" {
@@ -37,7 +37,7 @@ type RepoInfo struct {
 	Revision string
 }
 
-func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task Task) (map[string]string, error) {
+func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, task Task) (map[string]string, error) {
 	// First, collect all volumes to mount
 	// Also, determine what exactly need to get
 
@@ -68,7 +68,7 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 	volumesMap := make(map[string]*v1.Volume)
 
 	// Add repos to determine their current revisions.
-	for _, v := range c.Volumes {
+	for _, v := range c.VolumesData {
 		if v.GitRepo == nil {
 			continue
 		}
@@ -181,7 +181,7 @@ func (c *Config) DetermineGitSourceRevisions(client *kubernetes.Clientset, task 
 	return res, nil
 }
 
-func (c *Config) InjectGitRevisions(client *kubernetes.Clientset, task *Task) error {
+func (c *BoardConfig) InjectGitRevisions(client *kubernetes.Clientset, task *Task) error {
 	refs, err := c.DetermineGitSourceRevisions(client, *task)
 	if err != nil {
 		return err
