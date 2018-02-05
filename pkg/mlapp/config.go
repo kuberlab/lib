@@ -223,7 +223,7 @@ type Uix struct {
 }
 
 func (uix *Uix) Type() string {
-	return "UIX"
+	return "Ui"
 }
 
 func (uix *Uix) GetName() string {
@@ -296,7 +296,7 @@ type TaskResourceSpec struct {
 	Resource      *kuberlab.KubeResource
 }
 
-func (c Config) GetBoardConfig(mapping func(v Volume) (*VolumeSource, error)) (*BoardConfig,error) {
+func (c Config) GetBoardConfig(mapping func(v Volume) (*VolumeSource, error)) (*BoardConfig, error) {
 	b := BoardConfig{
 		Config: c,
 	}
@@ -307,12 +307,11 @@ func (c Config) GetBoardConfig(mapping func(v Volume) (*VolumeSource, error)) (*
 			v.VolumeSource = *s
 			b.VolumesData[i] = v
 		} else {
-			return nil,fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
+			return nil, fmt.Errorf("Failed setup cluster storage '%s': %v", v.ClusterStorage, err)
 		}
 	}
 	return &b, nil
 }
-
 
 func (c *BoardConfig) VolumeByName(name string) *Volume {
 	return c.volumeByName(name)
