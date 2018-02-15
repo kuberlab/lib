@@ -108,7 +108,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {
-			serviceName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, r.Name, t.JobID))
+			serviceName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.JobID, r.Name))
 			hosts[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", serviceName, i, serviceName, t.Namespace())
 		}
 		nodes := make([]string, len(hosts))
@@ -137,7 +137,7 @@ func (t TaskResourceGenerator) Env() []Env {
 	return envs
 }
 func (t TaskResourceGenerator) BuildName() string {
-	return utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.TaskResource.Name, t.JobID))
+	return utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.JobID, t.TaskResource.Name))
 }
 func (t TaskResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
