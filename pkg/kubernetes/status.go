@@ -94,7 +94,7 @@ func SetOverallStatus(state *ComponentState) {
 func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reason string, resourceState *ResourceState, err error) {
 	resourceState = &ResourceState{
 		Name:      pod.Name,
-		Status:    string(pod.Status.Phase),
+		Status:    getPodState(pod),
 		Events:    []api_v1.Event{},
 		Resources: sumResourceRequests(pod),
 	}
@@ -117,6 +117,35 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 		}
 	}
 	return
+}
+
+func getPodState(pod api_v1.Pod) string {
+	// Pod may be in Running phase even if the termination began already.
+	// So first check for terminating.
+	if isTerminating(pod) {
+		return "Terminating"
+	}
+
+	if pod.Status.Phase == api_v1.PodRunning {
+		return string(pod.Status.Phase)
+	}
+
+	if len(pod.Status.ContainerStatuses) < 1 {
+		return string(pod.Status.Phase)
+	}
+	containerState := pod.Status.ContainerStatuses[0].State
+	if containerState.Waiting != nil {
+		return containerState.Waiting.Reason
+	}
+	if containerState.Terminated != nil {
+		return containerState.Terminated.Reason
+	}
+	return string(pod.Status.Phase)
+}
+
+// isTerminating returns true if pod's DeletionTimestamp has been set
+func isTerminating(pod api_v1.Pod) bool {
+	return pod.DeletionTimestamp != nil
 }
 
 func labelSelector(labels map[string]string) meta_v1.ListOptions {
