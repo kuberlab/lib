@@ -42,6 +42,7 @@ type VolumeSource struct {
 	FlexVolume            *v1.FlexVolumeSource                  `json:"flexVolume,omitempty" protobuf:"bytes,12,opt,name=flexVolume"`
 	PersistentStorage     *PersistentStorage                    `json:"persistentStorage,omitempty" protobuf:"bytes,99,opt,name=persistentStorage"`
 	Dataset               *DatasetSource                        `json:"dataset,omitempty"`
+	DatasetFS             *DatasetFSSource                      `json:"datasetFS,omitempty"`
 }
 
 func (v Volume) CommonID() string {
@@ -104,6 +105,13 @@ type DatasetSource struct {
 	Dataset   string `json:"dataset,omitempty" protobuf:"bytes,2,opt,name=dataset"`
 	Version   string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
 	ServerURL string `json:"serverURL,omitempty" protobuf:"bytes,3,opt,name=serverURL"`
+}
+
+type DatasetFSSource struct {
+	Workspace string `json:"workspace" protobuf:"bytes,1,opt,name=workspace"`
+	Dataset   string `json:"dataset,omitempty" protobuf:"bytes,2,opt,name=dataset"`
+	Version   string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
+	Server    string `json:"server,omitempty" protobuf:"bytes,3,opt,name=server"`
 }
 
 type PersistentStorage struct {
