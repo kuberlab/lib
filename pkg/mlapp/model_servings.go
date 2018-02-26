@@ -122,7 +122,7 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 			Name:  "init-model",
 			Image: "kuberlab/board-init",
 			Command: fmt.Sprintf(
-				`["/bin/sh", "-c", "mkdir -p %v; curl -L -o %v/m.tgz %v && tar -xzvf m.tgz -C %va && rm m.tgz"]`,
+				`["/bin/sh", "-c", "mkdir -p %v; curl -L -o %v/m.tgz %v && tar -xzvf m.tgz -C %v && rm m.tgz"]`,
 				defaultModelPath, defaultModelPath, serving.ModelURL, defaultModelPath,
 			),
 			Mounts: map[string]interface{}{"volumeMounts": mounts},
