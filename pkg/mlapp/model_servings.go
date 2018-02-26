@@ -101,10 +101,21 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
+	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
 	if err != nil {
 		return nil, err
 	}
+	volumes := []v1.Volume{{
+		Name: "kunerlab-models",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	}}
+	mounts := []v1.VolumeMount{{
+		Name:      "kunerlab-models",
+		MountPath: defaultModelPath,
+		ReadOnly:  false,
+	}}
 
 	initContainers := []InitContainers{
 		{
@@ -114,16 +125,14 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 				`["/bin/sh", "-c", "mkdir -p %v; curl -L -o %v/m.tgz %v; cd %v; tar xzvf m.tgz"]`,
 				defaultModelPath, defaultModelPath, serving.ModelURL, defaultModelPath,
 			),
-			Mounts: map[string]interface{}{
-				"volumeMounts": []v1.VolumeMount{
-					{
-						Name:      volumes[0].Name,
-						MountPath: defaultModelPath,
-						ReadOnly:  false,
-					},
-				},
-			},
+			Mounts: map[string]interface{}{"volumeMounts": mounts},
 		},
+	}
+	if len(volumesSpec) > 0 {
+		volumes = append(volumes, volumesSpec...)
+	}
+	if len(mountsSpec) > 0 {
+		mounts = append(mounts, mountsSpec...)
 	}
 
 	g := ServingModelResourceGenerator{
