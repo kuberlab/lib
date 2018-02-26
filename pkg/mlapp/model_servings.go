@@ -106,13 +106,13 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 		return nil, err
 	}
 	volumes := []v1.Volume{{
-		Name: "kunerlab-models",
+		Name: "kuberlab-model",
 		VolumeSource: v1.VolumeSource{
 			EmptyDir: &v1.EmptyDirVolumeSource{},
 		},
 	}}
 	mounts := []v1.VolumeMount{{
-		Name:      "kunerlab-models",
+		Name:      "kuberlab-model",
 		MountPath: defaultModelPath,
 		ReadOnly:  false,
 	}}
