@@ -65,6 +65,7 @@ spec:
     {{- else }}
       value: '{{ .Value }}'
     {{- end }}
+    {{- end }}
     {{- if gt .Port 0 }}
     ports:
     - containerPort: {{ .Port }}

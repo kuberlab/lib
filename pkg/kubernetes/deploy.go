@@ -35,6 +35,9 @@ func GetTemplate(tpl string, vars interface{}) (string, error) {
 	t = t.Funcs(apputil.FuncMap())
 	t, err := t.Parse(tpl)
 	if err != nil {
+		fmt.Println("=======================")
+		fmt.Println(tpl)
+		fmt.Println("=======================")
 		return "", fmt.Errorf("Failed parse template %v", err)
 	}
 	buffer := bytes.NewBuffer(make([]byte, 0))
