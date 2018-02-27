@@ -57,6 +57,12 @@ spec:
           fieldPath: metadata.name
     {{- range .Env }}
     - name: {{ .Name }}
+    {{- if gt (len .ValueFromSecret) 0 }}
+      valueFrom:
+        secretKeyRef: 
+          name: '{{ .ValueFromSecret }}'
+          key: '{{ .SecretKey }}'
+    {{- else }}
       value: '{{ .Value }}'
     {{- end }}
     {{- if gt .Port 0 }}

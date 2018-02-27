@@ -60,7 +60,14 @@ spec:
         env:
         {{- range .Env }}
         - name: {{ .Name }}
+        {{- if gt (len .ValueFromSecret) 0 }}
+          valueFrom:
+            secretKeyRef: 
+              name: '{{ .ValueFromSecret }}'
+              key: '{{ .SecretKey }}'
+        {{- else }}
           value: '{{ .Value }}'
+        {{- end }}
         {{- end }}
         {{- if .Ports }}
         ports:
@@ -377,9 +384,14 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 	}
 
 	envs = append(envs, Env{Name: "CLOUD_DEALER_URL", Value: c.DealerAPI})
-	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
 	envs = append(envs, Env{Name: "PROJECT_NAME", Value: c.Name})
 	envs = append(envs, Env{Name: "PROJECT_ID", Value: c.ProjectID})
+	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
 	envs = append(envs, Env{Name: "WORKSPACE_ID", Value: c.WorkspaceID})
+	envs = append(envs, Env{
+		Name:            "WORKSPACE_SECRET",
+		ValueFromSecret: fmt.Sprintf("%v-ws-key-%v", c.Name, c.WorkspaceID),
+		SecretKey:       "token",
+	})
 	return envs
 }

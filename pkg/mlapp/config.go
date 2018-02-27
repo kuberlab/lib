@@ -283,8 +283,10 @@ type Images struct {
 }
 
 type Env struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Name            string `json:"name"`
+	Value           string `json:"value"`
+	ValueFromSecret string `json:"valueFromSecret"`
+	SecretKey       string `json:"secretKey"`
 }
 
 type TaskResourceSpec struct {
