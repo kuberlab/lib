@@ -184,6 +184,7 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 		res.Deps = []*kubernetes.KubeResource{generateUIService(g)}
 		resources = append(resources, res)
 	}
+	resources = append([]*kubernetes.KubeResource{c.generateKuberlabConfig()}, resources...)
 	return resources, nil
 }
 

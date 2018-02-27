@@ -532,7 +532,60 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 			})
 		}
 	}
+	// Need curl https://storage.googleapis.com/pluk/kdataset-linux -o /usr/bin/kdataset on all nodes
+	kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+		Name:      "kdataset",
+		MountPath: "/usr/bin/kdataset",
+		ReadOnly:  true,
+		SubPath:   "kdataset",
+	})
+	kvolumes = append(kvolumes, v1.Volume{
+		Name: "kdataset",
+		VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/usr/bin/",
+			},
+		},
+	})
+	kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+		Name:      "kuberlab-config",
+		MountPath: "/root/.kuberlab/config",
+		SubPath:   "config",
+	})
+	kvolumes = append(kvolumes, v1.Volume{
+		Name: "kuberlab-config",
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: fmt.Sprintf("%v-kuberlab-config", c.Name),
+				},
+			},
+		},
+	})
 	return kvolumes, kvolumesMount, nil
+}
+
+func (c *BoardConfig) generateKuberlabConfig() *kuberlab.KubeResource {
+	config := &v1.ConfigMap{
+		Data: map[string]string{
+			"config": "pluk_url: 'http://pluk.kuberlab.svc.cluster.local:8082'\n",
+		},
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-kuberlab-config", c.Name),
+			Namespace: c.GetNamespace(),
+			Labels:    c.ResourceLabels(),
+		},
+	}
+	gv := config.GroupVersionKind()
+	return &kuberlab.KubeResource{
+		Name:   "kuberlab-config",
+		Kind:   &gv,
+		Object: config,
+	}
 }
 
 type ConfigOption func(*Config) (*Config, error)
