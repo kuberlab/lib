@@ -21,11 +21,16 @@ type Time struct {
 }
 
 func NewTime(t time.Time) Time {
-	return Time{Time: t.UTC(), Valid: true}
+	return Time{Time: t.UTC().Truncate(time.Second), Valid: true}
 }
 
 func NewTimePtr(t time.Time) *Time {
-	return &Time{Time: t.UTC(), Valid: true}
+	tt := NewTime(t)
+	return &tt
+}
+
+func TimeNow() Time {
+	return NewTime(time.Now())
 }
 
 func MustParse(s string) Time {
