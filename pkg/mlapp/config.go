@@ -14,6 +14,7 @@ import (
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -533,6 +534,10 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 		}
 	}
 	// Need curl https://storage.googleapis.com/pluk/kdataset-linux -o /usr/bin/kdataset on all nodes
+	if l, ok := c.Labels[types.ComponentTypeLabel]; ok && l == "serving-model" {
+		// Ignore additional volumes for serving from model.
+		return kvolumes, kvolumesMount, nil
+	}
 	kvolumesMount = append(kvolumesMount, v1.VolumeMount{
 		Name:      "kdataset",
 		MountPath: "/usr/bin/kdataset",

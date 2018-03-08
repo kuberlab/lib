@@ -166,7 +166,12 @@ func GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, err
 		Config: Config{
 			Workspace:   serving.Workspace,
 			WorkspaceID: serving.WorkspaceID,
-			Meta:        Meta{Name: serving.Name},
+			Meta: Meta{
+				Name: serving.Name,
+				Labels: map[string]string{
+					types.ComponentTypeLabel: "serving-model",
+				},
+			},
 		},
 		VolumesData: []Volume{*vol},
 	}
