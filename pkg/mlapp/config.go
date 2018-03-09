@@ -14,7 +14,6 @@ import (
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
-	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -28,6 +27,9 @@ const (
 	KUBERLAB_PROJECT_ID   = "kuberlab.io/project-id"
 	KUBERLAB_PROJECT_NAME = "kuberlab.io/project"
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
+
+	KindMlApp   = "MLApp"
+	KindServing = "Serving"
 )
 
 var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
@@ -534,7 +536,7 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 		}
 	}
 	// Need curl https://storage.googleapis.com/pluk/kdataset-linux -o /usr/bin/kdataset on all nodes
-	if l, ok := c.Labels[types.ComponentTypeLabel]; ok && l == "serving-model" {
+	if c.Kind == KindServing {
 		// Ignore additional volumes for serving from model.
 		return kvolumes, kvolumesMount, nil
 	}

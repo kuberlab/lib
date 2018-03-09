@@ -389,7 +389,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 	envs = append(envs, Env{Name: "PROJECT_ID", Value: c.ProjectID})
 	envs = append(envs, Env{Name: "WORKSPACE_NAME", Value: c.Workspace})
 	envs = append(envs, Env{Name: "WORKSPACE_ID", Value: c.WorkspaceID})
-	if l, ok := c.Labels[types.ComponentTypeLabel]; !ok || l != "serving-model" {
+	if c.Kind != KindServing {
 		// Add for all resources except for serving from model.
 		envs = append(envs, Env{
 			Name:            "WORKSPACE_SECRET",

@@ -28,9 +28,9 @@ type ModelServing struct {
 	Workspace   string               `json:"workspace,omitempty"`
 }
 
-func (serv ModelServing) Volume() (*Volume, error) {
+func (serv ModelServing) Volume() *Volume {
 	if len(serv.Volumes) != 1 {
-		return nil, errors.New("Required exact 1 volume.")
+		return nil
 	}
 	return &Volume{
 		Name:      serv.Volumes[0].Name,
@@ -39,7 +39,7 @@ func (serv ModelServing) Volume() (*Volume, error) {
 		VolumeSource: VolumeSource{
 			GitRepo: serv.Source,
 		},
-	}, nil
+	}
 }
 
 func (serv ModelServing) KubeVolumes() ([]v1.Volume, []v1.VolumeMount, error) {
@@ -158,22 +158,21 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 }
 
 func GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
-	vol, err := serving.Volume()
-	if err != nil {
-		return nil, err
+	vol := serving.Volume()
+	var volData = make([]Volume, 0)
+	if vol != nil {
+		volData = append(volData, *vol)
 	}
 	cfg := &BoardConfig{
 		Config: Config{
+			Kind:        KindServing,
 			Workspace:   serving.Workspace,
 			WorkspaceID: serving.WorkspaceID,
 			Meta: Meta{
 				Name: serving.Name,
-				Labels: map[string]string{
-					types.ComponentTypeLabel: "serving-model",
-				},
 			},
 		},
-		VolumesData: []Volume{*vol},
+		VolumesData: volData,
 	}
 	return cfg.GenerateModelServing(serving)
 }
