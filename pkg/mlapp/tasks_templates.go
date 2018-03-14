@@ -51,10 +51,6 @@ spec:
     imagePullPolicy: Always
     name: "{{ .BuildName }}"
     env:
-    - name: RESOURCE_NAME
-      valueFrom:
-        fieldRef:
-        fieldPath: metadata.name
     - name: POD_NAME
       valueFrom:
         fieldRef:
