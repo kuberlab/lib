@@ -58,6 +58,14 @@ spec:
         {{- end }}
         image: "{{ .Image }}"
         env:
+        - name: RESOURCE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         {{- range .Env }}
         - name: {{ .Name }}
         {{- if gt (len .ValueFromSecret) 0 }}
