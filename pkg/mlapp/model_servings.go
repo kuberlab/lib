@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	defaultModelPath = "/model"
+	defaultModelPath      = "/model"
+	ServingModelComponent = "serving-model"
 )
 
 type ModelServing struct {
@@ -85,7 +86,7 @@ func (serving ServingModelResourceGenerator) Labels() map[string]string {
 		KUBERLAB_WS_LABEL:        serving.c.Workspace,
 		KUBERLAB_WS_ID_LABEL:     serving.c.WorkspaceID,
 		types.ComponentLabel:     serving.Uix.Name,
-		types.ComponentTypeLabel: "serving-model",
+		types.ComponentTypeLabel: ServingModelComponent,
 		types.ServingIDLabel:     serving.Name(),
 	}
 }
