@@ -218,7 +218,7 @@ func (serving ServingResourceGenerator) Env() []Env {
 			if k == "checkpoint_path" || k == "model_path" {
 				envs = append(envs,
 					Env{
-						Name:  "k",
+						Name:  k,
 						Value: fmt.Sprintf("%v", v),
 					},
 				)
