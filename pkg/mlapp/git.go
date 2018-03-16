@@ -10,6 +10,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"os/exec"
 )
 
 func (c *BoardConfig) setGitRefs(volumes []v1.Volume, task Task) {
@@ -62,7 +63,7 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 	// volumeName -> repoDir, repoUrl
 	logrus.Info("Determine git source revisions...")
 
-	gitRepos := make(map[string]*RepoInfo)
+	reposToDetect := make(map[string]*RepoInfo)
 	res := make(map[string]string)
 	defaultRevisions := c.existingRevisions(task)
 	logrus.Debugf("Default revisions: %v", defaultRevisions)
@@ -103,7 +104,7 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 			}
 
 			repoName := getGitRepoName(v.GitRepo.Repository)
-			gitRepos[v.Name] = &RepoInfo{
+			reposToDetect[v.Name] = &RepoInfo{
 				Dir: fmt.Sprintf("/rev-detect/%v", repoName),
 				URL: v.GitRepo.Repository,
 			}
@@ -112,13 +113,33 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 			volumesMap[v.Name].Name = v.Name
 		}
 	}
-	if len(gitRepos) == 0 {
+
+	// Get rid of public repos and detect them locally.
+	for k, v := range reposToDetect {
+		if strings.Contains(v.URL, "@") {
+			// "@" indicates private repo (either ssh username@host or https username@pass)
+			continue
+		}
+		// Detect others locally.
+		cmd := fmt.Sprintf("git ls-remote %v %v 2> /dev/null | head -1 | awk '{print $1}' | xargs printf '%v %%s\\n'", v.URL, v.Revision, k)
+		logrus.Infof("Exec locally: %v", cmd)
+		out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+		if err != nil {
+			return nil, fmt.Errorf("Failed detect git revisions: %v, %v", string(out), err)
+		}
+		parseLogsAddRevs(out, res)
+		if _, ok := res[k]; ok {
+			delete(reposToDetect, k)
+		}
+	}
+
+	if len(reposToDetect) == 0 {
 		return res, nil
 	}
 
 	// Generate script for determining revisions.
 	cmd := []string{"mkdir -p ~/.ssh"}
-	for k, v := range gitRepos {
+	for k, v := range reposToDetect {
 		if strings.Contains(v.URL, "@") {
 			// SSH.
 			u := v.URL
@@ -188,6 +209,11 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 	if err != nil {
 		return nil, err
 	}
+	parseLogsAddRevs(logsRaw, res)
+	return res, nil
+}
+
+func parseLogsAddRevs(logsRaw []byte, res map[string]string) {
 	logrus.Infof("Result: %v", string(logsRaw))
 	logs := strings.Split(string(logsRaw), "\n")
 
@@ -204,7 +230,6 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 
 		res[name] = rev
 	}
-	return res, nil
 }
 
 func (c *BoardConfig) InjectGitRevisions(client *kubernetes.Clientset, task *Task) error {
