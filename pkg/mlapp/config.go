@@ -493,6 +493,31 @@ func (c *BoardConfig) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.V
 	return kVolumes, kVolumesMount, nil
 }
 
+func (c *BoardConfig) CleanUPVolumes() ([]v1.Volume, []v1.VolumeMount) {
+	added := make(map[string]bool)
+	kVolumes := make([]v1.Volume, 0)
+	kVolumesMount := make([]v1.VolumeMount, 0)
+	for _, v := range c.VolumesData {
+		subPath := v.SubPath
+		if v.ClusterStorage != "" {
+			if !strings.HasPrefix(subPath, "/") {
+				id := v.CommonID()
+				if _, ok := added[id]; !ok {
+					added[id] = true
+					kVolumes = append(kVolumes, v.V1Volume())
+					kVolumesMount = append(kVolumesMount, v1.VolumeMount{
+						Name:      id,
+						SubPath:   c.Workspace + "/" + c.WorkspaceID,
+						MountPath: "/kuberlab/" + id,
+						ReadOnly:  false,
+					})
+				}
+			}
+		}
+	}
+	return kVolumes, kVolumesMount
+}
+
 func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.VolumeMount, error) {
 	kvolumes := make([]v1.Volume, 0)
 	kvolumesMount := make([]v1.VolumeMount, 0)
