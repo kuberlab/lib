@@ -1,17 +1,14 @@
 package mlapp
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"text/template"
 
 	"github.com/ghodss/yaml"
-	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
@@ -138,6 +135,7 @@ type Spec struct {
 	Volumes               []Volume   `json:"volumes,omitempty"`
 	Packages              []Packages `json:"packages,omitempty"`
 	DefaultPackageManager string     `json:"package_manager,omitempty"`
+	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
 }
 
 type Secret struct {
@@ -166,46 +164,38 @@ type Resource struct {
 	DefaultMountPath        string           `json:"default_mount_path"`
 }
 
-func (r Resource) VolumeMounts(volumes []Volume) []VolumeMount {
+func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []VolumeMount {
+	if r.DefaultMountPath != "" {
+		defaultMountPath = r.DefaultMountPath
+	}
+	defaultMountPath = strings.TrimSuffix(defaultMountPath, "/")
+	var mounts []VolumeMount
 	if r.UseDefaultVolumeMapping {
-		var mounts []VolumeMount
 		for _, v := range volumes {
-			mpath := v.MountPath
-			if strings.HasPrefix(r.DefaultMountPath, "[") {
-				tmp := strings.TrimSuffix(strings.TrimPrefix(r.DefaultMountPath, "["), "]")
-				mpath = execTemplate(tmp, v.MountPath)
-			} else if r.DefaultMountPath != "" {
-				mpath = r.DefaultMountPath + "/" + strings.TrimPrefix(v.MountPath, "/")
-			}
-
 			var rev *string = nil
 			if v.GitRepo != nil {
 				rev = &v.GitRepo.Revision
 			}
-
 			mounts = append(mounts, VolumeMount{
-				Name: v.Name, ReadOnly: false, MountPath: mpath, GitRevision: rev,
+				Name: v.Name, ReadOnly: false, MountPath: v.MountPath, GitRevision: rev,
 			})
 		}
-		return mounts
+	} else {
+		mounts = r.Volumes
 	}
-	return r.Volumes
+	for i := range mounts {
+		mpath := mounts[i].MountPath
+		if mpath == "" {
+			mpath = mounts[i].Name
+		}
+		if !strings.HasPrefix(mpath, "/") {
+			mpath = defaultMountPath + "/" + mpath
+		}
+		mounts[i].MountPath = mpath
+	}
+	return mounts
 }
 
-func execTemplate(tmp, v string) string {
-	t := template.New("gotpl")
-	t = t.Funcs(apputil.FuncMap())
-	t, err := t.Parse(tmp)
-	if err != nil {
-		return v
-	}
-	buffer := bytes.NewBuffer(make([]byte, 0))
-
-	if err := t.ExecuteTemplate(buffer, "gotpl", map[string]string{"Value": v}); err != nil {
-		return v
-	}
-	return buffer.String()
-}
 func (r Resource) Image() string {
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
 		if len(r.Images.GPU) == 0 {
@@ -240,9 +230,10 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 }
 
 type Serving struct {
-	Uix      `json:",inline"`
-	TaskName string `json:"taskName"`
-	Build    string `json:"build"`
+	Uix       `json:",inline"`
+	TaskName  string                 `json:"taskName"`
+	Build     string                 `json:"build"`
+	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
 }
 
 func (s *Serving) Type() string {
@@ -470,7 +461,7 @@ func (c *BoardConfig) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.V
 			} else if len(subPath) > 0 {
 				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + subPath
 			} else {
-				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name
+				subPath = c.Workspace + "/" + c.WorkspaceID + "/" + c.Name + "/" + v.Name
 			}
 		} else {
 			subPath = strings.TrimPrefix(subPath, "/")

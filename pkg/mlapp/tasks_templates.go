@@ -187,14 +187,14 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 		Kind:   &groupKind,
 	}*/
 	for _, r := range task.Resources {
-		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.VolumesData))
+		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.VolumesData, c.DefaultMountPath))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
 
 		c.setGitRefs(volumes, task)
 
-		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData), &task.Name, &jobID)
+		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData, c.DefaultMountPath), &task.Name, &jobID)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}

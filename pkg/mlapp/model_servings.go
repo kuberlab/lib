@@ -78,7 +78,16 @@ type ServingModelResourceGenerator struct {
 
 func (serving ServingModelResourceGenerator) Env() []Env {
 	envs := baseEnv(serving.c, serving.Resource)
-
+	envs = append(envs,
+		Env{
+			Name:  "checkpoint_path",
+			Value: "/model",
+		},
+		Env{
+			Name:  "model_path",
+			Value: "/model",
+		},
+	)
 	return envs
 }
 func (serving ServingModelResourceGenerator) Labels() map[string]string {
@@ -102,7 +111,7 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
-	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
+	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath))
 	if err != nil {
 		return nil, err
 	}

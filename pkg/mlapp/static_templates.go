@@ -59,9 +59,7 @@ spec:
         image: "{{ .Image }}"
         env:
         - name: RESOURCE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
+          value: '{{ .ComponentName }}'
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -175,11 +173,11 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 			continue
 		}
 
-		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData))
+		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
-		initContainers, err := c.KubeInits(uix.VolumeMounts(c.VolumesData), nil, nil)
+		initContainers, err := c.KubeInits(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath), nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
@@ -198,8 +196,9 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 
 type ServingResourceGenerator struct {
 	UIXResourceGenerator
-	TaskName string
-	Build    string
+	TaskName  string
+	Build     string
+	BuildInfo map[string]interface{}
 }
 
 func (serving ServingResourceGenerator) Env() []Env {
@@ -214,6 +213,18 @@ func (serving ServingResourceGenerator) Env() []Env {
 			Value: serving.TaskName,
 		},
 	)
+	if serving.BuildInfo != nil {
+		for k, v := range serving.BuildInfo {
+			if k == "checkpoint_path" || k == "model_path" {
+				envs = append(envs,
+					Env{
+						Name:  "k",
+						Value: fmt.Sprintf("%v", v),
+					},
+				)
+			}
+		}
+	}
 	return envs
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
@@ -234,17 +245,18 @@ func (serving ServingResourceGenerator) ComponentName() string {
 
 func (c *BoardConfig) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData))
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath))
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
-	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData), nil, nil)
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
 	}
 	g := ServingResourceGenerator{
-		TaskName: serving.TaskName,
-		Build:    serving.Build,
+		TaskName:  serving.TaskName,
+		Build:     serving.Build,
+		BuildInfo: serving.BuildInfo,
 		UIXResourceGenerator: UIXResourceGenerator{
 			c:              c,
 			Uix:            serving.Uix,
@@ -344,7 +356,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 			envs = append(envs, e)
 		}
 	}
-	for _, m := range r.VolumeMounts(c.VolumesData) {
+	for _, m := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath) {
 		v := c.volumeByName(m.Name)
 		if v == nil {
 			continue
@@ -377,7 +389,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 			Value: "0",
 		})
 	}
-	for _, v := range r.VolumeMounts(c.VolumesData) {
+	for _, v := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath) {
 		mountPath := v.MountPath
 		if len(mountPath) == 0 {
 			if v := c.volumeByName(v.Name); v != nil {
