@@ -94,7 +94,7 @@ func SetOverallStatus(state *ComponentState) {
 func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reason string, resourceState *ResourceState, err error) {
 	resourceState = &ResourceState{
 		Name:      pod.Name,
-		Status:    getPodState(pod),
+		Status:    GetPodState(pod),
 		Events:    []api_v1.Event{},
 		Resources: sumResourceRequests(pod),
 	}
@@ -119,7 +119,7 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 	return
 }
 
-func getPodState(pod api_v1.Pod) string {
+func GetPodState(pod api_v1.Pod) string {
 	// Pod may be in Running phase even if the termination began already.
 	// So first check for terminating.
 	if isTerminating(pod) {
