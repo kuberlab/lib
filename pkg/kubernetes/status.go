@@ -32,7 +32,7 @@ type ResourceState struct {
 }
 
 var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
-var mountFailedPattern = regexp.MustCompile(`MountVolume.*failed.*`)
+var mountFailedPattern = regexp.MustCompile(`.*(MountVolume.*failed.*)`)
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
 	var name string
@@ -118,8 +118,8 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 		}
 		if mountFailedPattern.MatchString(e.Message) {
 			groups := mountFailedPattern.FindStringSubmatch(e.Message)
-			if len(groups) > 0 {
-				reason = groups[0]
+			if len(groups) > 1 {
+				reason = groups[1]
 			}
 		}
 	}
