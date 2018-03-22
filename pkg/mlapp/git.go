@@ -3,6 +3,7 @@ package mlapp
 import (
 	"fmt"
 	"net/url"
+	"os/exec"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -10,7 +11,6 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os/exec"
 )
 
 func (c *BoardConfig) setGitRefs(volumes []v1.Volume, task Task) {
@@ -250,7 +250,7 @@ func (c *BoardConfig) InjectGitRevisions(client *kubernetes.Clientset, task *Tas
 
 	for name, ref := range refs {
 		if !revisionExists(name) {
-			task.GitRevisions = append(task.GitRevisions, TaskGitRevision{Revision: ref, VolumeName: name})
+			task.GitRevisions = append(task.GitRevisions, TaskRevision{Revision: ref, VolumeName: name})
 		}
 	}
 	return nil

@@ -248,15 +248,16 @@ type Port struct {
 }
 
 type Task struct {
-	Meta           `json:",inline"`
-	Version        string            `json:"version,omitempty"`
-	TimeoutMinutes uint              `json:"timeoutMinutes,omitempty"`
-	Resources      []TaskResource    `json:"resources"`
-	Revision       *Revision         `json:"revision,omitempty"`
-	GitRevisions   []TaskGitRevision `json:"gitRevisions,omitempty"`
+	Meta             `json:",inline"`
+	Version          string         `json:"version,omitempty"`
+	TimeoutMinutes   uint           `json:"timeoutMinutes,omitempty"`
+	Resources        []TaskResource `json:"resources"`
+	Revision         *Revision      `json:"revision,omitempty"`
+	GitRevisions     []TaskRevision `json:"gitRevisions,omitempty"`
+	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty"`
 }
 
-type TaskGitRevision struct {
+type TaskRevision struct {
 	VolumeName string `json:"volumeName,omitempty"`
 	Revision   string `json:"revision,omitempty"`
 }
@@ -347,6 +348,14 @@ func (c *BoardConfig) LibVolume() (*v1.Volume, *v1.VolumeMount) {
 		}
 	}
 	return nil, nil
+}
+
+func (c *BoardConfig) InjectRevisions(client *kubernetes.Clientset, task *Task) error {
+	if err := c.InjectGitRevisions(client, task); err != nil {
+		return err
+	}
+	c.InjectDatasetRevisions(task)
+	return nil
 }
 
 type InitContainers struct {
