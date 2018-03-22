@@ -2,9 +2,8 @@ package kubernetes
 
 import (
 	"fmt"
-	"strings"
-
 	"regexp"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/utils"
@@ -16,11 +15,17 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+const (
+	ReasonInsufficient = "insufficient"
+	ReasonError        = "error"
+)
+
 type ComponentState struct {
-	Type           string           `json:"type"`
-	Name           string           `json:"name"`
-	Status         string           `json:"status"`
-	Reason         string           `json:"reason"`
+	Type           string `json:"type"`
+	Name           string `json:"name"`
+	Status         string `json:"status"`
+	Reason         string `json:"reason"`
+	ReasonCode     string
 	ResourceStates []*ResourceState `json:"resource_states"`
 }
 
@@ -63,11 +68,12 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	state := &ComponentState{Type: type_, Name: name, ResourceStates: make([]*ResourceState, 0)}
 
 	for _, pod := range pods {
-		reason, resState, err := DetermineResourceState(pod, client)
+		reason, resState, code, err := DetermineResourceState(pod, client)
 		if err != nil {
 			return nil, err
 		}
 		state.Reason = reason
+		state.ReasonCode = code
 		state.ResourceStates = append(state.ResourceStates, resState)
 	}
 
@@ -92,7 +98,7 @@ func SetOverallStatus(state *ComponentState) {
 	}
 }
 
-func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reason string, resourceState *ResourceState, err error) {
+func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reason string, resourceState *ResourceState, code string, err error) {
 	resourceState = &ResourceState{
 		Name:      pod.Name,
 		Status:    GetPodState(pod),
@@ -101,7 +107,7 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 	}
 	events, err := client.CoreV1().Events(pod.Namespace).Search(scheme.Scheme, &pod)
 	if err != nil {
-		return "", nil, err
+		return "", nil, "", err
 	}
 
 	for _, e := range events.Items {
@@ -114,12 +120,14 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 			groups := insufficientPattern.FindStringSubmatch(e.Message)
 			if len(groups) > 1 {
 				reason = groups[1]
+				code = ReasonInsufficient
 			}
 		}
 		if mountFailedPattern.MatchString(e.Message) {
 			groups := mountFailedPattern.FindStringSubmatch(e.Message)
 			if len(groups) > 1 {
 				reason = groups[1]
+				code = ReasonError
 			}
 		}
 	}
