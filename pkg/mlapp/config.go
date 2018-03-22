@@ -231,7 +231,7 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 
 type Serving struct {
 	Uix       `json:",inline"`
-	Spec      ServingSpec
+	Spec      ServingSpec            `json:"spec"`
 	TaskName  string                 `json:"taskName"`
 	Build     string                 `json:"build"`
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
