@@ -231,9 +231,24 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 
 type Serving struct {
 	Uix       `json:",inline"`
+	Spec      ServingSpec
 	TaskName  string                 `json:"taskName"`
 	Build     string                 `json:"build"`
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
+}
+
+type ServingSpec struct {
+	Params      []ServingSpecParam `json:"params,omitempty"`
+	OutFilter   []string           `json:"outFilter,omitempty"`
+	OutMimeType string             `json:"outMimeType,omitempty"`
+	RawInput    bool               `json:"rawInput"`
+	Signature   string             `json:"signature,omitempty"`
+	Model       string             `json:"model,omitempty"`
+}
+
+type ServingSpecParam struct {
+	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 func (s *Serving) Type() string {
