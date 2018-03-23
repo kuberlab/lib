@@ -182,6 +182,18 @@ func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []Volu
 		}
 	} else {
 		mounts = r.Volumes
+		for i := range mounts {
+			for _, v := range volumes {
+				if v.Name == mounts[i].Name {
+					if mounts[i].MountPath == "" {
+						mounts[i].MountPath = v.MountPath
+					}
+					if mounts[i].SubPath == "" {
+						mounts[i].SubPath = v.SubPath
+					}
+				}
+			}
+		}
 	}
 	for i := range mounts {
 		mpath := mounts[i].MountPath
