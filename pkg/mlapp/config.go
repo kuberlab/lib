@@ -188,9 +188,6 @@ func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []Volu
 					if mounts[i].MountPath == "" {
 						mounts[i].MountPath = v.MountPath
 					}
-					if mounts[i].SubPath == "" {
-						mounts[i].SubPath = v.SubPath
-					}
 				}
 			}
 		}
