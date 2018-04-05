@@ -74,21 +74,21 @@ spec:
     {{- end }}
     resources:
       requests:
-        {{- if .ResourcesSpec.Requests.CPU }}
-        cpu: "{{ .ResourcesSpec.Requests.CPU }}"
+        {{- if .ResourcesSpec.Requests.CPUQuantity }}
+        cpu: "{{ .ResourcesSpec.Requests.CPUQuantity }}"
         {{- end }}
-        {{- if .ResourcesSpec.Requests.Memory }}
-        memory: "{{ .ResourcesSpec.Requests.Memory }}"
+        {{- if .ResourcesSpec.Requests.MemoryQuantity }}
+        memory: "{{ .ResourcesSpec.Requests.MemoryQuantity }}"
         {{- end }}
       limits:
         {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
          alpha.kubernetes.io/nvidia-gpu: "{{ .ResourcesSpec.Accelerators.GPU }}"
          {{- end }}
-         {{- if .ResourcesSpec.Limits.CPU }}
-         cpu: "{{ .ResourcesSpec.Limits.CPU }}"
+         {{- if .ResourcesSpec.Limits.CPUQuantity }}
+         cpu: "{{ .ResourcesSpec.Limits.CPUQuantity }}"
          {{- end }}
-         {{- if .ResourcesSpec.Limits.Memory }}
-         memory: "{{ .ResourcesSpec.Limits.Memory }}"
+         {{- if .ResourcesSpec.Limits.MemoryQuantity }}
+         memory: "{{ .ResourcesSpec.Limits.MemoryQuantity }}"
          {{- end }}
 {{ toYaml .Mounts | indent 4 }}
 {{ toYaml .Volumes | indent 2 }}
@@ -107,7 +107,7 @@ type TaskResourceGenerator struct {
 }
 
 func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
-	return ResourceSpec(t.Resources, t.c.ClusterLimits, ResourceReqLim{CPU: "50m", Memory: "128Mi"})
+	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, ResourceLimit{CPUMi: 50, MemoryMB: 128})
 }
 
 func (t TaskResourceGenerator) Env() []Env {
@@ -187,6 +187,9 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 		Kind:   &groupKind,
 	}*/
 	for _, r := range task.Resources {
+		if err := c.CheckResourceLimit(r.Resource, r.Name); err != nil {
+			return nil, err
+		}
 		volumes, mounts, err := c.KubeVolumesSpec(r.VolumeMounts(c.VolumesData, c.DefaultMountPath))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)

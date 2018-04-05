@@ -89,21 +89,21 @@ spec:
         {{- end }}
         resources:
           requests:
-            {{- if .ResourcesSpec.Requests.CPU }}
-            cpu: "{{ .ResourcesSpec.Requests.CPU }}"
+            {{- if .ResourcesSpec.Requests.CPUQuantity }}
+            cpu: "{{ .ResourcesSpec.Requests.CPUQuantity }}"
             {{- end }}
-            {{- if .ResourcesSpec.Requests.Memory }}
-            memory: "{{ .ResourcesSpec.Requests.Memory }}"
+            {{- if .ResourcesSpec.Requests.MemoryQuantity }}
+            memory: "{{ .ResourcesSpec.Requests.MemoryQuantity }}"
             {{- end }}
           limits:
             {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .ResourcesSpec.Accelerators.GPU }}"
             {{- end }}
-            {{- if .ResourcesSpec.Limits.CPU }}
-            cpu: "{{ .ResourcesSpec.Limits.CPU }}"
+            {{- if .ResourcesSpec.Limits.CPUQuantity }}
+            cpu: "{{ .ResourcesSpec.Limits.CPUQuantity }}"
             {{- end }}
-            {{- if .ResourcesSpec.Limits.Memory }}
-            memory: "{{ .ResourcesSpec.Limits.Memory }}"
+            {{- if .ResourcesSpec.Limits.MemoryQuantity }}
+            memory: "{{ .ResourcesSpec.Limits.MemoryQuantity }}"
             {{- end }}
 {{ toYaml .Mounts | indent 8 }}
 {{ toYaml .Volumes | indent 6 }}
@@ -118,7 +118,11 @@ type UIXResourceGenerator struct {
 }
 
 func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {
-	return ResourceSpec(ui.Resources, ui.c.ClusterLimits, ResourceReqLim{CPU: "50m", Memory: "128Mi"})
+	return ResourceSpec(
+		ui.Resources,
+		ui.c.BoardMetadata.Limits,
+		ResourceLimit{CPUMi: 50, MemoryMB: 128},
+	)
 }
 
 func (ui UIXResourceGenerator) Replicas() int {
@@ -171,6 +175,10 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 	for _, uix := range c.Uix {
 		if uix.Disabled {
 			continue
+		}
+
+		if err := c.CheckResourceLimit(uix.Resource, uix.Name); err != nil {
+			return nil, err
 		}
 
 		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath))
@@ -253,6 +261,11 @@ func (c *BoardConfig) GenerateServingResources(serving Serving) ([]*kubernetes.K
 	if err != nil {
 		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
 	}
+
+	if err := c.CheckResourceLimit(serving.Uix.Resource, serving.Name); err != nil {
+		return nil, err
+	}
+
 	g := ServingResourceGenerator{
 		TaskName:  serving.TaskName,
 		Build:     serving.Build,
@@ -376,8 +389,8 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 	})
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
 		count := r.Resources.Accelerators.GPU
-		if c.ClusterLimits != nil && c.ClusterLimits.GPU > 0 {
-			count = c.ClusterLimits.GPU
+		if c.BoardMetadata.Limits != nil && c.BoardMetadata.Limits.GPU > 0 {
+			count = uint(c.BoardMetadata.Limits.GPU)
 		}
 		envs = append(envs, Env{
 			Name:  "GPU_COUNT",

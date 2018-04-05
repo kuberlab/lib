@@ -43,11 +43,30 @@ type Config struct {
 }
 
 type BoardConfig struct {
-	DealerAPI     string          `json:"dealer_api,omitempty"`
-	VolumesData   []Volume        `json:"volumes_data,omitempty"`
-	ClusterLimits *ResourceReqLim `json:"cluster_limits,omitempty"`
-	Secrets       []Secret        `json:"secrets,omitempty"`
+	DealerAPI     string   `json:"dealer_api,omitempty"`
+	VolumesData   []Volume `json:"volumes_data,omitempty"`
+	Secrets       []Secret `json:"secrets,omitempty"`
+	BoardMetadata Metadata `json:"board_metadata"`
 	Config        `json:",inline"`
+}
+
+type Metadata struct {
+	Limits *ResourceLimit `json:"limits,omitempty"`
+}
+
+func (c *BoardConfig) CheckResourceLimit(res Resource, resName string) error {
+	if c.BoardMetadata.Limits == nil {
+		return nil
+	}
+	if c.BoardMetadata.Limits.Replicas > 0 {
+		if int64(res.Replicas) > c.BoardMetadata.Limits.Replicas {
+			return fmt.Errorf(
+				"Invalid replicas %v for resource %v: maximum allowed: %v",
+				res.Replicas, resName, c.BoardMetadata.Limits.Replicas,
+			)
+		}
+	}
+	return nil
 }
 
 func (c Config) ValidateConfig() error {
