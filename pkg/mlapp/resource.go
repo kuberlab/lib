@@ -14,10 +14,10 @@ type ResourceAccelerators struct {
 
 type ResourceLimit struct {
 	// Deprecated: use CPUMi instead.
-	CPU *resource.Quantity `json:"cpu"`
+	CPU *resource.Quantity `json:"cpu,omitempty"`
 	// Deprecated: use MemoryMB instead.
-	Memory        *resource.Quantity `json:"memory"`
-	GPU           int64              `json:"gpu"`
+	Memory        *resource.Quantity `json:"memory,omitempty"`
+	GPU           int64              `json:"gpu,omitempty"`
 	CPUMi         int64              `json:"cpu_mi,omitempty"`
 	MemoryMB      int64              `json:"memory_mb,omitempty"`
 	Replicas      int64              `json:"replicas,omitempty"`
