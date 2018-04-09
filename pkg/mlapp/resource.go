@@ -1,6 +1,8 @@
 package mlapp
 
-import "k8s.io/apimachinery/pkg/api/resource"
+import (
+	"k8s.io/apimachinery/pkg/api/resource"
+)
 
 type ResourceRequest struct {
 	Accelerators ResourceAccelerators `json:"accelerators"`
@@ -26,6 +28,11 @@ type ResourceLimit struct {
 }
 
 func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
+	// In templates
+	if r == nil {
+		return nil
+	}
+
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.CPU != nil && !r.CPU.IsZero() {
 		q = r.CPU
@@ -39,12 +46,20 @@ func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 }
 
 func (r *ResourceLimit) GPUQuantity() *resource.Quantity {
+	// In templates
+	if r == nil {
+		return nil
+	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	q.Set(r.GPU)
 	return q
 }
 
 func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
+	// In templates
+	if r == nil {
+		return nil
+	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.Memory != nil && !r.Memory.IsZero() {
 		q = r.Memory

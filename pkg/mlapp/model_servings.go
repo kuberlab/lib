@@ -21,12 +21,14 @@ const (
 
 type ModelServing struct {
 	Uix
-	Source      *GitRepoVolumeSource `json:"source,omitempty"`
-	ModelID     string               `json:"model_id,omitempty"`
-	Model       string               `json:"model,omitempty"`
-	ModelURL    string               `json:"model_url,omitempty"`
-	WorkspaceID string               `json:"workspace_id,omitempty"`
-	Workspace   string               `json:"workspace,omitempty"`
+	Source          *GitRepoVolumeSource `json:"source,omitempty"`
+	DealerAPI       string               `json:"dealer_api"`
+	ModelID         string               `json:"model_id,omitempty"`
+	Model           string               `json:"model,omitempty"`
+	ModelURL        string               `json:"model_url,omitempty"`
+	WorkspaceID     string               `json:"workspace_id,omitempty"`
+	Workspace       string               `json:"workspace,omitempty"`
+	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
 }
 
 func (serv ModelServing) Volume() *Volume {
