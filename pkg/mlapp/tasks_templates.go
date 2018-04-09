@@ -8,6 +8,7 @@ import (
 
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	//"github.com/kuberlab/lib/pkg/mlapp/ssh"
+	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
@@ -107,7 +108,7 @@ type TaskResourceGenerator struct {
 }
 
 func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
-	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, ResourceLimit{CPUMi: 50, MemoryMB: 128})
+	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128})
 }
 
 func (t TaskResourceGenerator) Env() []Env {

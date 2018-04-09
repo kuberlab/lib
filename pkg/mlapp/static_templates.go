@@ -11,6 +11,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/kuberlab/lib/pkg/dealerclient"
 )
 
 const DeploymentTpl = `
@@ -121,7 +122,7 @@ func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {
 	return ResourceSpec(
 		ui.Resources,
 		ui.c.BoardMetadata.Limits,
-		ResourceLimit{CPUMi: 50, MemoryMB: 128},
+		dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128},
 	)
 }
 

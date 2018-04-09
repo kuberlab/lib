@@ -14,7 +14,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/errors"
-	"github.com/kuberlab/lib/pkg/mlapp"
 )
 
 type Client struct {
@@ -45,20 +44,6 @@ type Workspace struct {
 	DisplayName string
 	Type        string
 	Can         []string
-}
-
-func NewClientFromBoardConfig(c *mlapp.BoardConfig) (*Client, error) {
-	wsSecret := c.GetWorkspaceSecret()
-	if wsSecret == "" {
-		return nil, errors.New("Workspace secret not found")
-	}
-	return NewClient(
-		c.DealerAPI,
-		&AuthOpts{
-			WorkspaceSecret: wsSecret,
-			Workspace:       c.Workspace,
-		},
-	)
 }
 
 func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
@@ -205,13 +190,13 @@ func (c *Client) GetWorkspace(workspace string) (*Workspace, error) {
 	return ws, nil
 }
 
-func (c *Client) GetWorkspaceLimit(workspace string) (*mlapp.ResourceLimit, error) {
+func (c *Client) GetWorkspaceLimit(workspace string) (*ResourceLimit, error) {
 	if c.auth.WorkspaceSecret == "" {
 		return nil, errors.New("Workspace secret auth required.")
 	}
 	u := fmt.Sprintf("/secret/%v/limits", c.auth.WorkspaceSecret)
 
-	var limit = &mlapp.ResourceLimit{}
+	var limit = &ResourceLimit{}
 	req, err := c.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err

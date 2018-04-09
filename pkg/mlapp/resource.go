@@ -2,83 +2,28 @@ package mlapp
 
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/kuberlab/lib/pkg/dealerclient"
 )
 
 type ResourceRequest struct {
 	Accelerators ResourceAccelerators `json:"accelerators"`
-	Requests     *ResourceLimit       `json:"requests"`
-	Limits       *ResourceLimit       `json:"limits"`
+	Requests     *dealerclient.ResourceLimit       `json:"requests"`
+	Limits       *dealerclient.ResourceLimit       `json:"limits"`
 }
 
 type ResourceAccelerators struct {
 	GPU uint `json:"gpu"`
 }
 
-type ResourceLimit struct {
-	// Deprecated: use CPUMi instead.
-	CPU *resource.Quantity `json:"cpu,omitempty"`
-	// Deprecated: use MemoryMB instead.
-	Memory        *resource.Quantity `json:"memory,omitempty"`
-	GPU           int64              `json:"gpu,omitempty"`
-	CPUMi         int64              `json:"cpu_mi,omitempty"`
-	MemoryMB      int64              `json:"memory_mb,omitempty"`
-	Replicas      int64              `json:"replicas,omitempty"`
-	ParallelRuns  int64              `json:"parallel_runs,omitempty"`
-	ExecutionTime int64              `json:"execution_time,omitempty"`
-}
 
-func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
-	// In templates
-	if r == nil {
-		return nil
-	}
 
-	q := &resource.Quantity{Format: resource.DecimalSI}
-	if r.CPUMi != 0 {
-		q.SetMilli(r.CPUMi)
-	} else if r.CPU != nil && !r.CPU.IsZero() {
-		q = r.CPU
-		r.CPUMi = q.MilliValue()
-	} else {
-		return nil
-	}
-	return q
-}
-
-func (r *ResourceLimit) GPUQuantity() *resource.Quantity {
-	// In templates
-	if r == nil {
-		return nil
-	}
-	q := &resource.Quantity{Format: resource.DecimalSI}
-	q.Set(r.GPU)
-	return q
-}
-
-func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
-	// In templates
-	if r == nil {
-		return nil
-	}
-	q := &resource.Quantity{Format: resource.DecimalSI}
-	if r.MemoryMB != 0 {
-		q.SetScaled(r.MemoryMB, resource.Mega)
-	} else if r.Memory != nil && !r.Memory.IsZero() {
-		q = r.Memory
-		r.MemoryMB = q.ScaledValue(resource.Mega)
-	} else {
-		return nil
-	}
-	return q
-}
-
-func ResourceSpec(r *ResourceRequest, limitVal *ResourceLimit, defaultReq ResourceLimit) ResourceRequest {
+func ResourceSpec(r *ResourceRequest, limitVal *dealerclient.ResourceLimit, defaultReq dealerclient.ResourceLimit) ResourceRequest {
 	if r == nil {
 		r = &ResourceRequest{}
 	}
 	var gpuLimitCluster *resource.Quantity
 	if limitVal == nil {
-		limitVal = &ResourceLimit{}
+		limitVal = &dealerclient.ResourceLimit{}
 		//no gpu limit
 		gpuLimitCluster = nil
 	} else {
@@ -106,11 +51,11 @@ func ResourceSpec(r *ResourceRequest, limitVal *ResourceLimit, defaultReq Resour
 		Accelerators: ResourceAccelerators{
 			GPU: quantity2Uint(gpu1),
 		},
-		Limits: &ResourceLimit{
+		Limits: &dealerclient.ResourceLimit{
 			CPUMi:    cpu2.MilliValue(),
 			MemoryMB: memory2.ScaledValue(resource.Mega),
 		},
-		Requests: &ResourceLimit{
+		Requests: &dealerclient.ResourceLimit{
 			CPUMi:    cpu1.MilliValue(),
 			MemoryMB: memory1.ScaledValue(resource.Mega),
 		},

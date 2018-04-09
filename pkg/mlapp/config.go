@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/utils"
@@ -51,7 +52,7 @@ type BoardConfig struct {
 }
 
 type Metadata struct {
-	Limits *ResourceLimit `json:"limits,omitempty"`
+	Limits *dealerclient.ResourceLimit `json:"limits,omitempty"`
 }
 
 func (c *BoardConfig) CheckResourceLimit(res Resource, resName string) error {
