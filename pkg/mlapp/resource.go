@@ -34,11 +34,11 @@ func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 	}
 
 	q := &resource.Quantity{Format: resource.DecimalSI}
-	if r.CPU != nil && !r.CPU.IsZero() {
+	if r.CPUMi != 0 {
+		q.SetMilli(r.CPUMi)
+	} else if r.CPU != nil && !r.CPU.IsZero() {
 		q = r.CPU
 		r.CPUMi = q.MilliValue()
-	} else if r.CPUMi != 0 {
-		q.SetMilli(r.CPUMi)
 	} else {
 		return nil
 	}
@@ -61,11 +61,11 @@ func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
 		return nil
 	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
-	if r.Memory != nil && !r.Memory.IsZero() {
+	if r.MemoryMB != 0 {
+		q.SetScaled(r.MemoryMB, resource.Mega)
+	} else if r.Memory != nil && !r.Memory.IsZero() {
 		q = r.Memory
 		r.MemoryMB = q.ScaledValue(resource.Mega)
-	} else if r.MemoryMB != 0 {
-		q.SetScaled(r.MemoryMB, resource.Mega)
 	} else {
 		return nil
 	}
