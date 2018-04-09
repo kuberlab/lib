@@ -731,6 +731,19 @@ func (c *BoardConfig) GetSecretName(secret Secret) string {
 	return utils.KubeLabelEncode(c.Name + "-" + secret.Name)
 }
 
+func (c *BoardConfig) GetWorkspaceSecret() string {
+	name := fmt.Sprintf("ws-key-%v", c.WorkspaceID)
+	for _, s := range c.Secrets {
+		if strings.Contains(s.Name, name) {
+			for _, v := range s.Data {
+				// Return 1st value.
+				return v
+			}
+		}
+	}
+	return ""
+}
+
 func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
 	l1 := map[string]string{
 		KUBERLAB_WS_LABEL:     utils.KubeLabelEncode(c.Workspace),
