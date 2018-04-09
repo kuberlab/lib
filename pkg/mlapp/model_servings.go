@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ghodss/yaml"
+	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
@@ -110,7 +111,7 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 	return utils.KubeDeploymentEncode(fmt.Sprintf("%s", serving.Name()))
 }
 
-func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
+func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
 	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath))
@@ -147,6 +148,21 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 		mounts = append(mounts, mountsSpec...)
 	}
 
+	if dealerLimits && serving.DealerAPI != "" && serving.WorkspaceSecret != "" {
+		dealer, err := dealerclient.NewClient(
+			serving.DealerAPI,
+			&dealerclient.AuthOpts{WorkspaceSecret: serving.WorkspaceSecret, Workspace: serving.Workspace},
+		)
+		if err != nil {
+			return nil, err
+		}
+		limits, err := dealer.GetWorkspaceLimit(serving.Workspace)
+		if err != nil {
+			return nil, err
+		}
+		c.BoardMetadata.Limits = limits
+	}
+
 	g := ServingModelResourceGenerator{
 		UIXResourceGenerator: UIXResourceGenerator{
 			c:              c,
@@ -169,7 +185,7 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing) ([]*kubernetes.
 	return resources, nil
 }
 
-func GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, error) {
+func GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	vol := serving.Volume()
 	var volData = make([]Volume, 0)
 	if vol != nil {
@@ -186,7 +202,7 @@ func GenerateModelServing(serving ModelServing) ([]*kubernetes.KubeResource, err
 		},
 		VolumesData: volData,
 	}
-	return cfg.GenerateModelServing(serving)
+	return cfg.GenerateModelServing(serving, dealerLimits)
 }
 
 func generateServingServiceFromDeployment(serv *extv1beta1.Deployment) *kubernetes.KubeResource {
