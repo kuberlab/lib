@@ -5,13 +5,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"github.com/kuberlab/lib/pkg/dealerclient"
 )
 
 const DeploymentTpl = `
@@ -34,6 +34,10 @@ spec:
         {{ $key }}: "{{ $value }}"
         {{- end }}
     spec:
+      {{- if.NodeSelector }}
+      nodeSelector:
+        kuberlab.io/ml-node: .NodeSelector
+      {{- end }}
       {{- if gt (len .InitContainers) 0 }}
       initContainers:
       {{- range $i, $value := .InitContainers }}
@@ -42,6 +46,13 @@ spec:
         command: {{ $value.Command }}
 {{ toYaml $value.Mounts | indent 8 }}
       {{- end }}
+      {{- end }}
+      tolerations:
+      - key: role.kuberlab.io/cpu-compute
+        effect: PreferNoSchedule
+      {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
+      - key: role.kuberlab.io/gpu-compute
+        effect: PreferNoSchedule
       {{- end }}
       containers:
       - name: {{ .ComponentName }}
@@ -116,6 +127,13 @@ type UIXResourceGenerator struct {
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
+}
+
+func (ui UIXResourceGenerator) NodeSelector() string {
+	if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
+		return utils.GetDefaultGPUNodeSelector()
+	}
+	return utils.GetDefaultCPUNodeSelector()
 }
 
 func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {

@@ -53,6 +53,16 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 		labels[types.KuberlabMLNodeLabel] = node
 		p.Labels = labels
 		p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: node}
+	} else {
+		defautTemplate := utils.GetDefaultCPUNodeSelector()
+		if t := p.Labels[types.ComputeTypeLabel]; t == "gpu" {
+			if gtemplate := utils.GetDefaultGPUNodeSelector(); gtemplate != "" {
+				defautTemplate = gtemplate
+			}
+		}
+		if defautTemplate != "" {
+			p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: defautTemplate}
+		}
 	}
 	for j, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))

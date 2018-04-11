@@ -44,11 +44,11 @@ type Config struct {
 }
 
 type BoardConfig struct {
-	DealerAPI     string   `json:"dealer_api,omitempty"`
-	VolumesData   []Volume `json:"volumes_data,omitempty"`
-	Secrets       []Secret `json:"secrets,omitempty"`
-	BoardMetadata Metadata `json:"board_metadata,omitempty"`
-	Config        `json:",inline"`
+	DealerAPI       string   `json:"dealer_api,omitempty"`
+	VolumesData     []Volume `json:"volumes_data,omitempty"`
+	Secrets         []Secret `json:"secrets,omitempty"`
+	BoardMetadata   Metadata `json:"board_metadata,omitempty"`
+	Config          `json:",inline"`
 }
 
 type Metadata struct {

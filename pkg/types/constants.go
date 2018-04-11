@@ -7,4 +7,5 @@ const (
 	ComponentLabel      = "kuberlab.io/component"
 	ServingIDLabel      = "kuberlab.io/serving-id"
 	KuberlabMLNodeLabel = "kuberlab.io/ml-node"
+	ComputeTypeLabel    = "kuberlab.io/compute-type"
 )

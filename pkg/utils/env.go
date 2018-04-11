@@ -5,11 +5,13 @@ import (
 )
 
 const (
-	Namespace        = "POD_NAMESPACE"
-	DefaultNamespace = "kuberlab"
-	Name             = "POD_NAME"
-	LogLevel         = "LOG_LEVEL"
-	MasterJob        = "MASTER_JOB"
+	Namespace              = "POD_NAMESPACE"
+	DefaultNamespace       = "kuberlab"
+	Name                   = "POD_NAME"
+	LogLevel               = "LOG_LEVEL"
+	MasterJob              = "MASTER_JOB"
+	DefaultGPUNodeSelector = "DEFAULT_GPU_NODE_SELECTOR"
+	DefaultCPUNodeSelector = "DEFAULT_CPU_NODE_SELECTOR"
 )
 
 func getFromEnv(varName string) string {
@@ -34,4 +36,12 @@ func GetName() string {
 
 func GetMasterJob() string {
 	return getFromEnv(MasterJob)
+}
+
+func GetDefaultGPUNodeSelector() string {
+	return getFromEnv(DefaultGPUNodeSelector)
+}
+
+func GetDefaultCPUNodeSelector() string {
+	return getFromEnv(DefaultCPUNodeSelector)
 }

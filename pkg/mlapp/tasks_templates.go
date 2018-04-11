@@ -31,6 +31,13 @@ spec:
   hostname: "{{ .BuildName }}"
   subdomain: "{{ .BuildName }}"
   restartPolicy: Never
+  tolerations:
+  - key: role.kuberlab.io/cpu-compute
+    effect: PreferNoSchedule
+  {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
+  - key: role.kuberlab.io/gpu-compute
+    effect: PreferNoSchedule
+  {{- end }}
   {{- if gt (len .InitContainers) 0 }}
   initContainers:
   {{- range $i, $value := .InitContainers }}
@@ -162,11 +169,16 @@ func (t TaskResourceGenerator) Namespace() string {
 }
 
 func (t TaskResourceGenerator) Labels() map[string]string {
+	computeType := "cpu"
+	if t.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+	}
 	return t.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     t.task.Name + "-" + t.TaskResource.Name,
 		types.TASK_ID_LABEL:      t.JobID,
 		types.TASK_NAME_LABEL:    t.task.Name,
 		types.ComponentTypeLabel: "task",
+		types.ComputeTypeLabel:   computeType,
 	})
 }
 
@@ -177,16 +189,6 @@ func (t TaskResourceGenerator) Args() string {
 
 func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
-	/*sshName := utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s", c.Name, task.Name, jobID))
-	sshSecret, sshVolumes, sshVolumesMount := ssh.TaskSshSupport(sshName, c.GetNamespace(), c.ResourceLabels(map[string]string{
-		types.TASK_ID_LABEL: jobID,
-	}))
-	groupKind := sshSecret.GroupVersionKind()
-	sshSecretResource := kuberlab.KubeResource{
-		Name:   sshName + ":secret",
-		Object: sshSecret,
-		Kind:   &groupKind,
-	}*/
 	for _, r := range task.Resources {
 		if err := c.CheckResourceLimit(r.Resource, r.Name); err != nil {
 			return nil, err
