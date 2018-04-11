@@ -36,7 +36,7 @@ spec:
     spec:
       {{- if.NodeSelector }}
       nodeSelector:
-        kuberlab.io/ml-node: .NodeSelector
+        kuberlab.io/ml-node: {{ .NodeSelector }}
       {{- end }}
       {{- if gt (len .InitContainers) 0 }}
       initContainers:
