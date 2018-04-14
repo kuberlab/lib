@@ -329,7 +329,6 @@ type Env struct {
 
 type TaskResourceSpec struct {
 	PodsNumber    int
-	DoneCondition string
 	TaskName      string
 	ResourceName  string
 	NodeAllocator string

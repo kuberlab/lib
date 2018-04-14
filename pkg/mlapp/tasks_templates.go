@@ -219,10 +219,6 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 		if err != nil {
 			return nil, err
 		}
-		allowFail := true
-		if r.AllowFail != nil {
-			allowFail = *r.AllowFail
-		}
 		res.Object = &kuberlab.WorkerSet{
 			PodTemplate:  res.Object.(*v1.Pod),
 			ResourceName: r.Name,
@@ -230,7 +226,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 			ProjectName:  c.Name,
 			Namespace:    c.GetNamespace(),
 			JobID:        jobID,
-			AllowFail:    allowFail,
+			IsPermanent:  r.IsPermanent,
 			MaxRestarts:  r.MaxRestartCount,
 			Replicas:     int(r.Replicas),
 			Selector: c.ResourceSelector(map[string]string{
@@ -246,7 +242,6 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 			res.Deps = []*kuberlab.KubeResource{generateHeadlessService(g)}
 		}
 		taskSpec = append(taskSpec, TaskResourceSpec{
-			DoneCondition: r.DoneCondition,
 			TaskName:      task.Name,
 			ResourceName:  r.Name,
 			PodsNumber:    int(r.Replicas),
