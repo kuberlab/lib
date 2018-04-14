@@ -20,7 +20,7 @@ type WorkerSet struct {
 	JobID        string
 	Replicas     int
 	MaxRestarts  int
-	AllowFail    bool
+	IsPermanent  bool
 	PodTemplate  *v1.Pod
 	Selector     meta_v1.ListOptions
 }
