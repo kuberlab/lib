@@ -44,11 +44,11 @@ type Config struct {
 }
 
 type BoardConfig struct {
-	DealerAPI       string   `json:"dealer_api,omitempty"`
-	VolumesData     []Volume `json:"volumes_data,omitempty"`
-	Secrets         []Secret `json:"secrets,omitempty"`
-	BoardMetadata   Metadata `json:"board_metadata,omitempty"`
-	Config          `json:",inline"`
+	DealerAPI     string   `json:"dealer_api,omitempty"`
+	VolumesData   []Volume `json:"volumes_data,omitempty"`
+	Secrets       []Secret `json:"secrets,omitempty"`
+	BoardMetadata Metadata `json:"board_metadata,omitempty"`
+	Config        `json:",inline"`
 }
 
 type Metadata struct {
@@ -310,9 +310,8 @@ type TaskResource struct {
 	Meta            `json:",inline"`
 	RestartPolicy   string `json:"restartPolicy"`
 	MaxRestartCount int    `json:"maxRestartCount"`
-	AllowFail       *bool  `json:"allowFail,omitempty"`
+	IsPermanent     bool   `json:"is_permanent"`
 	Port            int32  `json:"port,omitempty"`
-	DoneCondition   string `json:"doneCondition,omitempty"`
 	Resource        `json:",inline"`
 }
 
