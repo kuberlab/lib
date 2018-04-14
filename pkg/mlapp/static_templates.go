@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"bytes"
+	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
@@ -12,9 +14,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"github.com/kuberlab/lib/pkg/apputil"
 	"text/template"
-	"bytes"
 )
 
 const DeploymentTpl = `
@@ -161,7 +161,7 @@ func (ui UIXResourceGenerator) Env() []Env {
 			Value: ui.c.ProxyURL(ui.Uix.Name),
 		},
 	)
-	return env
+	return ResolveEnv(env)
 }
 func (ui UIXResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
@@ -255,7 +255,7 @@ func (serving ServingResourceGenerator) Env() []Env {
 			}
 		}
 	}
-	return envs
+	return ResolveEnv(envs)
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
 	return serving.c.ResourceLabels(map[string]string{
@@ -456,24 +456,25 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 	return envs
 }
 
-func ResolveEnv(envs []Env){
+func ResolveEnv(envs []Env) []Env {
 	vars := map[string]string{}
-	for _,e := range envs{
-		if e.SecretKey=="" {
+	for _, e := range envs {
+		if e.SecretKey == "" {
 			vars[e.Name] = e.Value
 		}
 	}
-	for i,e := range envs{
-		if e.SecretKey != ""{
+	for i, e := range envs {
+		if e.SecretKey != "" {
 			continue
 		}
 		t := template.New("gotpl")
 		t = t.Funcs(apputil.FuncMap())
-		if t, err := t.Parse(e.Value);err==nil{
+		if t, err := t.Parse(e.Value); err == nil {
 			buffer := bytes.NewBuffer(make([]byte, 0))
 			if err := t.ExecuteTemplate(buffer, "gotpl", vars); err == nil {
 				envs[i].Value = buffer.String()
 			}
 		}
 	}
+	return envs
 }

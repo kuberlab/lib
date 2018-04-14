@@ -149,7 +149,7 @@ func (t TaskResourceGenerator) Env() []Env {
 		Name:  strings.ToUpper("TASK_NAME"),
 		Value: t.task.Name,
 	})
-	return envs
+	return ResolveEnv(envs)
 }
 func (t TaskResourceGenerator) BuildName() string {
 	return utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.JobID, t.TaskResource.Name))

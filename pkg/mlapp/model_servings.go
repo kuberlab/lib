@@ -91,7 +91,7 @@ func (serving ServingModelResourceGenerator) Env() []Env {
 			Value: "/model",
 		},
 	)
-	return envs
+	return ResolveEnv(envs)
 }
 func (serving ServingModelResourceGenerator) Labels() map[string]string {
 	return map[string]string{
