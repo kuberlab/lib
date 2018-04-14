@@ -12,6 +12,9 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/kuberlab/lib/pkg/apputil"
+	"text/template"
+	"bytes"
 )
 
 const DeploymentTpl = `
@@ -451,4 +454,26 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 	}
 
 	return envs
+}
+
+func ResolveEnv(envs []Env){
+	vars := map[string]string{}
+	for _,e := range envs{
+		if e.SecretKey=="" {
+			vars[e.Name] = e.Value
+		}
+	}
+	for i,e := range envs{
+		if e.SecretKey != ""{
+			continue
+		}
+		t := template.New("gotpl")
+		t = t.Funcs(apputil.FuncMap())
+		if t, err := t.Parse(e.Value);err==nil{
+			buffer := bytes.NewBuffer(make([]byte, 0))
+			if err := t.ExecuteTemplate(buffer, "gotpl", vars); err == nil {
+				envs[i].Value = buffer.String()
+			}
+		}
+	}
 }
