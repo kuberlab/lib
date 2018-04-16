@@ -5,9 +5,7 @@ import (
 )
 
 type ResourceLimit struct {
-	// Deprecated: use CPUMi instead.
-	CPU *resource.Quantity `json:"cpu,omitempty"`
-	// Deprecated: use MemoryMB instead.
+	CPU           *resource.Quantity `json:"cpu,omitempty"`
 	Memory        *resource.Quantity `json:"memory,omitempty"`
 	GPU           int64              `json:"gpu,omitempty"`
 	CPUMi         int64              `json:"cpu_mi,omitempty"`
@@ -23,7 +21,7 @@ func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 		return nil
 	}
 
-	if r.CPU.MilliValue() <= 0 || r.CPUMi <= 0 {
+	if (r.CPU != nil && r.CPU.MilliValue() <= 0) || r.CPUMi < 0 {
 		return nil
 	}
 
@@ -59,7 +57,7 @@ func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
 		return nil
 	}
 
-	if r.MemoryMB <= 0 || r.Memory.Value() <= 0 {
+	if r.MemoryMB < 0 || (r.Memory != nil && r.Memory.Value() <= 0) {
 		return nil
 	}
 

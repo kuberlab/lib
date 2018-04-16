@@ -1,21 +1,19 @@
 package mlapp
 
 import (
-	"k8s.io/apimachinery/pkg/api/resource"
 	"github.com/kuberlab/lib/pkg/dealerclient"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type ResourceRequest struct {
-	Accelerators ResourceAccelerators `json:"accelerators"`
-	Requests     *dealerclient.ResourceLimit       `json:"requests"`
-	Limits       *dealerclient.ResourceLimit       `json:"limits"`
+	Accelerators ResourceAccelerators        `json:"accelerators"`
+	Requests     *dealerclient.ResourceLimit `json:"requests"`
+	Limits       *dealerclient.ResourceLimit `json:"limits"`
 }
 
 type ResourceAccelerators struct {
 	GPU uint `json:"gpu"`
 }
-
-
 
 func ResourceSpec(r *ResourceRequest, limitVal *dealerclient.ResourceLimit, defaultReq dealerclient.ResourceLimit) ResourceRequest {
 	if r == nil {
@@ -52,12 +50,12 @@ func ResourceSpec(r *ResourceRequest, limitVal *dealerclient.ResourceLimit, defa
 			GPU: quantity2Uint(gpu1),
 		},
 		Limits: &dealerclient.ResourceLimit{
-			CPUMi:    cpu2.MilliValue(),
-			MemoryMB: memory2.ScaledValue(resource.Mega),
+			CPU:    cpu2,
+			Memory: memory2,
 		},
 		Requests: &dealerclient.ResourceLimit{
-			CPUMi:    cpu1.MilliValue(),
-			MemoryMB: memory1.ScaledValue(resource.Mega),
+			CPU:    cpu1,
+			Memory: memory1,
 		},
 	}
 }
