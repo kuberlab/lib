@@ -23,6 +23,10 @@ func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 		return nil
 	}
 
+	if r.CPU.MilliValue() <= 0 || r.CPUMi <= 0 {
+		return nil
+	}
+
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.CPUMi != 0 {
 		q.SetMilli(r.CPUMi)
@@ -40,6 +44,10 @@ func (r *ResourceLimit) GPUQuantity() *resource.Quantity {
 	if r == nil {
 		return nil
 	}
+	if r.GPU < 0 {
+		// No limit
+		return nil
+	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	q.Set(r.GPU)
 	return q
@@ -50,6 +58,11 @@ func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
 	if r == nil {
 		return nil
 	}
+
+	if r.MemoryMB <= 0 || r.Memory.Value() <= 0 {
+		return nil
+	}
+
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.MemoryMB != 0 {
 		q.SetScaled(r.MemoryMB, resource.Mega)
