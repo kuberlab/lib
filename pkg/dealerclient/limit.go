@@ -40,6 +40,10 @@ func (r *ResourceLimit) GPUQuantity() *resource.Quantity {
 	if r == nil {
 		return nil
 	}
+	if r.GPU == -1 {
+		// No limit
+		return nil
+	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	q.Set(r.GPU)
 	return q
