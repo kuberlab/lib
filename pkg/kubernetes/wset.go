@@ -61,6 +61,10 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 			}
 		}
 		if defautTemplate != "" {
+			labels := make(map[string]string)
+			utils.JoinMaps(labels, p.Labels)
+			labels[types.KuberlabMLNodeLabel] = defautTemplate
+			p.Labels = labels
 			p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: defautTemplate}
 		}
 	}
