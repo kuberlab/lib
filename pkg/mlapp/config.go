@@ -70,6 +70,16 @@ func (c *BoardConfig) CheckResourceLimit(res Resource, resName string) error {
 	return nil
 }
 
+func (c *BoardConfig) GPURequests() int64 {
+	var gpus int64 = 0
+	for _, uix := range c.Spec.Uix {
+		if uix.Resources != nil {
+			gpus += int64(uix.Resources.Accelerators.GPU)
+		}
+	}
+	return gpus
+}
+
 func (c Config) ValidateConfig() error {
 	resNameErr := func(n, r string) error {
 		return errors.NewStatusReason(
@@ -266,6 +276,14 @@ type Serving struct {
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
 }
 
+func (s *Serving) GPURequests() int64 {
+	var gpus int64 = 0
+	if s.Uix.Resources != nil {
+		gpus += int64(s.Uix.Resources.Accelerators.GPU)
+	}
+	return gpus
+}
+
 type ServingSpec struct {
 	Params      []ServingSpecParam `json:"params,omitempty"`
 	OutFilter   []string           `json:"outFilter,omitempty"`
@@ -299,6 +317,16 @@ type Task struct {
 	Revision         *Revision      `json:"revision,omitempty"`
 	GitRevisions     []TaskRevision `json:"gitRevisions,omitempty"`
 	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty"`
+}
+
+func (t *Task) GPURequests() int64 {
+	var gpus int64 = 0
+	for _, r := range t.Resources {
+		if r.Resources != nil {
+			gpus += int64(r.Resources.Accelerators.GPU)
+		}
+	}
+	return gpus
 }
 
 type TaskRevision struct {

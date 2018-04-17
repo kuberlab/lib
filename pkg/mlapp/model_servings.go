@@ -32,6 +32,14 @@ type ModelServing struct {
 	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
 }
 
+func (serv *ModelServing) GPURequests() int64 {
+	var gpus int64 = 0
+	if serv.Uix.Resources != nil {
+		gpus += int64(serv.Uix.Resources.Accelerators.GPU)
+	}
+	return gpus
+}
+
 func (serv ModelServing) Volume() *Volume {
 	if len(serv.Volumes) != 1 {
 		return nil
