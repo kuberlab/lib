@@ -28,6 +28,7 @@ const (
 
 	KindMlApp   = "MLApp"
 	KindServing = "Serving"
+	KindTask    = "Task"
 )
 
 var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
@@ -68,6 +69,10 @@ func (c *BoardConfig) CheckResourceLimit(res Resource, resName string) error {
 		}
 	}
 	return nil
+}
+
+func (c *BoardConfig) Type() string {
+	return KindMlApp
 }
 
 func (c *BoardConfig) GPURequests() int64 {
@@ -299,7 +304,7 @@ type ServingSpecParam struct {
 }
 
 func (s *Serving) Type() string {
-	return "Serving"
+	return KindServing
 }
 
 type Port struct {
@@ -317,6 +322,10 @@ type Task struct {
 	Revision         *Revision      `json:"revision,omitempty"`
 	GitRevisions     []TaskRevision `json:"gitRevisions,omitempty"`
 	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty"`
+}
+
+func (t *Task) Type() string {
+	return KindTask
 }
 
 func (t *Task) GPURequests() int64 {

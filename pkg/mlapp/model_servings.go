@@ -40,6 +40,10 @@ func (serv *ModelServing) GPURequests() int64 {
 	return gpus
 }
 
+func (serv *ModelServing) Type() string {
+	return KindServing
+}
+
 func (serv ModelServing) Volume() *Volume {
 	if len(serv.Volumes) != 1 {
 		return nil
