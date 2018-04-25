@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"crypto/tls"
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/errors"
 )
@@ -30,6 +31,7 @@ type AuthOpts struct {
 	Headers         http.Header
 	Workspace       string
 	WorkspaceSecret string
+	Insecure        bool
 }
 
 type Dataset struct {
@@ -62,9 +64,13 @@ func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
 		}
 		auth.Headers = hd
 	}
+	var transport = *(http.DefaultTransport.(*http.Transport))
+	if base.Scheme == "https" && auth.Insecure {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: auth.Insecure}
+	}
 
 	base.Path = "/api/v0.2"
-	baseClient := &http.Client{Timeout: time.Minute * 10}
+	baseClient := &http.Client{Timeout: time.Minute * 10, Transport: &transport}
 	return &Client{
 		BaseURL:   base,
 		Client:    baseClient,
