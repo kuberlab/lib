@@ -46,6 +46,7 @@ func GetPodSpec(name string, namespace string, image string, kubeVolume []v1.Vol
 		return nil, err
 	}
 	pod := o.Object.(*v1.Pod)
+	pod.Labels = map[string]string{"scope": "mlboard"}
 	pod.DeepCopyObject()
 	pod.Spec.Volumes = kubeVolume
 	pod.Spec.Containers[0].VolumeMounts = containerVolume

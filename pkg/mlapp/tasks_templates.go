@@ -179,6 +179,7 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 		types.TASK_NAME_LABEL:    t.task.Name,
 		types.ComponentTypeLabel: "task",
 		types.ComputeTypeLabel:   computeType,
+		"scope":                  "mlboard",
 	})
 }
 

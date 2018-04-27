@@ -185,6 +185,7 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 	return ui.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
+		"scope":                  "mlboard",
 	})
 }
 
@@ -262,6 +263,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 		types.ComponentLabel:     serving.Uix.Name,
 		types.ComponentTypeLabel: "serving",
 		types.ServingIDLabel:     serving.Name(),
+		"scope":                  "mlboard",
 	})
 }
 
