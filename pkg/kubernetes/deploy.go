@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"time"
 )
 
 type KubeResource struct {
@@ -181,13 +182,7 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return err
 		}
 	case *extv1beta1.Deployment:
-		if _, err := kubeClient.ExtensionsV1beta1().Deployments(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.ExtensionsV1beta1().Deployments(v.Namespace).Create(v)
-			return err
-		} else {
-			_, err := kubeClient.ExtensionsV1beta1().Deployments(v.Namespace).Update(v)
-			return err
-		}
+		return waitAndApply(kubeClient, v)
 	case *api_v1.Service:
 		if old, err := kubeClient.CoreV1().Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
 			_, err := kubeClient.CoreV1().Services(v.Namespace).Create(v)
@@ -255,6 +250,78 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 	default:
 		return errors.New("Undefined resource " + resource.Kind.GroupKind().Kind)
 	}
+}
+
+func waitAndApply(client *kubernetes.Clientset, new *extv1beta1.Deployment) error {
+	selector := make([]string, 0)
+	for k, v := range new.Labels {
+		selector = append(selector, fmt.Sprintf("%v==%v", k, v))
+	}
+	opts := meta_v1.ListOptions{
+		LabelSelector: strings.Join(selector, ","),
+	}
+
+	check := func() (bool, error) {
+		pods, err := client.CoreV1().Pods(new.Namespace).List(opts)
+		if err != nil {
+			return false, err
+		}
+		if podListAny(pods, isTerminating) {
+			// Retry
+			return false, nil
+		} else {
+			return true, nil
+		}
+	}
+
+	res, err := check()
+	if err != nil {
+		return err
+	}
+
+	if !res {
+		ticker := time.NewTicker(time.Second * 2)
+		timeout := time.NewTimer(time.Second * 35)
+		fall := false
+		for {
+			select {
+			case <-ticker.C:
+				res, err = check()
+				if err != nil {
+					return err
+				}
+				if res {
+					fall = true
+				}
+			case <-timeout.C:
+				fall = true
+			}
+			if fall {
+				break
+			}
+		}
+	}
+	if _, err := client.ExtensionsV1beta1().Deployments(new.Namespace).Get(new.Name, meta_v1.GetOptions{}); err != nil {
+		_, err := client.ExtensionsV1beta1().Deployments(new.Namespace).Create(new)
+		return err
+	} else {
+		_, err := client.ExtensionsV1beta1().Deployments(new.Namespace).Update(new)
+		return err
+	}
+
+	return nil
+}
+
+func podListAny(list *api_v1.PodList, predicate func(pod api_v1.Pod) bool) bool {
+	if list == nil {
+		return false
+	}
+	for _, p := range list.Items {
+		if predicate(p) {
+			return true
+		}
+	}
+	return false
 }
 
 func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) error {
