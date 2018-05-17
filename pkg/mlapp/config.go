@@ -495,6 +495,9 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, taskName, build *string) (
 				MountPath: baseDir,
 				ReadOnly:  false,
 			})
+			// Raise 39 exit code for further analysis.
+			cmdStr += "; if [ $? -ne 0 ]; then exit 39; fi"
+
 			inits = append(inits, InitContainers{
 				Mounts: map[string]interface{}{
 					"volumeMounts": vmounts,
