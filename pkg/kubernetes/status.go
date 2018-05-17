@@ -38,7 +38,7 @@ type ResourceState struct {
 
 var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
 var mountFailedPattern = regexp.MustCompile(`.*(MountVolume.*failed.*)`)
-var gitRepoPattern = regexp.MustCompile(`(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)`)
+var gitRepoPattern = regexp.MustCompile(`([\w]+@)+([\w\d-\.]+)[:/]([\w\d-_\./]+)|(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)`)
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
 	var name string
@@ -145,16 +145,25 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 			}
 			resourceState.Events = append(resourceState.Events, event)
 		}
-		if init.State.Terminated != nil {
-			if init.State.Terminated.ExitCode != 0 {
+		if init.State.Terminated != nil || init.LastTerminationState.Terminated != nil {
+			var terminated *api_v1.ContainerStateTerminated
+			if init.LastTerminationState.Terminated != nil {
+				terminated = init.LastTerminationState.Terminated
+			} else {
+				terminated = init.State.Terminated
+			}
+			if terminated.ExitCode != 0 {
 				event := api_v1.Event{
 					Count:          1,
 					Type:           "Warning",
 					FirstTimestamp: meta_v1.Now(),
 					LastTimestamp:  meta_v1.Now(),
+					Source: api_v1.EventSource{
+						Component: "mlboard",
+					},
 				}
-				if init.State.Terminated.ExitCode == 39 {
-					event.Reason = fmt.Sprintf("%v: %v", init.State.Terminated.Message, init.State.Terminated.Reason)
+				if terminated.ExitCode == 39 {
+					event.Reason = fmt.Sprintf("%v: %v", terminated.Message, terminated.Reason)
 					matches := gitRepoPattern.FindAllStringSubmatch(strings.Join(pod.Spec.InitContainers[i].Command, " "), -1)
 					repos := make([]string, 0)
 					for _, groups := range matches {
@@ -165,16 +174,16 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 					msg := "Failed get access to the repo(s): [" + strings.Join(repos, ",") + "]"
 					event.Message = msg
 				} else {
-					event.Reason = init.State.Terminated.Reason
-					event.Message = init.State.Terminated.Message
+					event.Reason = terminated.Reason
+					event.Message = terminated.Message
 				}
 				resourceState.Events = append(resourceState.Events, event)
+				reason = event.Message
 				code = ReasonError
 			}
 
 		}
 	}
-
 	return
 }
 
