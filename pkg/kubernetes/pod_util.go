@@ -17,6 +17,9 @@ kind: Pod
 metadata:
   name: {{ .Name }}
   namespace: {{ .Namespace }}
+  labels:
+    component: pip-install
+    scope: mlboard
 spec:
   restartPolicy: Never
   containers:
