@@ -679,6 +679,16 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 	return kvolumes, kvolumesMount, nil
 }
 
+func (c *BoardConfig) DockerSecretNames() []string {
+	secrets := make([]string, 0)
+	for _, s := range c.Secrets {
+		if s.Type == string(v1.SecretTypeDockerConfigJson) {
+			secrets = append(secrets, s.Name)
+		}
+	}
+	return secrets
+}
+
 func (c *BoardConfig) generateKuberlabConfig() *kuberlab.KubeResource {
 	config := &v1.ConfigMap{
 		Data: map[string]string{

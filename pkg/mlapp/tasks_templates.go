@@ -47,6 +47,12 @@ spec:
 {{ toYaml $value.Mounts | indent 4 }}
   {{- end }}
   {{- end }}
+  {{- if gt (len .DockerSecretNames) 0 }}
+  imagePullSecrets:
+  {{- range $i, $value := .DockerSecretNames }}
+  - name: {{ $value }}
+  {{- end }}
+  {{- end }}
   containers:
   - command: ["/bin/sh", "-c"]
     args:
@@ -116,6 +122,10 @@ type TaskResourceGenerator struct {
 
 func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
 	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128})
+}
+
+func (ui TaskResourceGenerator) DockerSecretNames() []string {
+	return ui.c.DockerSecretNames()
 }
 
 func (t TaskResourceGenerator) Env() []Env {

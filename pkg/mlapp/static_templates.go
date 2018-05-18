@@ -57,6 +57,12 @@ spec:
       - key: role.kuberlab.io/gpu-compute
         effect: PreferNoSchedule
       {{- end }}
+      {{- if gt (len .DockerSecretNames) 0 }}
+      imagePullSecrets:
+      {{- range $i, $value := .DockerSecretNames }}
+      - name: {{ $value }}
+      {{- end }}
+      {{- end }}
       containers:
       - name: {{ .ComponentName }}
         {{- if .Command }}
@@ -137,6 +143,10 @@ func (ui UIXResourceGenerator) NodeSelector() string {
 		return utils.GetDefaultGPUNodeSelector()
 	}
 	return utils.GetDefaultCPUNodeSelector()
+}
+
+func (ui UIXResourceGenerator) DockerSecretNames() []string {
+	return ui.c.DockerSecretNames()
 }
 
 func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {

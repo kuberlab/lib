@@ -197,7 +197,7 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 	return resources, nil
 }
 
-func GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
+func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
 	vol := serving.Volume()
 	var volData = make([]Volume, 0)
 	if vol != nil {
@@ -213,6 +213,11 @@ func GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernete
 			},
 		},
 		VolumesData: volData,
+	}
+	if dockerSecret != nil {
+		cfg.Secrets = []Secret{
+			{Name: dockerSecret.Name, Type: string(dockerSecret.Type), Data: dockerSecret.StringData},
+		}
 	}
 	return cfg.GenerateModelServing(serving, dealerLimits)
 }
