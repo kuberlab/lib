@@ -194,20 +194,22 @@ func GetPodState(pod api_v1.Pod) string {
 		return "Terminating"
 	}
 
-	if pod.Status.Phase == api_v1.PodRunning {
-		return string(pod.Status.Phase)
-	}
-
 	if len(pod.Status.ContainerStatuses) < 1 {
 		return string(pod.Status.Phase)
 	}
+
 	containerState := pod.Status.ContainerStatuses[0].State
-	if containerState.Waiting != nil {
-		return containerState.Waiting.Reason
+	if pod.Status.Phase == api_v1.PodRunning && containerState.Terminated == nil && containerState.Waiting == nil {
+		return string(pod.Status.Phase)
 	}
+
 	if containerState.Terminated != nil {
 		return containerState.Terminated.Reason
 	}
+	if containerState.Waiting != nil {
+		return containerState.Waiting.Reason
+	}
+
 	return string(pod.Status.Phase)
 }
 
