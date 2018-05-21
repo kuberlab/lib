@@ -171,6 +171,7 @@ type Spec struct {
 	Packages              []Packages `json:"packages,omitempty"`
 	DefaultPackageManager string     `json:"package_manager,omitempty"`
 	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
+	DockerAccountIDs      []string   `json:"docker_account_ids"`
 }
 
 type Secret struct {
