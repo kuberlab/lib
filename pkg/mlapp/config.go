@@ -684,7 +684,11 @@ func (c *BoardConfig) DockerSecretNames() []string {
 	secrets := make([]string, 0)
 	for _, s := range c.Secrets {
 		if s.Type == string(v1.SecretTypeDockerConfigJson) {
-			secrets = append(secrets, s.Name)
+			if s.Name != "mlboard-docker-config" {
+				secrets = append(secrets, c.GetSecretName(s))
+			} else {
+				secrets = append(secrets, s.Name)
+			}
 		}
 	}
 	return secrets
