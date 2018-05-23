@@ -214,11 +214,11 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 			return nil, err
 		}
 
-		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath))
+		volumes, mounts, err := c.KubeVolumesSpec(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
 		if err != nil {
 			return nil, fmt.Errorf("Failed get volumes '%s': %v", uix.Name, err)
 		}
-		initContainers, err := c.KubeInits(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath), nil, nil)
+		initContainers, err := c.KubeInits(uix.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), nil, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
@@ -287,11 +287,11 @@ func (serving ServingResourceGenerator) ComponentName() string {
 
 func (c *BoardConfig) GenerateServingResources(serving Serving) ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
-	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath))
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
 	if err != nil {
 		return nil, fmt.Errorf("Failed get volumes '%s': %v", serving.Name, err)
 	}
-	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath), nil, nil)
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed generate init spec '%s': %v", serving.Name, err)
 	}
@@ -403,7 +403,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 			envs = append(envs, e)
 		}
 	}
-	for _, m := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath) {
+	for _, m := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly) {
 		v := c.volumeByName(m.Name)
 		if v == nil {
 			continue
@@ -436,7 +436,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 			Value: "0",
 		})
 	}
-	for _, v := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath) {
+	for _, v := range r.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly) {
 		mountPath := v.MountPath
 		if len(mountPath) == 0 {
 			if v := c.volumeByName(v.Name); v != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kuberlab/lib/pkg/example"
+	"k8s.io/api/core/v1"
 )
 
 func Assert(want, got interface{}, t *testing.T) {
@@ -39,9 +40,7 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert("testWorkerValue", conf.Tasks[0].Resources[0].Labels["testWorkerKey"], t)
 	Assert(uint(2), conf.Tasks[0].Resources[0].Replicas, t)
 	Assert(1, conf.Tasks[0].Resources[0].MaxRestartCount, t)
-	Assert(true, conf.Tasks[0].Resources[0].AllowFail, t)
 	Assert(int32(9000), conf.Tasks[0].Resources[0].Port, t)
-	Assert("doneConditionValue", conf.Tasks[0].Resources[0].DoneCondition, t)
 	Assert("image-cpu", conf.Tasks[0].Resources[0].Images.CPU, t)
 	Assert("image-gpu", conf.Tasks[0].Resources[0].Images.GPU, t)
 	Assert(1, len(conf.Tasks[0].Resources[0].Command), t)
@@ -83,4 +82,50 @@ func TestUnmarshalConfig(t *testing.T) {
 	Assert("test", conf.Volumes[0].ClusterStorage, t)
 	Assert("/test", conf.Volumes[0].HostPath.Path, t)
 
+}
+
+func TestReadOnlyResource(t *testing.T) {
+	r := Resource{
+		UseDefaultVolumeMapping: true,
+	}
+	vols := []Volume{
+		{
+			VolumeSource: VolumeSource{
+				NFS: &v1.NFSVolumeSource{
+					Server: "1.1.1.1",
+					Path:   "/kuberlab",
+				},
+			},
+			Name:     "nfs",
+			ReadOnly: true,
+		},
+	}
+
+	mounts := r.VolumeMounts(vols, "/notebooks", false)
+
+	Assert(1, len(mounts), t)
+	Assert(true, mounts[0].ReadOnly, t)
+}
+
+func TestDefaultReadOnlyResource(t *testing.T) {
+	r := Resource{
+		UseDefaultVolumeMapping: true,
+	}
+	vols := []Volume{
+		{
+			VolumeSource: VolumeSource{
+				NFS: &v1.NFSVolumeSource{
+					Server: "1.1.1.1",
+					Path:   "/kuberlab",
+				},
+			},
+			Name:     "nfs",
+			ReadOnly: false,
+		},
+	}
+
+	mounts := r.VolumeMounts(vols, "/notebooks", true)
+
+	Assert(1, len(mounts), t)
+	Assert(true, mounts[0].ReadOnly, t)
 }

@@ -126,7 +126,7 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
-	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath))
+	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
 	if err != nil {
 		return nil, err
 	}

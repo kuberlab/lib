@@ -29,6 +29,7 @@ type Volume struct {
 	SubPath       string `json:"subPath"`
 	IsTrainLogDir bool   `json:"isTrainLogDir"`
 	IsLibDir      bool   `json:"isLibDir"`
+	ReadOnly      bool   `json:"readOnly"`
 }
 
 type VolumeSource struct {
@@ -53,10 +54,17 @@ func (v Volume) CommonID() string {
 		if v.NFS.ReadOnly {
 			m = "r"
 		}
+		if v.ReadOnly {
+			m = "r"
+		}
 		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server + "-" + v.NFS.Path + "-" + m))
 		return "nfs-" + strings.ToLower(strings.Replace(server, "_", "-", -1))
 	}
-	return "org-" + v.Name
+	m := "org-"
+	if v.ReadOnly {
+		m = "org-r-"
+	}
+	return m + v.Name
 }
 func (v Volume) V1Volume() v1.Volume {
 	r := v1.Volume{
@@ -131,6 +139,9 @@ func (v Volume) GetBoundID() string {
 	if v.NFS != nil {
 		p := "rw"
 		if v.NFS.ReadOnly {
+			p = "r"
+		}
+		if v.ReadOnly {
 			p = "r"
 		}
 		return v.NFS.Server + "/" + v.NFS.Path + ":" + p

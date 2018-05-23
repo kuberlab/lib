@@ -171,6 +171,7 @@ type Spec struct {
 	Packages              []Packages `json:"packages,omitempty"`
 	DefaultPackageManager string     `json:"package_manager,omitempty"`
 	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
+	DefaultReadOnly       bool       `json:"default_read_only"`
 	DockerAccountIDs      []string   `json:"docker_account_ids"`
 }
 
@@ -200,7 +201,7 @@ type Resource struct {
 	DefaultMountPath        string           `json:"default_mount_path"`
 }
 
-func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []VolumeMount {
+func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string, defaultReadOnly bool) []VolumeMount {
 	if r.DefaultMountPath != "" {
 		defaultMountPath = r.DefaultMountPath
 	}
@@ -208,12 +209,14 @@ func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []Volu
 	var mounts []VolumeMount
 	if r.UseDefaultVolumeMapping {
 		for _, v := range volumes {
+			rOnly := false
+			rOnly = rOnly || v.ReadOnly || defaultReadOnly
 			var rev *string = nil
 			if v.GitRepo != nil {
 				rev = &v.GitRepo.Revision
 			}
 			mounts = append(mounts, VolumeMount{
-				Name: v.Name, ReadOnly: false, MountPath: v.MountPath, GitRevision: rev,
+				Name: v.Name, ReadOnly: rOnly, MountPath: v.MountPath, GitRevision: rev,
 			})
 		}
 	} else {
@@ -221,6 +224,8 @@ func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string) []Volu
 		for i := range mounts {
 			for _, v := range volumes {
 				if v.Name == mounts[i].Name {
+					rOnly := mounts[i].ReadOnly || v.ReadOnly || defaultReadOnly
+					mounts[i].ReadOnly = rOnly
 					if mounts[i].MountPath == "" {
 						mounts[i].MountPath = v.MountPath
 					}
