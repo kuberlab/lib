@@ -143,8 +143,8 @@ func (c Config) GetAppName() string {
 }
 
 type Meta struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels"`
+	Name   string            `json:"name,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 type DeploymentBasedResource interface {
@@ -172,7 +172,7 @@ type Spec struct {
 	DefaultPackageManager string     `json:"package_manager,omitempty"`
 	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
 	DefaultReadOnly       bool       `json:"default_read_only"`
-	DockerAccountIDs      []string   `json:"docker_account_ids"`
+	DockerAccountIDs      []string   `json:"docker_account_ids,omitempty"`
 }
 
 type Secret struct {
@@ -183,22 +183,22 @@ type Secret struct {
 	Path   string            `json:"path,omitempty"`
 }
 type Packages struct {
-	Names   []string `json:"names"`
-	Manager string   `json:"manager"`
+	Names   []string `json:"names,omitempty"`
+	Manager string   `json:"manager,omitempty"`
 }
 
 type Resource struct {
-	Replicas                int              `json:"replicas"`
+	Replicas                int              `json:"replicas,omitempty"`
 	Resources               *ResourceRequest `json:"resources,omitempty"`
-	Images                  Images           `json:"images"`
-	Command                 string           `json:"command"`
-	WorkDir                 string           `json:"workDir"`
+	Images                  Images           `json:"images,omitempty"`
+	Command                 string           `json:"command,omitempty"`
+	WorkDir                 string           `json:"workDir,omitempty"`
 	RawArgs                 string           `json:"args,omitempty"`
-	Env                     []Env            `json:"env"`
-	Volumes                 []VolumeMount    `json:"volumes"`
-	NodesLabel              string           `json:"nodes"`
-	UseDefaultVolumeMapping bool             `json:"default_volume_mapping"`
-	DefaultMountPath        string           `json:"default_mount_path"`
+	Env                     []Env            `json:"env,omitempty"`
+	Volumes                 []VolumeMount    `json:"volumes,omitempty"`
+	NodesLabel              string           `json:"nodes,omitempty"`
+	UseDefaultVolumeMapping bool             `json:"default_volume_mapping,omitempty"`
+	DefaultMountPath        string           `json:"default_mount_path,omitempty"`
 }
 
 func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string, defaultReadOnly bool) []VolumeMount {
