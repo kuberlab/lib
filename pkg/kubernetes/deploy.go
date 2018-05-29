@@ -23,6 +23,10 @@ import (
 	"time"
 )
 
+const (
+	ApplyTimeout = 70 * time.Second
+)
+
 type KubeResource struct {
 	Name    string
 	Object  runtime.Object
@@ -281,7 +285,7 @@ func waitAndApply(client *kubernetes.Clientset, new *extv1beta1.Deployment) erro
 
 	if !res {
 		ticker := time.NewTicker(time.Second * 2)
-		timeout := time.NewTimer(time.Second * 35)
+		timeout := time.NewTimer(ApplyTimeout)
 		fall := false
 		for {
 			select {
