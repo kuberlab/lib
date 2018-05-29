@@ -445,7 +445,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 		}
 		if len(mountPath) > 0 {
 			envs = append(envs, Env{
-				Name:  strings.ToUpper(v.Name + "_DIR"),
+				Name:  strings.ToUpper(utils.EnvConvert(v.Name) + "_DIR"),
 				Value: mountPath,
 			})
 		}
