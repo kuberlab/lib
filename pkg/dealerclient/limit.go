@@ -21,10 +21,10 @@ func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	if limit.GPU >= 0 && r.GPU > limit.GPU {
 		r.GPU = limit.GPU
 	}
-	if r.Replicas > limit.Replicas && limit.Replicas > 0 || r.Replicas < 0 {
+	if r.Replicas > limit.Replicas && limit.Replicas > 0 || r.Replicas <= 0 {
 		r.Replicas = limit.Replicas
 	}
-	if r.ExecutionTime > limit.ExecutionTime && limit.Replicas > 0 || r.ExecutionTime < 0 {
+	if r.ExecutionTime > limit.ExecutionTime && limit.Replicas > 0 || r.ExecutionTime <= 0 {
 		r.ExecutionTime = limit.ExecutionTime
 	}
 	r.Memory = nil
