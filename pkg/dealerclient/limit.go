@@ -29,8 +29,16 @@ func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	}
 	r.Memory = nil
 	r.CPU = nil
-	r.CPUMi = minCPU.MilliValue()
-	r.MemoryMB = minMemory.ScaledValue(resource.Mega)
+	if minCPU != nil {
+		r.CPUMi = minCPU.MilliValue()
+	} else {
+		r.CPUMi = 0
+	}
+	if minMemory != nil {
+		r.MemoryMB = minMemory.ScaledValue(resource.Mega)
+	} else {
+		r.MemoryMB = 0
+	}
 }
 
 func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
