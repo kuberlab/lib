@@ -15,6 +15,24 @@ type ResourceLimit struct {
 	ExecutionTime int64              `json:"execution_time"`
 }
 
+func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
+	minCPU := minQuantity(r.CPUQuantity(), limit.CPUQuantity())
+	minMemory := minQuantity(r.MemoryQuantity(), limit.MemoryQuantity())
+	if r.GPU > limit.GPU {
+		r.GPU = limit.GPU
+	}
+	if r.Replicas > limit.Replicas {
+		r.Replicas = limit.Replicas
+	}
+	if r.ExecutionTime > limit.ExecutionTime {
+		r.ExecutionTime = limit.ExecutionTime
+	}
+	r.Memory = nil
+	r.CPU = nil
+	r.CPUMi = minCPU.MilliValue()
+	r.MemoryMB = minMemory.ScaledValue(resource.Mega)
+}
+
 func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 	// In templates
 	if r == nil {
@@ -71,4 +89,18 @@ func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
 		return nil
 	}
 	return q
+}
+
+func minQuantity(val *resource.Quantity, limit *resource.Quantity) *resource.Quantity {
+	if val == nil {
+		return limit
+	}
+	if limit == nil {
+		return val
+	}
+	if val.Cmp(*limit) < 0 {
+		return val
+	} else {
+		return limit
+	}
 }
