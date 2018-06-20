@@ -18,7 +18,7 @@ type ResourceLimit struct {
 func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	minCPU := minQuantity(r.CPUQuantity(), limit.CPUQuantity())
 	minMemory := minQuantity(r.MemoryQuantity(), limit.MemoryQuantity())
-	if limit.GPU >= 0 && r.GPU > limit.GPU {
+	if limit.GPU >= 0 && r.GPU > limit.GPU || r.GPU <= 0 {
 		r.GPU = limit.GPU
 	}
 	if r.Replicas > limit.Replicas && limit.Replicas > 0 || r.Replicas <= 0 {
