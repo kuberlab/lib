@@ -450,7 +450,7 @@ type InitContainers struct {
 	Mounts  map[string]interface{}
 }
 
-func (c *BoardConfig) KubeInits(mounts []VolumeMount, taskName, build *string) ([]InitContainers, error) {
+func (c *BoardConfig) KubeInits(mounts []VolumeMount, task *Task, build *string) ([]InitContainers, error) {
 	var inits []InitContainers
 	added := map[string]bool{}
 	_, vmounts, err := c.getSecretVolumes(c.Secrets)
@@ -469,7 +469,7 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, taskName, build *string) (
 		}
 		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
 			// Skip for UIX and already cloned repos.
-			if v.GitRepo.AccountId == "" && taskName == nil && build == nil {
+			if v.GitRepo.AccountId == "" && task == nil && build == nil {
 				return []InitContainers{}, nil
 			}
 			var cmd []string
@@ -488,7 +488,18 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, taskName, build *string) (
 				cmd = append(cmd, apnd...)
 			}
 
-			if v.GitRepo.Revision != "" {
+			findRevision := func(volume string) string {
+				for _, rev := range task.GitRevisions {
+					if rev.VolumeName == volume {
+						return rev.Revision
+					}
+				}
+				return ""
+			}
+
+			if task != nil && findRevision(v.Name) != "" {
+				cmd = append(cmd, fmt.Sprintf("git checkout %s", findRevision(v.Name)))
+			} else if v.GitRepo.Revision != "" {
 				cmd = append(cmd, fmt.Sprintf("git checkout %s", v.GitRepo.Revision))
 			}
 			cmd = append(cmd, "git config --local user.name kuberlab-robot")

@@ -211,7 +211,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 
 		c.setGitRefs(volumes, task)
 
-		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), &task.Name, &jobID)
+		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), &task, &jobID)
 		if err != nil {
 			return nil, fmt.Errorf("Failed generate init spec %s-%s': %v", task.Name, r.Name, err)
 		}
