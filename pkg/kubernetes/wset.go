@@ -41,7 +41,8 @@ func (ws *WorkerSet) LabelSelector() meta_v1.ListOptions {
 func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	p := *ws.PodTemplate
 	p.Name = fmt.Sprintf("%s-%d", p.Name, i)
-	p.Spec.Hostname = fmt.Sprintf("%s-%d", p.Spec.Hostname, i)
+	p.Spec.Subdomain = utils.KubeNamespaceEncode(p.Spec.Subdomain)
+	p.Spec.Hostname = utils.KubeNamespaceEncode(fmt.Sprintf("%s-%d", p.Spec.Hostname, i))
 	annotations := make(map[string]string)
 	utils.JoinMaps(annotations, p.Annotations)
 	annotations["restart"] = strconv.Itoa(restart)
