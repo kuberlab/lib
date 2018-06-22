@@ -105,7 +105,8 @@ type GitRepoVolumeSource struct {
 type S3BucketSource struct {
 	Bucket    string `json:"bucket" protobuf:"bytes,1,opt,name=bucket"`
 	Server    string `json:"server,omitempty" protobuf:"bytes,2,opt,name=server"`
-	AccountId string `json:"accountId,omitempty" protobuf:"bytes,3,opt,name=accountId"`
+	Region    string `json:"region,omitempty" protobuf:"bytes,3,opt,name=region"`
+	AccountId string `json:"accountId,omitempty" protobuf:"bytes,4,opt,name=accountId"`
 }
 
 type DatasetSource struct {
