@@ -209,11 +209,6 @@ func (c *BoardConfig) secret2kubeResource(s Secret) *kubernetes.KubeResource {
 }
 
 func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
-	vol := serving.Volume()
-	var volData = make([]Volume, 0)
-	if vol != nil {
-		volData = append(volData, *vol)
-	}
 	cfg := &BoardConfig{
 		Config: Config{
 			Kind:        KindServing,
