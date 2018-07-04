@@ -97,9 +97,9 @@ func (v Volume) V1Volume() v1.Volume {
 type GitRepoVolumeSource struct {
 	v1.GitRepoVolumeSource `json:",inline" protobuf:"bytes,1,opt,name=volumeSource"`
 	AccountId              string `json:"accountId,omitempty" protobuf:"bytes,2,opt,name=accountId"`
-	PrivateKey             string `json:"private_key" protobuf:"bytes,3,opt,name=private_key"`
-	UserName               string `json:"user_name" protobuf:"bytes,4,opt,name=user_name"`
-	AccessToken            string `json:"access_token" protobuf:"bytes,5,opt,name=access_token"`
+	PrivateKey             string `json:"private_key,omitempty" protobuf:"bytes,3,opt,name=private_key"`
+	UserName               string `json:"user_name,omitempty" protobuf:"bytes,4,opt,name=user_name"`
+	AccessToken            string `json:"access_token,omitempty" protobuf:"bytes,5,opt,name=access_token"`
 }
 
 type S3BucketSource struct {

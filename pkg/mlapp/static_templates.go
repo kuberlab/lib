@@ -67,7 +67,6 @@ spec:
       - name: {{ .ComponentName }}
         {{- if .Command }}
         command: ["/bin/sh", "-c"]
-        imagePullPolicy: Always
         args:
         - >
           {{- if .WorkDir }}
@@ -78,6 +77,7 @@ spec:
           exit $code
         {{- end }}
         image: "{{ .Image }}"
+        imagePullPolicy: Always
         env:
         - name: RESOURCE_NAME
           value: '{{ .ComponentName }}'

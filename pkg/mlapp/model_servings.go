@@ -1,7 +1,6 @@
 package mlapp
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/ghodss/yaml"
@@ -23,6 +22,8 @@ const (
 type ModelServing struct {
 	Uix
 	Source          *GitRepoVolumeSource `json:"source,omitempty"`
+	VolumesData     []Volume             `json:"volumes_data,omitempty"`
+	Secrets         []Secret             `json:"secrets,omitempty"`
 	DealerAPI       string               `json:"dealer_api"`
 	ModelID         string               `json:"model_id,omitempty"`
 	Model           string               `json:"model,omitempty"`
@@ -56,35 +57,6 @@ func (serv ModelServing) Volume() *Volume {
 			GitRepo: serv.Source,
 		},
 	}
-}
-
-func (serv ModelServing) KubeVolumes() ([]v1.Volume, []v1.VolumeMount, error) {
-	var volumes []v1.Volume
-	var mounts []v1.VolumeMount
-
-	if len(serv.Volumes) != 1 {
-		return nil, nil, errors.New("Required exact 1 volume.")
-	}
-
-	volumes = append(
-		volumes,
-		v1.Volume{
-			Name: serv.Volumes[0].Name,
-			VolumeSource: v1.VolumeSource{
-				GitRepo: &serv.Source.GitRepoVolumeSource,
-			},
-		},
-	)
-	mounts = append(
-		mounts,
-		v1.VolumeMount{
-			Name:      serv.Volumes[0].Name,
-			MountPath: serv.Volumes[0].MountPath,
-			ReadOnly:  serv.Volumes[0].ReadOnly,
-			SubPath:   serv.Volumes[0].SubPath,
-		},
-	)
-	return volumes, mounts, nil
 }
 
 type ServingModelResourceGenerator struct {
@@ -142,6 +114,11 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 		ReadOnly:  false,
 	}}
 
+	inits, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	initContainers := []InitContainers{
 		{
 			Name:  "init-model",
@@ -153,6 +130,7 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 			Mounts: map[string]interface{}{"volumeMounts": mounts},
 		},
 	}
+	initContainers = append(initContainers, inits...)
 	if len(volumesSpec) > 0 {
 		volumes = append(volumes, volumesSpec...)
 	}
@@ -193,16 +171,44 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 	fmt.Println(string(data))
 
 	res.Deps = []*kubernetes.KubeResource{generateServingServiceFromDeployment(res.Object.(*extv1beta1.Deployment))}
+
+	for _, s := range c.Secrets {
+		res.Deps = append(res.Deps, c.secret2kubeResource(s))
+	}
+
 	resources = append(resources, res)
 	return resources, nil
 }
 
-func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
-	vol := serving.Volume()
-	var volData = make([]Volume, 0)
-	if vol != nil {
-		volData = append(volData, *vol)
+func (c *BoardConfig) secret2kubeResource(s Secret) *kubernetes.KubeResource {
+	secret := &v1.Secret{
+		StringData: s.Data,
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      c.GetSecretName(s),
+			Namespace: c.GetNamespace(),
+			Labels: map[string]string{
+				types.ComponentTypeLabel: "serving-model",
+				KUBERLAB_WS_ID_LABEL:     c.WorkspaceID,
+				types.ServingIDLabel:     c.Name,
+			},
+		},
+		Type: v1.SecretType(s.Type),
+		TypeMeta: meta_v1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
 	}
+
+	gv := secret.GroupVersionKind()
+
+	return &kubernetes.KubeResource{
+		Kind:   &gv,
+		Name:   fmt.Sprintf("%v:secret", s.Name),
+		Object: secret,
+	}
+}
+
+func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
 	cfg := &BoardConfig{
 		Config: Config{
 			Kind:        KindServing,
@@ -212,12 +218,13 @@ func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret 
 				Name: serving.Name,
 			},
 		},
-		VolumesData: volData,
+		VolumesData: serving.VolumesData,
+		Secrets:     serving.Secrets,
 	}
 	if dockerSecret != nil {
-		cfg.Secrets = []Secret{
-			{Name: dockerSecret.Name, Type: string(dockerSecret.Type), Data: dockerSecret.StringData},
-		}
+		cfg.Secrets = append(cfg.Secrets,
+			Secret{Name: dockerSecret.Name, Type: string(dockerSecret.Type), Data: dockerSecret.StringData},
+		)
 	}
 	return cfg.GenerateModelServing(serving, dealerLimits)
 }
