@@ -139,6 +139,9 @@ type UIXResourceGenerator struct {
 }
 
 func (ui UIXResourceGenerator) NodeSelector() string {
+	if ui.NodesLabel != "" {
+		return ui.NodesLabel
+	}
 	if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
 		return utils.GetDefaultGPUNodeSelector()
 	}
@@ -192,11 +195,15 @@ func (ui UIXResourceGenerator) ComponentName() string {
 }
 
 func (ui UIXResourceGenerator) Labels() map[string]string {
-	return ui.c.ResourceLabels(map[string]string{
+	labels := map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
 		"scope":                  "mlboard",
-	})
+	}
+	if ui.NodesLabel != "" {
+		labels[types.KuberlabMLNodeLabel] = ui.NodesLabel
+	}
+	return ui.c.ResourceLabels(labels)
 }
 
 func (ui UIXResourceGenerator) Args() string {
