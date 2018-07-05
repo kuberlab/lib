@@ -421,9 +421,14 @@ func (c *BoardConfig) volumeByID(commonID string) *Volume {
 func (c *BoardConfig) LibVolume() (*v1.Volume, *v1.VolumeMount) {
 	for _, v := range c.VolumesData {
 		if v.IsLibDir {
+			mountPath := c.DefaultMountPath
+			if v.MountPath != "" {
+				mountPath = v.MountPath
+			}
+
 			vols, mounts, err := c.KubeVolumesSpec(
 				[]VolumeMount{
-					{Name: v.Name, ReadOnly: false, MountPath: v.MountPath},
+					{Name: v.Name, ReadOnly: false, MountPath: mountPath},
 				},
 			)
 			if err != nil {
