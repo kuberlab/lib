@@ -54,9 +54,12 @@ spec:
   {{- end }}
   {{- end }}
   containers:
-  - command: ["/bin/sh", "-c"]
+  - command: ["/bin/bash", "-c"]
     args:
     - >
+      {{- if .Conda }}
+      source activate {{ .Conda }}
+      {{- end }}
       cd {{ .WorkDir }};
       {{ .Command }} {{ .Args }};
       code=$?;
@@ -126,6 +129,15 @@ func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
 
 func (ui TaskResourceGenerator) DockerSecretNames() []string {
 	return ui.c.DockerSecretNames()
+}
+
+func (ui TaskResourceGenerator) Conda() string {
+	for _, e := range ui.Env() {
+		if e.Name == "CONDA_ENV" {
+			return e.Value
+		}
+	}
+	return ""
 }
 
 func (t TaskResourceGenerator) Env() []Env {

@@ -66,9 +66,12 @@ spec:
       containers:
       - name: {{ .ComponentName }}
         {{- if .Command }}
-        command: ["/bin/sh", "-c"]
+        command: ["/bin/bash", "-c"]
         args:
         - >
+          {{- if .Conda }}
+          source activate {{ .Conda }}
+          {{- end }}
           {{- if .WorkDir }}
           cd {{ .WorkDir }};
           {{- end }}
@@ -150,6 +153,15 @@ func (ui UIXResourceGenerator) NodeSelector() string {
 
 func (ui UIXResourceGenerator) DockerSecretNames() []string {
 	return ui.c.DockerSecretNames()
+}
+
+func (ui UIXResourceGenerator) Conda() string {
+	for _, e := range ui.Env() {
+		if e.Name == "CONDA_ENV" {
+			return e.Value
+		}
+	}
+	return ""
 }
 
 func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {
