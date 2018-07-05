@@ -58,7 +58,7 @@ spec:
     args:
     - >
       {{- if .Conda }}
-      source activate {{ .Conda }}
+      source activate {{ .Conda }};
       {{- end }}
       cd {{ .WorkDir }};
       {{ .Command }} {{ .Args }};
