@@ -7,7 +7,7 @@ const (
 	ServingTypeModel ServingType = "model"
 )
 
-type BaseServing struct {
+type UniversalServing struct {
 	// common
 	Uix  `json:",inline"`
 	Type ServingType `json:"type"`
