@@ -29,6 +29,7 @@ type UniversalServing struct {
 	WorkspaceID     string               `json:"workspace_id,omitempty"`
 	Workspace       string               `json:"workspace,omitempty"`
 	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
+	ClusterID       string               `json:"cluster_id,omitempty"`
 }
 
 func (us UniversalServing) Serving() Serving {
