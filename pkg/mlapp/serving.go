@@ -1,8 +1,16 @@
 package mlapp
 
+type ServingType string
+
+const (
+	ServingTypeTask  ServingType = "task"
+	ServingTypeModel ServingType = "model"
+)
+
 type BaseServing struct {
 	// common
 	Uix  `json:",inline"`
+	Type ServingType `json:"type"`
 	Spec ServingSpec `json:"spec"`
 
 	// task serving
