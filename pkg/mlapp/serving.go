@@ -30,3 +30,13 @@ type UniversalServing struct {
 	Workspace       string               `json:"workspace,omitempty"`
 	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
 }
+
+func (us UniversalServing) Serving() Serving {
+	return Serving{
+		Uix:       us.Uix,
+		Spec:      us.Spec,
+		TaskName:  us.TaskName,
+		Build:     us.Build,
+		BuildInfo: us.BuildInfo,
+	}
+}
