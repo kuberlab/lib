@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	ApplyTimeout = 140 * time.Second
+	ApplyTimeout = 180 * time.Second
 )
 
 type KubeResource struct {
