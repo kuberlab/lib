@@ -70,6 +70,8 @@ spec:
     {{- if .PrivilegedMode }}
     securityContext:
       privileged: true
+      capabilities:
+        add: ["SYS_ADMIN"]
     {{- end }}
     env:
     - name: POD_NAME
