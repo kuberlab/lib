@@ -67,6 +67,10 @@ spec:
     image: {{ .Image }}
     imagePullPolicy: Always
     name: "{{ .BuildName }}"
+    {{- if .PrivilegedMode }}
+    securityContext:
+      privileged: true
+    {{- end }}
     env:
     - name: POD_NAME
       valueFrom:
@@ -127,12 +131,12 @@ func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
 	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128})
 }
 
-func (ui TaskResourceGenerator) DockerSecretNames() []string {
-	return ui.c.DockerSecretNames()
+func (t TaskResourceGenerator) DockerSecretNames() []string {
+	return t.c.DockerSecretNames()
 }
 
-func (ui TaskResourceGenerator) Conda() string {
-	for _, e := range ui.Env() {
+func (t TaskResourceGenerator) Conda() string {
+	for _, e := range t.Env() {
 		if e.Name == "CONDA_ENV" {
 			return e.Value
 		}
@@ -210,6 +214,10 @@ func (t TaskResourceGenerator) Args() string {
 	return t.RawArgs
 }
 
+func (t TaskResourceGenerator) PrivilegedMode() bool {
+	return t.NodesLabel == "knode:movidius"
+}
+
 func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskResourceSpec, error) {
 	taskSpec := make([]TaskResourceSpec, 0)
 	for _, r := range task.Resources {
@@ -238,6 +246,18 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 			JobID:          jobID,
 			InitContainers: initContainers,
 		}
+
+		if g.PrivilegedMode() {
+			g.volumes = append(
+				g.volumes,
+				v1.Volume{
+					Name:         "dev",
+					VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/dev"}},
+				},
+			)
+			g.mounts = append(g.mounts, v1.VolumeMount{Name: "dev", MountPath: "/dev"})
+		}
+
 		res, err := kuberlab.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
 		if err != nil {
 			return nil, err
