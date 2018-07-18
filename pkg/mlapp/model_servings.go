@@ -64,7 +64,7 @@ type ServingModelResourceGenerator struct {
 }
 
 func (serving ServingModelResourceGenerator) Env() []Env {
-	envs := baseEnv(serving.c, serving.Resource)
+	envs, _ := baseEnv(serving.c, serving.Resource)
 	envs = append(envs,
 		Env{
 			Name:  "checkpoint_path",

@@ -60,6 +60,7 @@ spec:
       {{- if .Conda }}
       source activate {{ .Conda }};
       {{- end }}
+      export PYTHONPATH=$PYTHONPATH:{{ .PythonPath }};
       cd {{ .WorkDir }};
       {{ .Command }} {{ .Args }};
       code=$?;
@@ -146,8 +147,13 @@ func (t TaskResourceGenerator) Conda() string {
 	return ""
 }
 
+func (t TaskResourceGenerator) PythonPath() string {
+	_, pythonPath := baseEnv(t.c, t.TaskResource.Resource)
+	return pythonPath
+}
+
 func (t TaskResourceGenerator) Env() []Env {
-	envs := baseEnv(t.c, t.TaskResource.Resource)
+	envs, _ := baseEnv(t.c, t.TaskResource.Resource)
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
 		for i := range hosts {

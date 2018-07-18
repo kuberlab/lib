@@ -179,7 +179,7 @@ func (ui UIXResourceGenerator) Replicas() int {
 	return 1
 }
 func (ui UIXResourceGenerator) Env() []Env {
-	env := baseEnv(ui.c, ui.Resource)
+	env, _ := baseEnv(ui.c, ui.Resource)
 	env = append(env,
 		Env{
 			Name:  "URL_PREFIX",
@@ -262,7 +262,7 @@ type ServingResourceGenerator struct {
 }
 
 func (serving ServingResourceGenerator) Env() []Env {
-	envs := baseEnv(serving.c, serving.Resource)
+	envs, _ := baseEnv(serving.c, serving.Resource)
 	envs = append(envs,
 		Env{
 			Name:  "BUILD_ID",
@@ -412,12 +412,12 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 }
 
-func baseEnv(c *BoardConfig, r Resource) []Env {
+func baseEnv(c *BoardConfig, r Resource) ([]Env, string){
 	envs := make([]Env, 0, len(r.Env))
-	path := make([]string, 0)
+	pythonPath := make([]string, 0)
 	for _, e := range r.Env {
 		if e.Name == "PYTHONPATH" {
-			path = strings.Split(e.Value, ":")
+			pythonPath = strings.Split(e.Value, ":")
 		} else {
 			envs = append(envs, e)
 		}
@@ -434,12 +434,12 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 		if len(mount) < 1 {
 			mount = v.MountPath
 		}
-		path = append(path, mount)
+		pythonPath = append(pythonPath, mount)
 	}
-	envs = append(envs, Env{
-		Name:  "PYTHONPATH",
-		Value: strings.Join(path, ":"),
-	})
+	//envs = append(envs, Env{
+	//	Name:  "PYTHONPATH",
+	//	Value: strings.Join(pythonPath, ":"),
+	//})
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
 		count := r.Resources.Accelerators.GPU
 		if c.BoardMetadata.Limits != nil && c.BoardMetadata.Limits.GPU > 0 {
@@ -484,7 +484,7 @@ func baseEnv(c *BoardConfig, r Resource) []Env {
 		})
 	}
 
-	return envs
+	return envs, strings.Join(pythonPath, ":")
 }
 
 func ResolveEnv(envs []Env) []Env {
