@@ -27,6 +27,9 @@ metadata:
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
+  {{- if .PrivilegedMode }}
+  hostNetwork: true
+  {{- end }}
   terminationGracePeriodSeconds: 10
   hostname: "{{ .BuildName }}"
   subdomain: "{{ .BuildName }}"
