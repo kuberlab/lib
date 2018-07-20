@@ -37,6 +37,10 @@ spec:
         {{ $key }}: "{{ $value }}"
         {{- end }}
     spec:
+      {{- if .PrivilegedMode }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       {{- if.NodeSelector }}
       nodeSelector:
         kuberlab.io/ml-node: {{ .NodeSelector }}
@@ -81,6 +85,12 @@ spec:
         {{- end }}
         image: "{{ .Image }}"
         imagePullPolicy: Always
+        {{- if .PrivilegedMode }}
+        securityContext:
+          privileged: true
+          capabilities:
+            add: ["SYS_ADMIN"]
+        {{- end }}
         env:
         - name: RESOURCE_NAME
           value: '{{ .ComponentName }}'
@@ -153,6 +163,10 @@ func (ui UIXResourceGenerator) NodeSelector() string {
 
 func (ui UIXResourceGenerator) DockerSecretNames() []string {
 	return ui.c.DockerSecretNames()
+}
+
+func (ui UIXResourceGenerator) PrivilegedMode() bool {
+	return ui.NodesLabel == "knode:movidius"
 }
 
 func (ui UIXResourceGenerator) Conda() string {
@@ -242,6 +256,18 @@ func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error)
 			return nil, fmt.Errorf("Failed generate init spec '%s': %v", uix.Name, err)
 		}
 		g := UIXResourceGenerator{c: c, Uix: uix, mounts: mounts, volumes: volumes, InitContainers: initContainers}
+
+		if g.PrivilegedMode() {
+			g.volumes = append(
+				g.volumes,
+				v1.Volume{
+					Name:         "dev",
+					VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/dev"}},
+				},
+			)
+			g.mounts = append(g.mounts, v1.VolumeMount{Name: "dev", MountPath: "/dev"})
+		}
+
 		res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.ComponentName()+":resource", g)
 		if err != nil {
 			return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
@@ -412,7 +438,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 	}
 }
 
-func baseEnv(c *BoardConfig, r Resource) ([]Env, string){
+func baseEnv(c *BoardConfig, r Resource) ([]Env, string) {
 	envs := make([]Env, 0, len(r.Env))
 	pythonPath := make([]string, 0)
 	for _, e := range r.Env {
