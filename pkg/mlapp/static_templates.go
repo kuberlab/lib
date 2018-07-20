@@ -153,7 +153,7 @@ type UIXResourceGenerator struct {
 
 func (ui UIXResourceGenerator) NodeSelector() string {
 	if ui.NodesLabel != "" {
-		return ui.NodesLabel
+		return strings.TrimPrefix(ui.NodesLabel, "knode:")
 	}
 	if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
 		return utils.GetDefaultGPUNodeSelector()
