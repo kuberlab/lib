@@ -29,6 +29,7 @@ metadata:
 spec:
   {{- if .PrivilegedMode }}
   hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
   {{- end }}
   terminationGracePeriodSeconds: 10
   hostname: "{{ .BuildName }}"
