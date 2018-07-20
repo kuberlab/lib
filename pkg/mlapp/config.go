@@ -282,8 +282,8 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 type Serving struct {
 	Uix       `json:",inline"`
 	Spec      ServingSpec            `json:"spec"`
-	TaskName  string                 `json:"taskName"`
-	Build     string                 `json:"build"`
+	TaskName  string                 `json:"taskName,omitempty"`
+	Build     string                 `json:"build,omitempty"`
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
 }
 
@@ -352,8 +352,8 @@ type TaskRevision struct {
 type TaskResource struct {
 	Meta            `json:",inline"`
 	RestartPolicy   string `json:"restartPolicy"`
-	MaxRestartCount int    `json:"maxRestartCount"`
-	IsPermanent     bool   `json:"is_permanent"`
+	MaxRestartCount int    `json:"maxRestartCount,omitempty"`
+	IsPermanent     bool   `json:"is_permanent,omitempty"`
 	Port            int32  `json:"port,omitempty"`
 	Resource        `json:",inline"`
 }

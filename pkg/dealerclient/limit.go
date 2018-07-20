@@ -5,14 +5,14 @@ import (
 )
 
 type ResourceLimit struct {
-	CPU           *resource.Quantity `json:"cpu,omitempty"`
-	Memory        *resource.Quantity `json:"memory,omitempty"`
-	GPU           int64              `json:"gpu"`
-	CPUMi         int64              `json:"cpu_mi"`
-	MemoryMB      int64              `json:"memory_mb"`
-	Replicas      int64              `json:"replicas"`
-	ParallelRuns  int64              `json:"parallel_runs"`
-	ExecutionTime int64              `json:"execution_time"`
+	CPU           *resource.Quantity `json:"cpu,omitempty,omitempty"`
+	Memory        *resource.Quantity `json:"memory,omitempty,omitempty"`
+	GPU           int64              `json:"gpu,omitempty"`
+	CPUMi         int64              `json:"cpu_mi,omitempty"`
+	MemoryMB      int64              `json:"memory_mb,omitempty"`
+	Replicas      int64              `json:"replicas,omitempty"`
+	ParallelRuns  int64              `json:"parallel_runs,omitempty"`
+	ExecutionTime int64              `json:"execution_time,omitempty"`
 }
 
 func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {

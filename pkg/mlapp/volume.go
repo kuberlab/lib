@@ -11,9 +11,9 @@ import (
 
 type VolumeMount struct {
 	Name        string  `json:"name"`
-	MountPath   string  `json:"mountPath"`
+	MountPath   string  `json:"mountPath,omitempty"`
 	ReadOnly    bool    `json:"readOnly,omitempty"`
-	SubPath     string  `json:"subPath"`
+	SubPath     string  `json:"subPath,omitempty"`
 	GitRevision *string `json:"gitRevision,omitempty"`
 }
 type Volume struct {
@@ -25,11 +25,11 @@ type Volume struct {
 	ClusterStorage string `json:"clusterStorage,omitempty"`
 	//Broken         bool   `json:"broken"`
 
-	MountPath     string `json:"mountPath"`
-	SubPath       string `json:"subPath"`
-	IsTrainLogDir bool   `json:"isTrainLogDir"`
-	IsLibDir      bool   `json:"isLibDir"`
-	ReadOnly      bool   `json:"readOnly"`
+	MountPath     string `json:"mountPath,omitempty"`
+	SubPath       string `json:"subPath,omitempty"`
+	IsTrainLogDir bool   `json:"isTrainLogDir,omitempty"`
+	IsLibDir      bool   `json:"isLibDir,omitempty"`
+	ReadOnly      bool   `json:"readOnly,omitempty"`
 }
 
 type VolumeSource struct {
