@@ -17,6 +17,7 @@ import (
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"sort"
 )
 
 const (
@@ -647,6 +648,10 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 				}
 				i += 1
 			}
+
+			// Sort items by key.
+			sort.Sort(keyPathSorted(items))
+
 			v := v1.Volume{
 				Name: s.Name,
 				VolumeSource: v1.VolumeSource{
