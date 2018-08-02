@@ -21,16 +21,16 @@ const (
 
 type ModelServing struct {
 	Uix
-	Source          *GitRepoVolumeSource `json:"source,omitempty"`
-	VolumesData     []Volume             `json:"volumes_data,omitempty"`
-	Secrets         []Secret             `json:"secrets,omitempty"`
-	DealerAPI       string               `json:"dealer_api"`
-	ModelID         string               `json:"model_id,omitempty"`
-	Model           string               `json:"model,omitempty"`
-	ModelURL        string               `json:"model_url,omitempty"`
-	WorkspaceID     string               `json:"workspace_id,omitempty"`
-	Workspace       string               `json:"workspace,omitempty"`
-	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
+	Sources         []Volume `json:"sources,omitempty"`
+	VolumesData     []Volume `json:"volumes_data,omitempty"`
+	Secrets         []Secret `json:"secrets,omitempty"`
+	DealerAPI       string   `json:"dealer_api"`
+	ModelID         string   `json:"model_id,omitempty"`
+	Model           string   `json:"model,omitempty"`
+	ModelURL        string   `json:"model_url,omitempty"`
+	WorkspaceID     string   `json:"workspace_id,omitempty"`
+	Workspace       string   `json:"workspace,omitempty"`
+	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
 }
 
 func (serv *ModelServing) GPURequests() int64 {
@@ -43,20 +43,6 @@ func (serv *ModelServing) GPURequests() int64 {
 
 func (serv *ModelServing) Type() string {
 	return KindServing
-}
-
-func (serv ModelServing) Volume() *Volume {
-	if len(serv.Volumes) != 1 {
-		return nil
-	}
-	return &Volume{
-		Name:      serv.Volumes[0].Name,
-		MountPath: serv.Volumes[0].MountPath,
-		SubPath:   serv.Volumes[0].SubPath,
-		VolumeSource: VolumeSource{
-			GitRepo: serv.Source,
-		},
-	}
 }
 
 type ServingModelResourceGenerator struct {
@@ -97,6 +83,9 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 
 func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
+
+	// Do not use volume mounts, use mounts from sources
+	serving.UseDefaultVolumeMapping = true
 
 	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
 	if err != nil {
@@ -216,6 +205,9 @@ func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret 
 			WorkspaceID: serving.WorkspaceID,
 			Meta: Meta{
 				Name: serving.Name,
+			},
+			Spec: Spec{
+				Volumes: serving.Sources,
 			},
 		},
 		VolumesData: serving.VolumesData,
