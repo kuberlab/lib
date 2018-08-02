@@ -19,16 +19,16 @@ type UniversalServing struct {
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
 
 	// model serving
-	Source          *GitRepoVolumeSource `json:"source,omitempty"`
-	VolumesData     []Volume             `json:"volumes_data,omitempty"`
-	Secrets         []Secret             `json:"secrets,omitempty"`
-	DealerAPI       string               `json:"dealer_api,omitempty"`
-	ModelID         string               `json:"model_id,omitempty"`
-	Model           string               `json:"model,omitempty"`
-	ModelURL        string               `json:"model_url,omitempty"`
-	WorkspaceID     string               `json:"workspace_id,omitempty"`
-	Workspace       string               `json:"workspace,omitempty"`
-	WorkspaceSecret string               `json:"workspace_secret,omitempty"`
+	Sources         []Volume `json:"sources,omitempty"`
+	VolumesData     []Volume `json:"volumes_data,omitempty"`
+	Secrets         []Secret `json:"secrets,omitempty"`
+	DealerAPI       string   `json:"dealer_api"`
+	ModelID         string   `json:"model_id,omitempty"`
+	Model           string   `json:"model,omitempty"`
+	ModelURL        string   `json:"model_url,omitempty"`
+	WorkspaceID     string   `json:"workspace_id,omitempty"`
+	Workspace       string   `json:"workspace,omitempty"`
+	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
 }
 
 func (us UniversalServing) Serving() Serving {
