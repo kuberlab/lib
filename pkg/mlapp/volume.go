@@ -33,7 +33,7 @@ type Volume struct {
 }
 
 type VolumeSource struct {
-	IsWorkspaceLocal      bool                                  `json:"isWorkspaceLocal"`
+	IsWorkspaceLocal      bool                                  `json:"isWorkspaceLocal,omitempty"`
 	HostPath              *v1.HostPathVolumeSource              `json:"hostPath,omitempty" protobuf:"bytes,1,opt,name=hostPath"`
 	GitRepo               *GitRepoVolumeSource                  `json:"gitRepo,omitempty" protobuf:"bytes,5,opt,name=gitRepo"`
 	NFS                   *v1.NFSVolumeSource                   `json:"nfs,omitempty" protobuf:"bytes,7,opt,name=nfs"`
