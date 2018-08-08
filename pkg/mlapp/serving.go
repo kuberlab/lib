@@ -22,7 +22,7 @@ type UniversalServing struct {
 	Sources         []Volume `json:"sources,omitempty"`
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
-	DealerAPI       string   `json:"dealer_api"`
+	DealerAPI       string   `json:"dealer_api,omitempty"`
 	ModelID         string   `json:"model_id,omitempty"`
 	Model           string   `json:"model,omitempty"`
 	ModelURL        string   `json:"model_url,omitempty"`
