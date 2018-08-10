@@ -76,6 +76,7 @@ spec:
           {{- if .Conda }}
           source activate {{ .Conda }};
           {{- end }}
+          export PYTHONPATH=$PYTHONPATH:{{ .PythonPath }};
           {{- if .WorkDir }}
           cd {{ .WorkDir }};
           {{- end }}
@@ -202,16 +203,24 @@ func (ui UIXResourceGenerator) Env() []Env {
 	)
 	return ResolveEnv(env)
 }
+
+func (ui UIXResourceGenerator) PythonPath() string {
+	_, pythonPath := baseEnv(ui.c, ui.Resource)
+	return pythonPath
+}
+
 func (ui UIXResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
 		"volumeMounts": ui.mounts,
 	}
 }
+
 func (ui UIXResourceGenerator) Volumes() interface{} {
 	return map[string]interface{}{
 		"volumes": ui.volumes,
 	}
 }
+
 func (ui UIXResourceGenerator) Namespace() string {
 	return ui.c.GetNamespace()
 }
