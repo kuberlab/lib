@@ -172,8 +172,9 @@ type Spec struct {
 	Packages              []Packages `json:"packages,omitempty"`
 	DefaultPackageManager string     `json:"package_manager,omitempty"`
 	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
-	DefaultReadOnly       bool       `json:"default_read_only"`
+	DefaultInstallerImage string     `json:"default_installer_image,omitempty"`
 	DockerAccountIDs      []string   `json:"docker_account_ids,omitempty"`
+	DefaultReadOnly       bool       `json:"default_read_only"`
 }
 
 type Secret struct {
@@ -183,6 +184,7 @@ type Secret struct {
 	Mounts map[string]string `json:"mounts,omitempty"`
 	Path   string            `json:"path,omitempty"`
 }
+
 type Packages struct {
 	Names   []string `json:"names,omitempty"`
 	Manager string   `json:"manager,omitempty"`
@@ -394,6 +396,23 @@ func (c Config) GetBoardConfig(mapping func(v Volume) (*VolumeSource, error)) (*
 		}
 	}
 	return &b, nil
+}
+
+func (c *BoardConfig) InstallerImage() string {
+	if c.DefaultInstallerImage != "" {
+		return c.DefaultInstallerImage
+	}
+	if len(c.Uix) > 0 {
+		if c.Uix[0].Images.CPU != "" {
+			return c.Uix[0].Images.CPU
+		}
+	}
+	if len(c.Tasks) > 0 {
+		if len(c.Tasks[0].Resources) > 0 && c.Tasks[0].Resources[0].Images.CPU != "" {
+			return c.Tasks[0].Resources[0].Images.CPU
+		}
+	}
+	return ""
 }
 
 func (c *BoardConfig) VolumeByName(name string) *Volume {
