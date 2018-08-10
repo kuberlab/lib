@@ -93,6 +93,10 @@ spec:
             add: ["SYS_ADMIN"]
         {{- end }}
         env:
+        {{- if not .Command }}
+        - name: PYTHONPATH
+          value: '{{ .PythonPath }}'
+        {{- end }}
         - name: RESOURCE_NAME
           value: '{{ .ComponentName }}'
         - name: POD_NAME
