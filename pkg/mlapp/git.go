@@ -2,14 +2,14 @@ package mlapp
 
 import (
 	"fmt"
-	"net/url"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/pborman/uuid"
 	"k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -31,9 +31,9 @@ func (c *BoardConfig) setGitRefs(volumes []v1.Volume, task Task) {
 }
 
 type RepoInfo struct {
-	Dir      string
-	URL      string
-	Revision string
+	URL        string
+	Revision   string
+	PrivateKey string
 }
 
 func (c *BoardConfig) existingRevisions(task Task) map[string]string {
@@ -54,6 +54,20 @@ func (c *BoardConfig) existingRevisions(task Task) map[string]string {
 		}
 	}
 	return revs
+}
+
+func (c *BoardConfig) privateKeyFor(account string) string {
+	suf := fmt.Sprintf("-%s", account)
+	for _, s := range c.Secrets {
+		if s.Name == "gitconfig" {
+			for k, v := range s.Data {
+				if strings.HasSuffix(k, suf) {
+					return v
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, task Task) (map[string]string, error) {
@@ -86,7 +100,6 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 		}
 		return false
 	}
-	volumesMap := make(map[string]*v1.Volume)
 
 	// Add repos to determine their current revisions.
 	for _, v := range c.VolumesData {
@@ -102,26 +115,34 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 				res[v.Name] = defaultRevisions[v.Name]
 				continue
 			}
-
-			repoName := getGitRepoName(v.GitRepo.Repository)
-			reposToDetect[v.Name] = &RepoInfo{
-				Dir: fmt.Sprintf("/rev-detect/%v", repoName),
-				URL: v.GitRepo.Repository,
+			var repo = v.GitRepo.Repository
+			var pkey string
+			if v.GitRepo.AccountId != "" {
+				pkey = c.privateKeyFor(v.GitRepo.AccountId)
+				repo = strings.Replace(repo, "-"+v.GitRepo.AccountId, "", -1)
 			}
-			vv := v.V1Volume()
-			volumesMap[v.Name] = &vv
-			volumesMap[v.Name].Name = v.Name
+			reposToDetect[v.Name] = &RepoInfo{
+				URL:        repo,
+				PrivateKey: pkey,
+			}
 		}
 	}
 
 	// Get rid of public repos and detect them locally.
 	for k, v := range reposToDetect {
-		if strings.Contains(v.URL, "@") {
-			// "@" indicates private repo (either ssh username@host or https username@pass)
-			continue
-		}
-		// Detect others locally.
+		// Detect locally.
 		cmd := fmt.Sprintf("git ls-remote %v %v 2> /dev/null | head -1 | awk '{print $1}' | xargs printf '%v %%s\\n'", v.URL, v.Revision, k)
+
+		if v.PrivateKey != "" {
+			keyFileName := uuid.New()
+			if err := ioutil.WriteFile(keyFileName, []byte(v.PrivateKey), 0600); err != nil {
+				return nil, err
+			}
+			cmd = fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i %v -o StrictHostKeyChecking=no' %v`, keyFileName, cmd)
+			//noinspection GoDeferInLoop
+			defer os.Remove(keyFileName)
+		}
+
 		logrus.Infof("Exec locally: %v", cmd)
 		out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 		if err != nil {
@@ -137,79 +158,6 @@ func (c *BoardConfig) DetermineGitSourceRevisions(client *kubernetes.Clientset, 
 		return res, nil
 	}
 
-	// Generate script for determining revisions.
-	cmd := []string{"mkdir -p ~/.ssh"}
-	for k, v := range reposToDetect {
-		if strings.Contains(v.URL, "@") {
-			// SSH.
-			u := v.URL
-			if !strings.HasPrefix(u, "ssh://") {
-				u = "ssh://" + u
-			}
-			parsed, err := url.Parse(u)
-			if err != nil {
-				return nil, err
-			}
-			cmd = append(cmd, fmt.Sprintf("ssh-keyscan %v >> ~/.ssh/known_hosts > /dev/null 2> /dev/null", parsed.Host))
-		}
-		//cmd = append(cmd, fmt.Sprintf("cd %v", v.Dir))
-		cmd = append(cmd, fmt.Sprintf("git ls-remote %v %v 2> /dev/null | head -1 | awk '{print $1}' | xargs printf '%v %%s\\n'", v.URL, v.Revision, k))
-	}
-	logrus.Infof("Generated cmd: %v", strings.Join(cmd, "; "))
-
-	// Generate Pod, run it and read logs.
-	volumes := make([]v1.Volume, 0)
-	volumeMounts := make([]v1.VolumeMount, 0)
-	if len(c.Secrets) > 0 {
-		vol, vom, err := c.getSecretVolumes(c.Secrets)
-		if err != nil {
-			return nil, err
-		}
-		if len(vol) > 0 {
-			volumes = append(volumes, vol...)
-		}
-		if len(vom) > 0 {
-			volumeMounts = append(volumeMounts, vom...)
-		}
-	}
-
-	pod, err := kuberlab.GetPodSpec(
-		"git-revs",
-		c.GetNamespace(),
-		"kuberlab/board-init:latest",
-		volumes,
-		volumeMounts,
-		append([]string{"/bin/bash", "-c"}, strings.Join(cmd, "; ")),
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	pod.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
-
-	pod, err = client.CoreV1().Pods(c.GetNamespace()).Create(pod)
-	if err != nil {
-		return nil, err
-	}
-	defer client.CoreV1().Pods(c.GetNamespace()).Delete(pod.Name, &meta_v1.DeleteOptions{})
-
-	//if err = kuberlab.WaitPod(pod, client); err != nil {
-	//	return nil, err
-	//}
-	if err = kuberlab.WaitPodComplete(pod, client); err != nil {
-		return nil, err
-	}
-
-	logsRaw, err := client.CoreV1().Pods(pod.Namespace).GetLogs(
-		pod.Name,
-		&v1.PodLogOptions{
-			Follow: true,
-		},
-	).DoRaw()
-	if err != nil {
-		return nil, err
-	}
-	parseLogsAddRevs(logsRaw, res)
 	return res, nil
 }
 
