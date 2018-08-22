@@ -17,5 +17,3 @@ func (s keyPathSorted) Less(i, j int) bool {
 func (s keyPathSorted) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
-
-

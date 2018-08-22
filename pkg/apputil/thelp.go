@@ -1,12 +1,12 @@
 package apputil
 
 import (
+	"net/url"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
-	"net/url"
-	"strings"
 )
 
 func ToYaml(v interface{}) string {

@@ -1,11 +1,12 @@
 package mlapp
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
+	"text/template"
 
-	"bytes"
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/kubernetes"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"text/template"
 )
 
 const DeploymentTpl = `

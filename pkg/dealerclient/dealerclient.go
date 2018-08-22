@@ -2,6 +2,7 @@ package dealerclient
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"crypto/tls"
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/errors"
 )
