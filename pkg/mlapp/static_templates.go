@@ -41,9 +41,12 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      {{- if.NodeSelector }}
+      {{- if .NodeSelector }}
       nodeSelector:
         kuberlab.io/ml-node: {{ .NodeSelector }}
+        {{- if .DeployResourceLabel }}
+        kuberlab.io/private-resource: {{ .DeployResourceLabel }}
+        {{- end }}
       {{- end }}
       {{- if gt (len .InitContainers) 0 }}
       initContainers:
@@ -60,6 +63,10 @@ spec:
       {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
       - key: role.kuberlab.io/gpu-compute
         effect: PreferNoSchedule
+      {{- end }}
+      {{- if .DeployResourceLabel }}
+       - key: kuberlab.io/private-resource
+         effect: NoSchedule
       {{- end }}
       {{- if gt (len .DockerSecretNames) 0 }}
       imagePullSecrets:
@@ -166,6 +173,9 @@ func (ui UIXResourceGenerator) NodeSelector() string {
 	return utils.GetDefaultCPUNodeSelector()
 }
 
+func (ui UIXResourceGenerator) DeployResourceLabel() string {
+	return ui.c.DeployResourceLabel
+}
 func (ui UIXResourceGenerator) DockerSecretNames() []string {
 	return ui.c.DockerSecretNames()
 }
