@@ -36,7 +36,7 @@ var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 var validVolumes = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 type Config struct {
-	Kind        string `json:"kind"`
+	Kind        string `json:"kind" description:"MLApp"`
 	Meta        `json:"metadata"`
 	Spec        `json:"spec,omitempty"`
 	Workspace   string    `json:"workspace,omitempty"`
@@ -46,11 +46,12 @@ type Config struct {
 }
 
 type BoardConfig struct {
-	DealerAPI     string   `json:"dealer_api,omitempty"`
-	VolumesData   []Volume `json:"volumes_data,omitempty"`
-	Secrets       []Secret `json:"secrets,omitempty"`
-	BoardMetadata Metadata `json:"board_metadata,omitempty"`
-	Config        `json:",inline"`
+	DealerAPI           string   `json:"dealer_api,omitempty"`
+	VolumesData         []Volume `json:"volumes_data,omitempty"`
+	Secrets             []Secret `json:"secrets,omitempty"`
+	BoardMetadata       Metadata `json:"board_metadata,omitempty"`
+	Config              `json:",inline"`
+	DeployResourceLabel string `json:"-"`
 }
 
 type Metadata struct {
@@ -144,8 +145,8 @@ func (c Config) GetAppName() string {
 }
 
 type Meta struct {
-	Name   string            `json:"name,omitempty"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Name   string            `json:"name,omitempty" description="Default project name"`
+	Labels map[string]string `json:"labels,omitempty" description="Map of string keys and values"`
 }
 
 type DeploymentBasedResource interface {
@@ -165,16 +166,16 @@ type Revision struct {
 }
 
 type Spec struct {
-	Tasks                 []Task     `json:"tasks,omitempty"`
-	Uix                   []Uix      `json:"uix,omitempty"`
-	Serving               []Serving  `json:"serving,omitempty"`
-	Volumes               []Volume   `json:"volumes,omitempty"`
-	Packages              []Packages `json:"packages,omitempty"`
-	DefaultPackageManager string     `json:"package_manager,omitempty"`
-	DefaultMountPath      string     `json:"default_mount_path,omitempty"`
-	DefaultInstallerImage string     `json:"default_installer_image,omitempty"`
+	Tasks                 []Task     `json:"tasks,omitempty" description="Project taks"`
+	Uix                   []Uix      `json:"uix,omitempty" description="Aditional Project UI tabs"`
+	Serving               []Serving  `json:"serving,omitempty" description="Serving Description`
+	Volumes               []Volume   `json:"volumes,omitempty" description="Project sources description"`
+	Packages              []Packages `json:"packages,omitempty" description="Packages required for project"`
+	DefaultPackageManager string     `json:"package_manager,omitempty" description="Default package manager for project. pip,pip3,conda."`
+	DefaultMountPath      string     `json:"default_mount_path,omitempty" description="Default path prefix for mount sources"`
+	DefaultInstallerImage string     `json:"default_installer_image,omitempty" description="Image used for package manage"`
 	DockerAccountIDs      []string   `json:"docker_account_ids,omitempty"`
-	DefaultReadOnly       bool       `json:"default_read_only"`
+	DefaultReadOnly       bool       `json:"default_read_only" description="Readonly project. User can't chnge configuration."`
 }
 
 type Secret struct {
