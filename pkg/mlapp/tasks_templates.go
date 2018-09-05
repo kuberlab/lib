@@ -44,6 +44,7 @@ spec:
   {{- end }}
   {{- if .DeployResourceLabel }}
   - key: kuberlab.io/private-resource
+    value: {{ .DeployResourceLabel }}
     effect: NoSchedule
   {{- end }}
   {{- if gt (len .InitContainers) 0 }}
