@@ -41,7 +41,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      {{- if gt (len .NodeSelectors ) 0) }}
+      {{- if gt (len .NodeSelectors ) 0 }}
       nodeSelector:
         {{- range $key, $value := .NodeSelectors }}
         {{ $key }}: "{{ $value }}"
