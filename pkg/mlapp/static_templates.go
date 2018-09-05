@@ -41,11 +41,10 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
-      {{- if .NodeSelector }}
+      {{- if gt (len .NodeSelectors ) 0) }}
       nodeSelector:
-        kuberlab.io/ml-node: {{ .NodeSelector }}
-        {{- if .DeployResourceLabel }}
-        kuberlab.io/private-resource: {{ .DeployResourceLabel }}
+        {{- range $key, $value := .NodeSelectors }}
+        {{ $key }}: "{{ $value }}"
         {{- end }}
       {{- end }}
       {{- if gt (len .InitContainers) 0 }}
@@ -65,8 +64,8 @@ spec:
         effect: PreferNoSchedule
       {{- end }}
       {{- if .DeployResourceLabel }}
-       - key: kuberlab.io/private-resource
-         effect: NoSchedule
+      - key: kuberlab.io/private-resource
+        effect: NoSchedule
       {{- end }}
       {{- if gt (len .DockerSecretNames) 0 }}
       imagePullSecrets:
@@ -163,14 +162,21 @@ type UIXResourceGenerator struct {
 	InitContainers []InitContainers
 }
 
-func (ui UIXResourceGenerator) NodeSelector() string {
+func (ui UIXResourceGenerator) NodeSelectors()  map[string]string {
+	nSlector  := map[string]string{}
 	if ui.NodesLabel != "" {
-		return strings.TrimPrefix(ui.NodesLabel, "knode:")
+		nSlector[types.KuberlabMLNodeLabel]=strings.TrimPrefix(ui.NodesLabel, "knode:")
+	} else {
+		if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
+			nSlector[types.KuberlabMLNodeLabel] = utils.GetDefaultGPUNodeSelector()
+		} else if v := utils.GetDefaultCPUNodeSelector(); v != "" {
+			nSlector[types.KuberlabMLNodeLabel] = v
+		}
 	}
-	if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
-		return utils.GetDefaultGPUNodeSelector()
+	if ui.c.DeployResourceLabel!=""{
+		nSlector[types.KuberlabPrivateNodeLabel] = ui.c.DeployResourceLabel
 	}
-	return utils.GetDefaultCPUNodeSelector()
+	return nSlector
 }
 
 func (ui UIXResourceGenerator) DeployResourceLabel() string {
