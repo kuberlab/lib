@@ -282,15 +282,16 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 			return nil, err
 		}
 		res.Object = &kuberlab.WorkerSet{
-			PodTemplate:  res.Object.(*v1.Pod),
-			ResourceName: r.Name,
-			TaskName:     task.Name,
-			ProjectName:  c.Name,
-			Namespace:    c.GetNamespace(),
-			JobID:        jobID,
-			IsPermanent:  r.IsPermanent,
-			MaxRestarts:  r.MaxRestartCount,
-			Replicas:     int(r.Replicas),
+			PodTemplate:         res.Object.(*v1.Pod),
+			ResourceName:        r.Name,
+			TaskName:            task.Name,
+			ProjectName:         c.Name,
+			Namespace:           c.GetNamespace(),
+			JobID:               jobID,
+			IsPermanent:         r.IsPermanent,
+			MaxRestarts:         r.MaxRestartCount,
+			Replicas:            int(r.Replicas),
+			DeployResourceLabel: c.DeployResourceLabel,
 			Selector: c.ResourceSelector(map[string]string{
 				types.TASK_ID_LABEL:  jobID,
 				types.ComponentLabel: task.Name + "-" + r.Name,
