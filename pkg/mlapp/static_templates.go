@@ -65,6 +65,7 @@ spec:
       {{- end }}
       {{- if .DeployResourceLabel }}
       - key: kuberlab.io/private-resource
+        value: {{ .DeployResourceLabel }}
         effect: NoSchedule
       {{- end }}
       {{- if gt (len .DockerSecretNames) 0 }}
