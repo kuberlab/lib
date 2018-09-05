@@ -13,16 +13,17 @@ import (
 )
 
 type WorkerSet struct {
-	ProjectName  string
-	Namespace    string
-	TaskName     string
-	ResourceName string
-	JobID        string
-	Replicas     int
-	MaxRestarts  int
-	IsPermanent  bool
-	PodTemplate  *v1.Pod
-	Selector     meta_v1.ListOptions
+	ProjectName         string
+	Namespace           string
+	TaskName            string
+	ResourceName        string
+	JobID               string
+	Replicas            int
+	MaxRestarts         int
+	IsPermanent         bool
+	PodTemplate         *v1.Pod
+	Selector            meta_v1.ListOptions
+	DeployResourceLabel string
 }
 
 func (ws WorkerSet) GetObjectKind() schema.ObjectKind {
@@ -48,12 +49,13 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 	annotations["restart"] = strconv.Itoa(restart)
 	p.Annotations = annotations
 	containers := make([]v1.Container, len(p.Spec.Containers))
+	nodeSelector := map[string]string{}
 	if node != "" {
 		labels := make(map[string]string)
 		utils.JoinMaps(labels, p.Labels)
 		labels[types.KuberlabMLNodeLabel] = node
 		p.Labels = labels
-		p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: node}
+		nodeSelector[types.KuberlabMLNodeLabel] = node
 	} else {
 		defautTemplate := utils.GetDefaultCPUNodeSelector()
 		if t := p.Labels[types.ComputeTypeLabel]; t == "gpu" {
@@ -66,8 +68,14 @@ func (ws *WorkerSet) GetWorker(i int, node string, restart int) *v1.Pod {
 			utils.JoinMaps(labels, p.Labels)
 			labels[types.KuberlabMLNodeLabel] = defautTemplate
 			p.Labels = labels
-			p.Spec.NodeSelector = map[string]string{types.KuberlabMLNodeLabel: defautTemplate}
+			nodeSelector[types.KuberlabMLNodeLabel] = defautTemplate
 		}
+	}
+	if ws.DeployResourceLabel != "" {
+		nodeSelector[types.KuberlabPrivateNodeLabel] = ws.DeployResourceLabel
+	}
+	if len(nodeSelector) > 0 {
+		p.Spec.NodeSelector = nodeSelector
 	}
 	for j, c := range p.Spec.Containers {
 		env := make([]v1.EnvVar, 0, len(c.Env))

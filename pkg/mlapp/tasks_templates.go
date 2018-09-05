@@ -42,6 +42,10 @@ spec:
   - key: role.kuberlab.io/gpu-compute
     effect: PreferNoSchedule
   {{- end }}
+  {{- if .DeployResourceLabel }}
+  - key: kuberlab.io/private-resource
+    effect: NoSchedule
+  {{- end }}
   {{- if gt (len .InitContainers) 0 }}
   initContainers:
   {{- range $i, $value := .InitContainers }}
@@ -155,7 +159,9 @@ func (t TaskResourceGenerator) PythonPath() string {
 	_, pythonPath := baseEnv(t.c, t.TaskResource.Resource)
 	return pythonPath
 }
-
+func (t TaskResourceGenerator) DeployResourceLabel() string {
+	return t.c.DeployResourceLabel
+}
 func (t TaskResourceGenerator) Env() []Env {
 	envs, _ := baseEnv(t.c, t.TaskResource.Resource)
 	for _, r := range t.task.Resources {
