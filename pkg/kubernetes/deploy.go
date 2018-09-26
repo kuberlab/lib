@@ -194,6 +194,7 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 		} else {
 			old.Labels = v.Labels
 			old.Spec.Selector = v.Spec.Selector
+			old.Spec.Ports = v.Spec.Ports
 			_, err := kubeClient.CoreV1().Services(v.Namespace).Update(old)
 			return err
 		}
