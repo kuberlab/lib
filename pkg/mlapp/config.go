@@ -329,7 +329,7 @@ type Task struct {
 	Meta             `json:",inline"`
 	Version          string         `json:"version,omitempty" description:"depricated"`
 	TimeoutMinutes   uint           `json:"timeoutMinutes,omitempty" description:"depricated"`
-	Resources        []TaskResource `json:"resources" description:"Components that should be started during task execution"`
+	Resources        []TaskResource `json:"resources,omitempty" description:"Components that should be started during task execution"`
 	Revision         *Revision      `json:"revision,omitempty" description:"Information to commit new configuration"`
 	GitRevisions     []TaskRevision `json:"gitRevisions,omitempty" description:"Revisions of source code used for execution"`
 	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty" description:"Revisions of datasets used for execution"`
