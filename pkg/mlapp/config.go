@@ -37,13 +37,18 @@ var validVolumes = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 // swagger:model
 type Config struct {
-	Kind        string `json:"kind" description:"MLApp"`
-	Meta        `json:"metadata"`
-	Spec        `json:"spec,omitempty"`
-	Workspace   string    `json:"workspace,omitempty" description:"User workspace name"`
-	WorkspaceID string    `json:"workspace_id,omitempty" description:"User workspace id"`
-	ProjectID   string    `json:"project_id,omitempty" description:"Project id"`
-	Revision    *Revision `json:"revision,omitempty" description:"Information to commit new configuration"`
+	// Resource kind
+	Kind string `json:"kind" example:"MLApp"`
+	Meta `json:"metadata"`
+	Spec `json:"spec,omitempty"`
+	// User workspace name
+	Workspace string `json:"workspace,omitempty"`
+	// User workspace id
+	WorkspaceID string `json:"workspace_id,omitempty"`
+	// Project id
+	ProjectID string `json:"project_id,omitempty"`
+	// Information to commit new configuration
+	Revision *Revision `json:"revision,omitempty"`
 }
 
 type BoardConfig struct {
@@ -146,8 +151,10 @@ func (c Config) GetAppName() string {
 }
 
 type Meta struct {
-	Name   string            `json:"name,omitempty" description="Default project name"`
-	Labels map[string]string `json:"labels,omitempty" description="Map of string keys and values"`
+	// Component name
+	Name string `json:"name,omitempty"`
+	// Map of string keys and values
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 type DeploymentBasedResource interface {
@@ -167,16 +174,25 @@ type Revision struct {
 }
 
 type Spec struct {
-	Tasks                 []Task     `json:"tasks,omitempty" description="Project taks description"`
-	Uix                   []Uix      `json:"uix,omitempty" description="Aditional Project UI tabs description"`
-	Serving               []Serving  `json:"serving,omitempty" description="Serving Description`
-	Volumes               []Volume   `json:"volumes,omitempty" description="Project sources description"`
-	Packages              []Packages `json:"packages,omitempty" description="Packages required for project"`
-	DefaultPackageManager string     `json:"package_manager,omitempty" description="Default package manager for project. pip,pip3,conda."`
-	DefaultMountPath      string     `json:"default_mount_path,omitempty" description="Default path prefix for mount sources"`
-	DefaultInstallerImage string     `json:"default_installer_image,omitempty" description="Image used for package manage"`
-	DockerAccountIDs      []string   `json:"docker_account_ids,omitempty"`
-	DefaultReadOnly       bool       `json:"default_read_only" description="Readonly project. User can't chnge configuration."`
+	// Project tasks description
+	Tasks []Task `json:"tasks,omitempty"`
+	// Additional Project UI tabs description
+	Uix []Uix `json:"uix,omitempty"`
+	// Serving Description
+	Serving []Serving `json:"serving,omitempty"`
+	// Project sources description
+	Volumes []Volume `json:"volumes,omitempty"`
+	// Packages required for project
+	Packages []Packages `json:"packages,omitempty"`
+	// Default package manager for project. pip, pip3, conda.
+	DefaultPackageManager string `json:"package_manager,omitempty"`
+	// Default path prefixes for mount sources
+	DefaultMountPath string `json:"default_mount_path,omitempty"`
+	// Image used for package manage
+	DefaultInstallerImage string   `json:"default_installer_image,omitempty"`
+	DockerAccountIDs      []string `json:"docker_account_ids,omitempty"`
+	// Readonly project. User can't change configuration.
+	DefaultReadOnly bool `json:"default_read_only"`
 }
 
 type Secret struct {
@@ -193,17 +209,28 @@ type Packages struct {
 }
 
 type Resource struct {
-	Replicas                int              `json:"replicas,omitempty" description:"Number of process replica for component"`
-	Resources               *ResourceRequest `json:"resources,omitempty" description:"Resources required for component"`
-	Images                  Images           `json:"images,omitempty" description:"Docker images used to start component"`
-	Command                 string           `json:"command,omitempty" description:"Execution command"`
-	WorkDir                 string           `json:"workDir,omitempty" description:"Work directory inside component"`
-	RawArgs                 string           `json:"args,omitempty" description:"for internal usage"`
-	Env                     []Env            `json:"env,omitempty" description:"Environment varaible for container"`
-	Volumes                 []VolumeMount    `json:"volumes,omitempty" description:"Volumes(Sources) to attach to component during execution"`
-	NodesLabel              string           `json:"nodes,omitempty" description:"Execute component on specefic node type"`
-	UseDefaultVolumeMapping bool             `json:"default_volume_mapping,omitempty" description:"Attach all project volumes(sources)"`
-	DefaultMountPath        string           `json:"default_mount_path,omitempty" description:"default mount prefix for vulumes inside component"`
+	// Number of process replica for component
+	Replicas int `json:"replicas,omitempty"`
+	// Resources required for component
+	Resources *ResourceRequest `json:"resources,omitempty"`
+	// Docker images used to start component
+	Images Images `json:"images,omitempty"`
+	// Execution command
+	Command string `json:"command,omitempty"`
+	// Work directory inside component
+	WorkDir string `json:"workDir,omitempty"`
+	// for internal usage
+	RawArgs string `json:"args,omitempty"`
+	// Environment variables for container
+	Env []Env `json:"env,omitempty"`
+	// Volumes (sources) to attach to component during execution
+	Volumes []VolumeMount `json:"volumes,omitempty"`
+	// Execute component on specific node type
+	NodesLabel string `json:"nodes,omitempty"`
+	// Attach all project volumes (sources)
+	UseDefaultVolumeMapping bool `json:"default_volume_mapping,omitempty"`
+	// Default mount prefix for volumes inside component
+	DefaultMountPath string `json:"default_mount_path,omitempty"`
 }
 
 func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string, defaultReadOnly bool) []VolumeMount {
@@ -326,13 +353,19 @@ type Port struct {
 }
 
 type Task struct {
-	Meta             `json:",inline"`
-	Version          string         `json:"version,omitempty" description:"depricated"`
-	TimeoutMinutes   uint           `json:"timeoutMinutes,omitempty" description:"depricated"`
-	Resources        []TaskResource `json:"resources,omitempty" description:"Components that should be started during task execution"`
-	Revision         *Revision      `json:"revision,omitempty" description:"Information to commit new configuration"`
-	GitRevisions     []TaskRevision `json:"gitRevisions,omitempty" description:"Revisions of source code used for execution"`
-	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty" description:"Revisions of datasets used for execution"`
+	Meta `json:",inline"`
+	// Deprecated
+	Version string `json:"version,omitempty"`
+	// Deprecated
+	TimeoutMinutes uint `json:"timeoutMinutes,omitempty"`
+	// Components that should be started during task execution
+	Resources []TaskResource `json:"resources,omitempty"`
+	// Information to commit new configuration
+	Revision *Revision `json:"revision,omitempty"`
+	// Revisions of source code used for execution
+	GitRevisions []TaskRevision `json:"gitRevisions,omitempty"`
+	// Revisions of datasets used for execution
+	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty"`
 }
 
 func (t *Task) Type() string {
@@ -350,29 +383,40 @@ func (t *Task) GPURequests() int64 {
 }
 
 type TaskRevision struct {
-	VolumeName string `json:"volumeName,omitempty" description:"Name of data source that support versioning"`
-	Revision   string `json:"revision,omitempty" description:"Revision id or branch or tag"`
+	// Name of data source that support versioning
+	VolumeName string `json:"volumeName,omitempty"`
+	// Revision id or branch or tag
+	Revision string `json:"revision,omitempty"`
 }
 
 type TaskResource struct {
-	Meta            `json:",inline"`
-	RestartPolicy   string `json:"restartPolicy" description:""`
-	MaxRestartCount int    `json:"maxRestartCount,omitempty" description:"How many times component may fail during task exection"`
-	IsPermanent     bool   `json:"is_permanent,omitempty" description:"Is it permanent component that should not stop exection until all other component will be finished"`
-	Port            int32  `json:"port,omitempty" description:"Port used for communication with other component inside tasks."`
-	Resource        `json:",inline"`
+	Meta          `json:",inline"`
+	RestartPolicy string `json:"restartPolicy"`
+	// How many times component may fail during task exection
+	MaxRestartCount int `json:"maxRestartCount,omitempty"`
+	// Is it permanent component that should not stop execution until all other component will be finished
+	IsPermanent bool `json:"is_permanent,omitempty"`
+	// Port used for communication with other component inside tasks.
+	Port     int32 `json:"port,omitempty"`
+	Resource `json:",inline"`
 }
 
 type Images struct {
-	CPU string `json:"cpu" description:"Docker image used for component execution on CPU"`
-	GPU string `json:"gpu" description:"Docker image used for component execution on GPU". It it empy cpu image will be used.`
+	// Docker image used for component execution on CPU
+	CPU string `json:"cpu"`
+	// Docker image used for component execution on GPU. It it empty cpu image will be used.
+	GPU string `json:"gpu"`
 }
 
 type Env struct {
-	Name            string `json:"name" description:"Component environment variable name"`
-	Value           string `json:"value" description:"Component environment variable value"`
-	ValueFromSecret string `json:"valueFromSecret" description:"Only for internal usage"`
-	SecretKey       string `json:"secretKey" description:"Only for internal usage"`
+	// Component environment variable name
+	Name string `json:"name"`
+	// Component environment variable value
+	Value string `json:"value,omitempty"`
+	// Only for internal usage
+	ValueFromSecret string `json:"valueFromSecret,omitempty"`
+	// Only for internal usage
+	SecretKey string `json:"secretKey,omitempty"`
 }
 
 type TaskResourceSpec struct {

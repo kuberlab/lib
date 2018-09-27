@@ -10,11 +10,16 @@ import (
 )
 
 type VolumeMount struct {
-	Name        string  `json:"name" description:"Volume(Source) name"`
-	MountPath   string  `json:"mountPath,omitempty" description:"Path to mount volume inside component. It empty default mount path + name will be used"`
-	ReadOnly    bool    `json:"readOnly,omitempty" description:"Is it read-only?"`
-	SubPath     string  `json:"subPath,omitempty" description:"Subpath inside source"`
-	GitRevision *string `json:"gitRevision,omitempty" description:"For git source specife revesion for mount. Empty is master"`
+	// Volume (source) name
+	Name string `json:"name"`
+	// Path to mount volume inside component. It empty default mount path + name will be used
+	MountPath string `json:"mountPath,omitempty"`
+	// Read-only volume
+	ReadOnly bool `json:"readOnly,omitempty"`
+	// Subpath inside source
+	SubPath string `json:"subPath,omitempty"`
+	// For git source specify revision for mount, default (empty) means master
+	GitRevision *string `json:"gitRevision,omitempty"`
 }
 type Volume struct {
 	// as in v1.Volume
