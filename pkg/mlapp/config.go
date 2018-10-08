@@ -595,6 +595,23 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, task *Task, build *string)
 				Command: fmt.Sprintf(`['sh', '-c', '%v']`, cmdStr),
 			})
 		}
+		if v.Model != nil {
+			baseDir := fmt.Sprintf("/model/%d", j)
+			vmounts = append(vmounts, v1.VolumeMount{
+				Name:      id,
+				MountPath: baseDir,
+				ReadOnly:  false,
+			})
+			inits = append(inits, InitContainers{
+				Name:  m.Name,
+				Image: "kuberlab/board-init",
+				Command: fmt.Sprintf(
+					`["/bin/sh", "-c", "mkdir -p %v; curl -L -o m.tgz %v && tar -xzvf m.tgz -C %v"]`,
+					baseDir, v.Model.DownloadURL, baseDir,
+				),
+				Mounts: map[string]interface{}{"volumeMounts": vmounts},
+			})
+		}
 
 	}
 	return inits, nil

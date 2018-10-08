@@ -49,6 +49,7 @@ type VolumeSource struct {
 	PersistentStorage     *PersistentStorage                    `json:"persistentStorage,omitempty" protobuf:"bytes,99,opt,name=persistentStorage"`
 	Dataset               *DatasetSource                        `json:"dataset,omitempty"`
 	DatasetFS             *DatasetFSSource                      `json:"datasetFS,omitempty"`
+	Model                 *ModelSource                          `json:"model,omitempty"`
 }
 
 func (v Volume) CommonID() string {
@@ -96,6 +97,9 @@ func (v Volume) V1Volume() v1.Volume {
 			r.GitRepo = &git
 		}
 	}
+	if v.Model != nil {
+		r.EmptyDir = &v1.EmptyDirVolumeSource{}
+	}
 	return r
 }
 
@@ -119,6 +123,13 @@ type DatasetSource struct {
 	Dataset   string `json:"dataset,omitempty" protobuf:"bytes,2,opt,name=dataset"`
 	Version   string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
 	ServerURL string `json:"serverURL,omitempty" protobuf:"bytes,3,opt,name=serverURL"`
+}
+
+type ModelSource struct {
+	Workspace   string `json:"workspace" protobuf:"bytes,1,opt,name=workspace"`
+	Model       string `json:"model,omitempty" protobuf:"bytes,2,opt,name=model"`
+	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
+	DownloadURL string `json:"downloadURL,omitempty" protobuf:"bytes,3,opt,name=downloadURL"`
 }
 
 type DatasetFSSource struct {
