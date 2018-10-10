@@ -3,7 +3,6 @@ package mlapp
 import (
 	"fmt"
 
-	"github.com/ghodss/yaml"
 	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
@@ -25,9 +24,6 @@ type ModelServing struct {
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
 	DealerAPI       string   `json:"dealer_api,omitempty"`
-	ModelID         string   `json:"model_id,omitempty"`
-	Model           string   `json:"model,omitempty"`
-	ModelURL        string   `json:"model_url,omitempty"`
 	WorkspaceID     string   `json:"workspace_id,omitempty"`
 	Workspace       string   `json:"workspace,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
@@ -87,44 +83,14 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 	// Do not use volume mounts, use mounts from sources
 	serving.UseDefaultVolumeMapping = true
 
-	volumesSpec, mountsSpec, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
-	if err != nil {
-		return nil, err
-	}
-	volumes := []v1.Volume{{
-		Name: "kuberlab-model",
-		VolumeSource: v1.VolumeSource{
-			EmptyDir: &v1.EmptyDirVolumeSource{},
-		},
-	}}
-	mounts := []v1.VolumeMount{{
-		Name:      "kuberlab-model",
-		MountPath: defaultModelPath,
-		ReadOnly:  false,
-	}}
-
-	inits, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), nil, nil)
+	volumes, mounts, err := c.KubeVolumesSpec(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly))
 	if err != nil {
 		return nil, err
 	}
 
-	initContainers := []InitContainers{
-		{
-			Name:  "init-model",
-			Image: "kuberlab/board-init",
-			Command: fmt.Sprintf(
-				`["/bin/sh", "-c", "mkdir -p %v; curl -L -o m.tgz %v && tar -xzvf m.tgz -C %v"]`,
-				defaultModelPath, serving.ModelURL, defaultModelPath,
-			),
-			Mounts: map[string]interface{}{"volumeMounts": mounts},
-		},
-	}
-	initContainers = append(initContainers, inits...)
-	if len(volumesSpec) > 0 {
-		volumes = append(volumes, volumesSpec...)
-	}
-	if len(mountsSpec) > 0 {
-		mounts = append(mounts, mountsSpec...)
+	initContainers, err := c.KubeInits(serving.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), nil, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	if dealerLimits && serving.DealerAPI != "" && serving.WorkspaceSecret != "" {
@@ -155,9 +121,6 @@ func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bo
 	if err != nil {
 		return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 	}
-
-	data, _ := yaml.Marshal(res.Object)
-	fmt.Println(string(data))
 
 	res.Deps = []*kubernetes.KubeResource{generateServingServiceFromDeployment(res.Object.(*extv1beta1.Deployment))}
 

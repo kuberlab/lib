@@ -606,7 +606,7 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, task *Task, build *string)
 				Name:  m.Name,
 				Image: "kuberlab/board-init",
 				Command: fmt.Sprintf(
-					`["/bin/sh", "-c", "mkdir -p %v; curl -L -o m.tgz %v && tar -xzvf m.tgz -C %v"]`,
+					`["/bin/sh", "-c", "mkdir -p %v; curl -L -o m.tar %v && tar -xvf m.tar -C %v"]`,
 					baseDir, v.Model.DownloadURL, baseDir,
 				),
 				Mounts: map[string]interface{}{"volumeMounts": vmounts},
