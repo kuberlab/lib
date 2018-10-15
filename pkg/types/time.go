@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	Format    = "2006-01-02T15:04:05"
+	Format    = "2006-01-02T15:04:05Z"
+	OldFormat = "2006-01-02T15:04:05"
 	SQLLayout = "2006-01-02 15:04:05"
 )
 
@@ -38,7 +39,11 @@ func MustParse(s string) Time {
 }
 
 func ParseTime(s string) (time.Time, error) {
-	return time.ParseInLocation(Format, s, time.FixedZone("UTC", 0))
+	t, err := time.ParseInLocation(Format, s, time.FixedZone("UTC", 0))
+	if err != nil {
+		return time.ParseInLocation(OldFormat, s, time.FixedZone("UTC", 0))
+	}
+	return t, err
 }
 
 func (t *Time) Scan(v interface{}) error {

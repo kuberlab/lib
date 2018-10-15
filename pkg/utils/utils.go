@@ -55,7 +55,10 @@ func JoinMaps(dest map[string]string, srcs ...map[string]string) map[string]stri
 func MustParse(date string) time.Time {
 	t, err := time.ParseInLocation("2006-01-02 15:04:05", date, time.FixedZone("UTC", 0))
 	if err != nil {
-		panic(err)
+		t, err = time.ParseInLocation("2006-01-02 15:04:05Z", date, time.FixedZone("UTC", 0))
+		if err != nil {
+			panic(err)
+		}
 	}
 	return t
 }
