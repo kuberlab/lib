@@ -15,7 +15,35 @@ func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 		}
 	}
 
-	// Detect explicitly set revisions.
+	// Set datasetRevisions in task
+	revisionMap := make(map[string]string)
+	for _, v := range c.VolumesData {
+		from := c.VolumeByName(v.Name)
+		if v.FlexVolume != nil && (from.Dataset != nil || from.DatasetFS != nil) {
+			revisionMap[v.Name] = v.FlexVolume.Options["version"]
+		}
+	}
+
+	setRevision := func(name, revision string) {
+		found := false
+		for _, taskRev := range task.DatasetRevisions {
+			if taskRev.VolumeName == name {
+				found = true
+				taskRev.Revision = revision
+			}
+		}
+		if !found {
+			task.DatasetRevisions = append(
+				task.DatasetRevisions, TaskRevision{VolumeName: name, Revision: revision},
+			)
+		}
+	}
+
+	for k, v := range revisionMap {
+		setRevision(k, v)
+	}
+
+	// Set revisions in config.
 	for _, taskRev := range task.DatasetRevisions {
 		for i, v := range c.Volumes {
 			if v.Name == taskRev.VolumeName {
