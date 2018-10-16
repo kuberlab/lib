@@ -1,5 +1,7 @@
 package mlapp
 
+import "github.com/Sirupsen/logrus"
+
 func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 	// Detect explicitly set revisions.
 	for _, taskRev := range task.DatasetRevisions {
@@ -18,9 +20,11 @@ func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 	// Set datasetRevisions in task
 	revisionMap := make(map[string]string)
 	for _, v := range c.VolumesData {
-		from := c.VolumeByName(v.Name)
-		if v.FlexVolume != nil && (from.Dataset != nil || from.DatasetFS != nil) {
-			revisionMap[v.Name] = v.FlexVolume.Options["version"]
+		if v.FlexVolume != nil {
+			version, ok := v.FlexVolume.Options["version"]
+			if ok {
+				revisionMap[v.Name] = version
+			}
 		}
 	}
 
@@ -40,6 +44,7 @@ func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 	}
 
 	for k, v := range revisionMap {
+		logrus.Infof("Set dataset revision [%v=%v]", k, v)
 		setRevision(k, v)
 	}
 
