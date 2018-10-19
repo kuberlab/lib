@@ -20,12 +20,16 @@ const (
 
 type ModelServing struct {
 	Uix
-	Sources         []Volume `json:"sources,omitempty"`
+	Sources     []Volume `json:"sources,omitempty"`
+	DealerAPI   string   `json:"dealer_api,omitempty"`
+	WorkspaceID string   `json:"workspace_id,omitempty"`
+	Workspace   string   `json:"workspace,omitempty"`
+}
+
+type BoardModelServing struct {
+	ModelServing
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
-	DealerAPI       string   `json:"dealer_api,omitempty"`
-	WorkspaceID     string   `json:"workspace_id,omitempty"`
-	Workspace       string   `json:"workspace,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
 }
 
@@ -77,7 +81,7 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 	return utils.KubeDeploymentEncode(fmt.Sprintf("%s", serving.Name()))
 }
 
-func (c *BoardConfig) GenerateModelServing(serving ModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
+func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
 	// Do not use volume mounts, use mounts from sources
@@ -160,7 +164,7 @@ func (c *BoardConfig) secret2kubeResource(s Secret) *kubernetes.KubeResource {
 	}
 }
 
-func GenerateModelServing(serving ModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
+func GenerateModelServing(serving BoardModelServing, dealerLimits bool, dockerSecret *v1.Secret) ([]*kubernetes.KubeResource, error) {
 	cfg := &BoardConfig{
 		Config: Config{
 			Kind:        KindServing,
