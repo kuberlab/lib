@@ -27,7 +27,7 @@ func (c *Client) DeleteModel(workspace, name string) error {
 func (c *Client) CreateModel(workspace, name string, public bool) error {
 	u := fmt.Sprintf("/workspace/%v/mlmodel", workspace)
 
-	ds := &Model{
+	ds := &Dataset{
 		Name:          name,
 		WorkspaceName: workspace,
 		Published:     public,
@@ -48,7 +48,7 @@ func (c *Client) CreateModel(workspace, name string, public bool) error {
 func (c *Client) CheckModel(workspace, name string) error {
 	u := fmt.Sprintf("/workspace/%v/mlmodel-check", workspace)
 
-	ds := &Model{
+	ds := &Dataset{
 		Name:          name,
 		WorkspaceName: workspace,
 		Published:     false,
@@ -66,10 +66,10 @@ func (c *Client) CheckModel(workspace, name string) error {
 	return nil
 }
 
-func (c *Client) ListModels(workspace string) ([]Model, error) {
+func (c *Client) ListModels(workspace string) ([]Dataset, error) {
 	u := fmt.Sprintf("/workspace/%v/mlmodel", workspace)
 
-	var ds = make([]Model, 0)
+	var ds = make([]Dataset, 0)
 	req, err := c.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
