@@ -81,3 +81,19 @@ func (c *Client) ListModels(workspace string) ([]Dataset, error) {
 	}
 	return ds, nil
 }
+
+func (c *Client) GetModel(workspace string, name string) (*Dataset, error) {
+	u := fmt.Sprintf("/workspace/%v/mlmodel/%v", workspace, name)
+
+	var ds = &Dataset{}
+	req, err := c.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	_, err = c.Do(req, ds)
+
+	if err != nil {
+		return nil, err
+	}
+	return ds, nil
+}

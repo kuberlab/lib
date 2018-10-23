@@ -288,6 +288,22 @@ func (c *Client) ListDatasets(workspace string) ([]Dataset, error) {
 	return ds, nil
 }
 
+func (c *Client) GetDataset(workspace string, name string) (*Dataset, error) {
+	u := fmt.Sprintf("/workspace/%v/dataset/%v", workspace, name)
+
+	var ds = &Dataset{}
+	req, err := c.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	_, err = c.Do(req, ds)
+
+	if err != nil {
+		return nil, err
+	}
+	return ds, nil
+}
+
 type DealerError struct {
 	Status     string
 	Error      string
