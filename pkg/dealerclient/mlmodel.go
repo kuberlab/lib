@@ -67,7 +67,7 @@ func (c *Client) CheckModel(workspace, name string) error {
 }
 
 func (c *Client) ListModels(workspace string) ([]Dataset, error) {
-	u := fmt.Sprintf("/workspace/%v/mlmodel", workspace)
+	u := fmt.Sprintf("/workspace/%v/mlmodel?all=true", workspace)
 
 	var ds = make([]Dataset, 0)
 	req, err := c.NewRequest("GET", u, nil)

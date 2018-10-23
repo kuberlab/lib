@@ -273,7 +273,7 @@ func (c *Client) CheckDataset(workspace, name string) error {
 }
 
 func (c *Client) ListDatasets(workspace string) ([]Dataset, error) {
-	u := fmt.Sprintf("/workspace/%v/dataset", workspace)
+	u := fmt.Sprintf("/workspace/%v/dataset?all=true", workspace)
 
 	var ds = make([]Dataset, 0)
 	req, err := c.NewRequest("GET", u, nil)
