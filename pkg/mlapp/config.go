@@ -366,6 +366,8 @@ type Task struct {
 	GitRevisions []TaskRevision `json:"gitRevisions,omitempty"`
 	// Revisions of datasets used for execution
 	DatasetRevisions []TaskRevision `json:"datasetRevisions,omitempty"`
+	// Revisions of models used for execution
+	ModelRevisions []TaskRevision `json:"modelRevisions,omitempty"`
 }
 
 func (t *Task) Type() string {
@@ -511,6 +513,7 @@ func (c *BoardConfig) InjectRevisions(client *kubernetes.Clientset, task *Task) 
 		return err
 	}
 	c.InjectDatasetRevisions(task)
+	c.InjectModelRevisions(task)
 	return nil
 }
 
