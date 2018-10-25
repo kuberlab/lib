@@ -7,8 +7,8 @@ import (
 
 type ResourceRequest struct {
 	Accelerators ResourceAccelerators        `json:"accelerators"`
-	Requests     *dealerclient.ResourceLimit `json:"requests"`
-	Limits       *dealerclient.ResourceLimit `json:"limits"`
+	Requests     *dealerclient.ResourceLimit `json:"requests,omitempty"`
+	Limits       *dealerclient.ResourceLimit `json:"limits,omitempty"`
 }
 
 type ResourceAccelerators struct {
