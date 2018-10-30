@@ -163,10 +163,10 @@ type UIXResourceGenerator struct {
 	InitContainers []InitContainers
 }
 
-func (ui UIXResourceGenerator) NodeSelectors()  map[string]string {
-	nSlector  := map[string]string{}
+func (ui UIXResourceGenerator) NodeSelectors() map[string]string {
+	nSlector := map[string]string{}
 	if ui.NodesLabel != "" {
-		nSlector[types.KuberlabMLNodeLabel]=strings.TrimPrefix(ui.NodesLabel, "knode:")
+		nSlector[types.KuberlabMLNodeLabel] = strings.TrimPrefix(ui.NodesLabel, "knode:")
 	} else {
 		if ui.ResourcesSpec().Accelerators.GPU > 0 && utils.GetDefaultGPUNodeSelector() != "" {
 			nSlector[types.KuberlabMLNodeLabel] = utils.GetDefaultGPUNodeSelector()
@@ -174,7 +174,7 @@ func (ui UIXResourceGenerator) NodeSelectors()  map[string]string {
 			nSlector[types.KuberlabMLNodeLabel] = v
 		}
 	}
-	if ui.c.DeployResourceLabel!=""{
+	if ui.c.DeployResourceLabel != "" {
 		nSlector[types.KuberlabPrivateNodeLabel] = ui.c.DeployResourceLabel
 	}
 	return nSlector
@@ -539,6 +539,7 @@ func baseEnv(c *BoardConfig, r Resource) ([]Env, string) {
 			SecretKey:       "token",
 		})
 	}
+	pythonPath = append(pythonPath, kibernetikaPythonLibs)
 
 	return envs, strings.Join(pythonPath, ":")
 }

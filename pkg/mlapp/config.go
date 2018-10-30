@@ -27,9 +27,10 @@ const (
 	KUBERLAB_PROJECT_NAME = "kuberlab.io/project"
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 
-	KindMlApp   = "MLApp"
-	KindServing = "Serving"
-	KindTask    = "Task"
+	KindMlApp             = "MLApp"
+	KindServing           = "Serving"
+	KindTask              = "Task"
+	kibernetikaPythonLibs = "/kibernetika-python-libs"
 )
 
 var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
@@ -788,6 +789,38 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 			},
 		},
 	})
+
+	kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+		Name:      "tf-conf",
+		MountPath: "/usr/bin/tf_conf",
+		ReadOnly:  true,
+		SubPath:   "tf_conf",
+	})
+	kvolumes = append(kvolumes, v1.Volume{
+		Name: "tf-conf",
+		VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/usr/bin/",
+			},
+		},
+	})
+
+	kvolumesMount = append(kvolumesMount, v1.VolumeMount{
+		Name:      "mlboardclient",
+		MountPath: kibernetikaPythonLibs,
+		ReadOnly:  true,
+	})
+	dirOrCreate := v1.HostPathDirectoryOrCreate
+	kvolumes = append(kvolumes, v1.Volume{
+		Name: "mlboardclient",
+		VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: kibernetikaPythonLibs,
+				Type: &dirOrCreate,
+			},
+		},
+	})
+
 	return kvolumes, kvolumesMount, nil
 }
 
