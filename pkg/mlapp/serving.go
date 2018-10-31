@@ -29,7 +29,7 @@ type UniversalServing struct {
 type UniversalServingPrivate struct {
 	UniversalServing
 
-	// additional private info (for calls to ml-board, it should not be on UI)
+	// additional private info (ml-board only for)
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
