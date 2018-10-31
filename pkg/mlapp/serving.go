@@ -25,7 +25,6 @@ type UniversalServing struct {
 	DealerAPI       string   `json:"dealer_api,omitempty"`
 	ModelID         string   `json:"model_id,omitempty"`
 	Model           string   `json:"model,omitempty"`
-	ModelURL        string   `json:"model_url,omitempty"`
 	WorkspaceID     string   `json:"workspace_id,omitempty"`
 	Workspace       string   `json:"workspace,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
