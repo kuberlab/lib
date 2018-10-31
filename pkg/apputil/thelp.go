@@ -1,8 +1,6 @@
 package apputil
 
 import (
-	"net/url"
-	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -18,52 +16,11 @@ func ToYaml(v interface{}) string {
 	return string(data)
 }
 
-type GitInfo struct {
-	URL     string
-	SubPath string
-}
-
 func gitRepo(v interface{}) string {
-	return gitInfo(v).URL
+	return ParseGitURL(v).URL
 }
 func gitSubPath(v interface{}) string {
-	return gitInfo(v).SubPath
-}
-func gitInfo(v interface{}) (g GitInfo) {
-	switch t := v.(type) {
-	case string:
-		g.URL = t
-		port_is_owner := false
-		if p := strings.Split(t, "@"); len(p) > 1 {
-			t = "https://" + p[1]
-			port_is_owner = true
-
-		}
-		v, err := url.Parse(t)
-		if err != nil {
-			return
-		}
-		path := v.Path
-		if port_is_owner {
-			if p := v.Port(); p != "" {
-				path = "/" + p + path
-			}
-		}
-		p := strings.Split(path, "/")
-		if len(p) < 3 {
-			return
-		}
-		repo := p[2]
-		g.SubPath = strings.TrimSuffix(repo, ".git")
-		if len(p) > 3 {
-			dir := "/" + strings.Join(p[3:], "/")
-			g.SubPath = g.SubPath + dir
-			g.URL = strings.TrimSuffix(g.URL, dir)
-		}
-		return
-	default:
-		return
-	}
+	return ParseGitURL(v).SubPath
 }
 
 func FuncMap() template.FuncMap {
