@@ -19,15 +19,21 @@ type UniversalServing struct {
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
 
 	// model serving
-	Sources         []Volume `json:"sources,omitempty"`
+	Sources     []Volume `json:"sources,omitempty"`
+	ModelID     string   `json:"model_id,omitempty"`
+	Model       string   `json:"model,omitempty"`
+	WorkspaceID string   `json:"workspace_id,omitempty"`
+	Workspace   string   `json:"workspace,omitempty"`
+}
+
+type UniversalServingPrivate struct {
+	UniversalServing
+
+	// additional private info (for calls to ml-board, it should not be on UI)
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
-	DealerAPI       string   `json:"dealer_api,omitempty"`
-	ModelID         string   `json:"model_id,omitempty"`
-	Model           string   `json:"model,omitempty"`
-	WorkspaceID     string   `json:"workspace_id,omitempty"`
-	Workspace       string   `json:"workspace,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
+	DealerAPI       string   `json:"dealer_api,omitempty"`
 }
 
 func (us UniversalServing) Serving() Serving {
