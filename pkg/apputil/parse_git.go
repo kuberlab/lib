@@ -1,18 +1,18 @@
 package apputil
 
 import (
-	"strings"
 	"net/url"
+	"strings"
 )
 
 type GitInfo struct {
-	URL     string
-	SubPath string
+	URL      string
+	SubPath  string
 	Revision string
 }
 
 var knownGitHosts = map[string]string{
-	"github.com": "tree",
+	"github.com":    "tree",
 	"bitbucket.org": "src",
 }
 
@@ -53,7 +53,7 @@ func ParseGitURL(v interface{}) (g GitInfo) {
 			}
 		}
 		g.SubPath = strings.TrimSuffix(p[2], ".git")
-		var dirParts = []string{}
+		var dirParts []string
 		if !known && len(p) > 4 {
 			dirParts = append(dirParts, p[3], p[4])
 		}
@@ -61,7 +61,7 @@ func ParseGitURL(v interface{}) (g GitInfo) {
 			dirParts = append(dirParts, p[5:]...)
 		}
 		if len(dirParts) > 0 {
-			var dir= "/" + strings.Join(dirParts, "/")
+			var dir = "/" + strings.Join(dirParts, "/")
 			g.SubPath = g.SubPath + dir
 			g.URL = strings.TrimSuffix(g.URL, dir)
 			g.URL = strings.TrimSuffix(g.URL, knownSuff)
