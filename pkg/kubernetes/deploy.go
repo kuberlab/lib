@@ -35,6 +35,21 @@ type KubeResource struct {
 	Upgrade Upgrade
 }
 
+func init() {
+	if err := batch_v1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+	if err := extv1beta1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+	if err := api_v1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+	if err := rbacv1beta1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+}
+
 func GetTemplate(tpl string, vars interface{}) (string, error) {
 	t := template.New("gotpl")
 	t = t.Funcs(apputil.FuncMap())
@@ -54,19 +69,6 @@ func GetTemplate(tpl string, vars interface{}) (string, error) {
 }
 
 func GetKubeResource(name string, data string, tranform func(runtime.Object) error) (*KubeResource, error) {
-	if err := batch_v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-	if err := extv1beta1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-	if err := api_v1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-	if err := rbacv1beta1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-
 	d := scheme.Codecs.UniversalDeserializer()
 	o, i, err := d.Decode([]byte(data), nil, nil)
 	if err != nil {
