@@ -15,6 +15,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/errors"
+	"net"
 )
 
 type Client struct {
@@ -64,13 +65,25 @@ func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
 		}
 		auth.Headers = hd
 	}
-	var transport = *(http.DefaultTransport.(*http.Transport))
+	// Clone default transport
+	var transport = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 	if base.Scheme == "https" && auth.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: auth.Insecure}
 	}
 
 	base.Path = "/api/v0.2"
-	baseClient := &http.Client{Timeout: time.Minute * 10, Transport: &transport}
+	baseClient := &http.Client{Timeout: time.Minute * 10, Transport: transport}
 	return &Client{
 		BaseURL:   base,
 		Client:    baseClient,
