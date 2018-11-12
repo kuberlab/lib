@@ -121,6 +121,18 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 			InitContainers: initContainers,
 		},
 	}
+
+	if g.PrivilegedMode() {
+		g.volumes = append(
+			g.volumes,
+			v1.Volume{
+				Name:         "dev",
+				VolumeSource: v1.VolumeSource{HostPath: &v1.HostPathVolumeSource{Path: "/dev"}},
+			},
+		)
+		g.mounts = append(g.mounts, v1.VolumeMount{Name: "dev", MountPath: "/dev"})
+	}
+
 	res, err := kubernetes.GetTemplatedResource(DeploymentTpl, g.ComponentName()+":resource", g)
 	if err != nil {
 		return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
