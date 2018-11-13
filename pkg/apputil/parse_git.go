@@ -19,6 +19,7 @@ var knownGitHosts = map[string]string{
 func ParseGitURL(v interface{}) (g GitInfo) {
 	switch t := v.(type) {
 	case string:
+		t = strings.TrimSuffix(t, "/")
 		g.URL = t
 		var port_is_owner bool
 		if p := strings.Split(t, "@"); len(p) > 1 {
@@ -54,8 +55,14 @@ func ParseGitURL(v interface{}) (g GitInfo) {
 		}
 		g.SubPath = strings.TrimSuffix(p[2], ".git")
 		var dirParts []string
-		if !known && len(p) > 4 {
-			dirParts = append(dirParts, p[3], p[4])
+		if !known {
+			if len(p) == 4 {
+				// in case https://github.com/org/repo/sub
+				dirParts = append(dirParts, p[3])
+			} else if len(p) > 4 {
+				// in case https://github.com/org/repo/sub/dir...
+				dirParts = append(dirParts, p[3], p[4])
+			}
 		}
 		if len(p) > 4 {
 			dirParts = append(dirParts, p[5:]...)
@@ -64,8 +71,8 @@ func ParseGitURL(v interface{}) (g GitInfo) {
 			var dir = "/" + strings.Join(dirParts, "/")
 			g.SubPath = g.SubPath + dir
 			g.URL = strings.TrimSuffix(g.URL, dir)
-			g.URL = strings.TrimSuffix(g.URL, knownSuff)
 		}
+		g.URL = strings.TrimSuffix(g.URL, knownSuff)
 	}
 	return
 }
