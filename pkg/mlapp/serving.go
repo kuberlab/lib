@@ -29,19 +29,9 @@ type UniversalServing struct {
 type UniversalServingPrivate struct {
 	UniversalServing
 
-	// additional private info (ml-board only for)
+	// additional private info (for calls to ml-board, it should not be on UI)
 	VolumesData     []Volume `json:"volumes_data,omitempty"`
 	Secrets         []Secret `json:"secrets,omitempty"`
 	WorkspaceSecret string   `json:"workspace_secret,omitempty"`
 	DealerAPI       string   `json:"dealer_api,omitempty"`
-}
-
-func (us UniversalServing) Serving() Serving {
-	return Serving{
-		Uix:       us.Uix,
-		Spec:      us.Spec,
-		TaskName:  us.TaskName,
-		Build:     us.Build,
-		BuildInfo: us.BuildInfo,
-	}
 }
