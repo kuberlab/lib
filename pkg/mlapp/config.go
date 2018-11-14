@@ -180,7 +180,7 @@ type Spec struct {
 	// Additional Project UI tabs description
 	Uix []Uix `json:"uix,omitempty"`
 	// Serving Description
-	Serving []Serving `json:"serving,omitempty"`
+	Serving []UniversalServing `json:"serving,omitempty"`
 	// Project sources description
 	Volumes []Volume `json:"volumes,omitempty"`
 	// Packages required for project

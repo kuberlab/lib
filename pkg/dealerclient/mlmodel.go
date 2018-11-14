@@ -1,6 +1,8 @@
 package dealerclient
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Model struct {
 	DisplayName   string
@@ -55,6 +57,36 @@ func (c *Client) CheckModel(workspace, name string) error {
 		DisplayName:   name,
 	}
 	req, err := c.NewRequest("POST", u, ds)
+	if err != nil {
+		return err
+	}
+	_, err = c.Do(req, nil)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CreateSpec(workspace, name string, spec interface{}) error {
+	u := fmt.Sprintf("/workspace/%v/mlmodel/%v/spec", workspace, name)
+
+	req, err := c.NewRequest("PUT", u, spec)
+	if err != nil {
+		return err
+	}
+	_, err = c.Do(req, nil)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) CreateSpecForVersion(workspace, name, version string, spec interface{}) error {
+	u := fmt.Sprintf("/workspace/%v/mlmodel/%v/versions/%v/spec", workspace, name, version)
+
+	req, err := c.NewRequest("PUT", u, spec)
 	if err != nil {
 		return err
 	}

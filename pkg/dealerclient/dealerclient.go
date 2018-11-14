@@ -119,15 +119,24 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 	u = strings.TrimSuffix(u, "/") + c.getUrl(urlStr)
 
 	var buf io.ReadWriter
+	var reqBody io.Reader
 	if body != nil {
-		buf = new(bytes.Buffer)
-		err := json.NewEncoder(buf).Encode(body)
-		if err != nil {
-			return nil, err
+		rd, ok := body.(io.Reader)
+		if ok {
+			// plain io.Reader
+			reqBody = rd
+		} else {
+			// As JSON
+			buf = new(bytes.Buffer)
+			err := json.NewEncoder(buf).Encode(body)
+			if err != nil {
+				return nil, err
+			}
+			reqBody = buf
 		}
 	}
 
-	req, err := http.NewRequest(method, u, buf)
+	req, err := http.NewRequest(method, u, reqBody)
 	if err != nil {
 		return nil, err
 	}
