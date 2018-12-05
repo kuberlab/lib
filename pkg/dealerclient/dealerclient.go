@@ -93,10 +93,12 @@ func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
 }
 
 func (c *Client) sanitizeURL(urlStr string) string {
-	workspace := c.auth.Headers.Get("X-Workspace-Name")
 	secret := c.auth.Headers.Get("X-Workspace-Secret")
-	if workspace == "" && secret == "" {
-		return urlStr
+	if secret == "" {
+		secret = c.auth.WorkspaceSecret
+		if secret == "" {
+			return urlStr
+		}
 	}
 
 	return strings.Replace(
