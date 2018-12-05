@@ -92,6 +92,21 @@ func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) sanitizeURL(urlStr string) string {
+	workspace := c.auth.Headers.Get("X-Workspace-Name")
+	secret := c.auth.Headers.Get("X-Workspace-Secret")
+	if workspace == "" && secret == "" {
+		return urlStr
+	}
+
+	return strings.Replace(
+		urlStr,
+		fmt.Sprintf("secret/%v", secret),
+		"secret/[sanitized]",
+		-1,
+	)
+}
+
 func (c *Client) getUrl(urlStr string) string {
 	workspace := c.auth.Headers.Get("X-Workspace-Name")
 	secret := c.auth.Headers.Get("X-Workspace-Secret")
@@ -170,13 +185,13 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 // interface, the raw response body will be written to v, without attempting to
 // first decode it.
 func (c *Client) Do(req *http.Request, v interface{}) (*http.Response, error) {
-	logrus.Debugf("[go-dealerclient] %v %v", req.Method, req.URL)
+	logrus.Debugf("[go-dealerclient] %v %v", req.Method, c.sanitizeURL(req.URL.String()))
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		if e, ok := err.(*url.Error); ok {
-			return nil, e
+			return nil, errors.New(c.sanitizeURL(e.Error()))
 		}
-		return nil, err
+		return nil, errors.New(c.sanitizeURL(err.Error()))
 	}
 
 	defer func() {
