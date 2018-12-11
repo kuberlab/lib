@@ -15,6 +15,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/version"
 )
 
 const DeploymentTpl = `
@@ -143,7 +144,11 @@ spec:
             {{- end }}
           limits:
             {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
+            {{- if and (eq .KubeVersionMajor 1) (lt .KubeVersionMinor 9) }}
             alpha.kubernetes.io/nvidia-gpu: "{{ .ResourcesSpec.Accelerators.GPU }}"
+            {{- else }}
+            nvidia.com/gpu: {{ .ResourcesSpec.Accelerators.GPU }}
+            {{- end }}
             {{- end }}
             {{- if .ResourcesSpec.Limits.CPUQuantity }}
             cpu: "{{ .ResourcesSpec.Limits.CPUQuantity }}"
@@ -161,6 +166,26 @@ type UIXResourceGenerator struct {
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
+}
+
+func (ui UIXResourceGenerator) KubeVersion() *version.Info {
+	return kubernetes.MlBoardKubeVersion
+}
+
+func (ui UIXResourceGenerator) KubeVersionMajor() int {
+	major, _ := strconv.ParseInt(kubernetes.MlBoardKubeVersion.Major, 10, 32)
+	if major == 0 {
+		return 1
+	}
+	return int(major)
+}
+
+func (ui UIXResourceGenerator) KubeVersionMinor() int {
+	minor, _ := strconv.ParseInt(kubernetes.MlBoardKubeVersion.Minor, 10, 32)
+	if minor == 0 {
+		return 8
+	}
+	return int(minor)
 }
 
 func (ui UIXResourceGenerator) NodeSelectors() map[string]string {

@@ -14,6 +14,7 @@ import (
 	"k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/version"
 )
 
 const ResourceTpl = `
@@ -115,14 +116,18 @@ spec:
         {{- end }}
       limits:
         {{- if gt .ResourcesSpec.Accelerators.GPU 0 }}
-         alpha.kubernetes.io/nvidia-gpu: "{{ .ResourcesSpec.Accelerators.GPU }}"
-         {{- end }}
-         {{- if .ResourcesSpec.Limits.CPUQuantity }}
-         cpu: "{{ .ResourcesSpec.Limits.CPUQuantity }}"
-         {{- end }}
-         {{- if .ResourcesSpec.Limits.MemoryQuantity }}
-         memory: "{{ .ResourcesSpec.Limits.MemoryQuantity }}"
-         {{- end }}
+        {{- if and (eq .KubeVersionMajor 1) (lt .KubeVersionMinor 9) }}
+        alpha.kubernetes.io/nvidia-gpu: "{{ .ResourcesSpec.Accelerators.GPU }}"
+        {{- else }}
+        nvidia.com/gpu: {{ .ResourcesSpec.Accelerators.GPU }}
+        {{- end }}
+        {{- end }}
+        {{- if .ResourcesSpec.Limits.CPUQuantity }}
+        cpu: "{{ .ResourcesSpec.Limits.CPUQuantity }}"
+        {{- end }}
+        {{- if .ResourcesSpec.Limits.MemoryQuantity }}
+        memory: "{{ .ResourcesSpec.Limits.MemoryQuantity }}"
+        {{- end }}
 {{ toYaml .Mounts | indent 4 }}
 {{ toYaml .Volumes | indent 2 }}
 `
@@ -137,6 +142,26 @@ type TaskResourceGenerator struct {
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
+}
+
+func (t TaskResourceGenerator) KubeVersion() *version.Info {
+	return kuberlab.MlBoardKubeVersion
+}
+
+func (t TaskResourceGenerator) KubeVersionMajor() int {
+	major, _ := strconv.ParseInt(kuberlab.MlBoardKubeVersion.Major, 10, 32)
+	if major == 0 {
+		return 1
+	}
+	return int(major)
+}
+
+func (t TaskResourceGenerator) KubeVersionMinor() int {
+	minor, _ := strconv.ParseInt(kuberlab.MlBoardKubeVersion.Minor, 10, 32)
+	if minor == 0 {
+		return 8
+	}
+	return int(minor)
 }
 
 func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
