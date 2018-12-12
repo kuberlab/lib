@@ -339,9 +339,11 @@ type ServingSpec struct {
 }
 
 type ServingSpecParam struct {
-	Name        string `json:"name,omitempty"`
-	Type        string `json:"type,omitempty"`
-	Description string `json:"description,omitempty"`
+	Name        string   `json:"name,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Value       string   `json:"value,omitempty"`
+	Select      []string `json:"select,omitempty"`
 }
 
 type ServingResponseParam struct {
@@ -349,9 +351,6 @@ type ServingResponseParam struct {
 	Type        string `json:"type,omitempty"`
 	Shape       []int  `json:"shape,omitempty"`
 	Description string `json:"description,omitempty"`
-}
-
-type ServingResponseParamShape struct {
 }
 
 func (s *Serving) Type() string {
