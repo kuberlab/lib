@@ -339,11 +339,11 @@ type ServingSpec struct {
 }
 
 type ServingSpecParam struct {
-	Name        string   `json:"name,omitempty"`
-	Type        string   `json:"type,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Value       string   `json:"value,omitempty"`
-	Select      []string `json:"select,omitempty"`
+	Name    string      `json:"name,omitempty"`
+	Type    string      `json:"type,omitempty"`
+	Label   string      `json:"label,omitempty"`
+	Value   interface{} `json:"value,omitempty"`
+	Options []string    `json:"options,omitempty"`
 }
 
 type ServingResponseParam struct {
