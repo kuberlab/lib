@@ -106,17 +106,23 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 		Events:    []api_v1.Event{},
 		Resources: sumResourceRequests(pod),
 	}
+
+	if pod.Status.Phase == api_v1.PodRunning {
+		return
+	}
+
 	events, err := client.CoreV1().Events(pod.Namespace).Search(scheme.Scheme, &pod)
 	if err != nil {
 		return "", nil, "", err
 	}
 
-	for _, e := range events.Items {
-		if e.Type == "Warning" || pod.Status.Phase != api_v1.PodRunning {
-			if len(resourceState.Events) < 1 {
-				resourceState.Events = events.Items
-			}
+	if pod.Status.Phase != api_v1.PodRunning {
+		if len(resourceState.Events) < 1 {
+			resourceState.Events = events.Items
 		}
+	}
+
+	for _, e := range events.Items {
 		if insufficientPattern.MatchString(e.Message) {
 			groups := insufficientPattern.FindStringSubmatch(e.Message)
 			if len(groups) > 1 {
