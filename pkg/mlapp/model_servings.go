@@ -49,6 +49,34 @@ type ServingModelResourceGenerator struct {
 	UIXResourceGenerator
 }
 
+func (serving ServingModelResourceGenerator) ExportMetrics() bool {
+	return true
+}
+
+func (serving ServingModelResourceGenerator) MetricsPort() int32 {
+	return 9090
+}
+
+func (serving ServingModelResourceGenerator) AllPorts() []Port {
+	if !serving.ExportMetrics() {
+		return serving.Ports
+	}
+	ports := serving.Ports
+	for i, p := range ports {
+		if p.Name == "" {
+			ports[i].Name = fmt.Sprintf("port%v", i)
+		}
+	}
+	metricPort := Port{
+		Name: "metric",
+		Port: serving.MetricsPort(),
+		Protocol: "TCP",
+		TargetPort: serving.MetricsPort(),
+	}
+	ports = append(ports, metricPort)
+	return ports
+}
+
 func (serving ServingModelResourceGenerator) Env() []Env {
 	envs, _ := baseEnv(serving.c, serving.Resource)
 	envs = append(envs,

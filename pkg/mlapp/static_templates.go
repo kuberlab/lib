@@ -37,6 +37,11 @@ spec:
         {{- range $key, $value := .Labels }}
         {{ $key }}: "{{ $value }}"
         {{- end }}
+      {{- if .ExportMetrics }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '{{ .MetricsPort }}'
+      {{- end }}
     spec:
       {{- if .PrivilegedMode }}
       hostNetwork: true
@@ -122,9 +127,9 @@ spec:
           value: '{{ .Value }}'
         {{- end }}
         {{- end }}
-        {{- if .Ports }}
+        {{- if .AllPorts }}
         ports:
-        {{- range .Ports }}
+        {{- range .AllPorts }}
         - name: {{ .Name }}
           {{- if .Protocol }}
           protocol: {{ .Protocol }}
@@ -166,6 +171,29 @@ type UIXResourceGenerator struct {
 	volumes        []v1.Volume
 	mounts         []v1.VolumeMount
 	InitContainers []InitContainers
+}
+
+func (ui UIXResourceGenerator) ExportMetrics() bool {
+	return false
+}
+
+func (ui UIXResourceGenerator) MetricsPort() int32 {
+	return 9090
+}
+
+func (ui UIXResourceGenerator) AllPorts() []Port {
+	if !ui.ExportMetrics() {
+		return ui.Ports
+	}
+	ports := ui.Ports
+	for i, p := range ports {
+		if p.Name == "" {
+			ports[i].Name = fmt.Sprintf("port%v", i)
+		}
+	}
+	metricPort := Port{Name: "metric", Port: ui.MetricsPort(), Protocol: "TCP", TargetPort: ui.MetricsPort()}
+	ports = append(ports, metricPort)
+	return ports
 }
 
 func (ui UIXResourceGenerator) KubeVersion() *version.Info {
