@@ -116,10 +116,10 @@ func DetermineResourceState(pod api_v1.Pod, client *kubernetes.Clientset) (reaso
 		return "", nil, "", err
 	}
 
-	if pod.Status.Phase != api_v1.PodRunning {
-		if len(resourceState.Events) < 1 {
-			resourceState.Events = events.Items
-		}
+	resourceState.Events = events.Items
+
+	if pod.Status.Phase == api_v1.PodRunning {
+		return
 	}
 
 	for _, e := range events.Items {
