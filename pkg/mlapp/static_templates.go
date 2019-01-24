@@ -139,6 +139,13 @@ spec:
           {{- end }}
         {{- end }}
         {{- end }}
+        {{- if gt .LivenessPort 0 }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .LivenessPort }}
+          initialDelaySeconds: 180
+          periodSeconds: 30
+        {{- end }}
         resources:
           requests:
             {{- if .ResourcesSpec.Requests.CPUQuantity }}
@@ -179,6 +186,13 @@ func (ui UIXResourceGenerator) ExportMetrics() bool {
 
 func (ui UIXResourceGenerator) MetricsPort() int32 {
 	return 9090
+}
+
+func (ui UIXResourceGenerator) LivenessPort() int32 {
+	if len(ui.Ports) == 0 {
+		return 0
+	}
+	return ui.Ports[0].TargetPort
 }
 
 func (ui UIXResourceGenerator) AllPorts() []Port {

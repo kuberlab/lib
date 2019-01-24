@@ -57,6 +57,13 @@ func (serving ServingModelResourceGenerator) MetricsPort() int32 {
 	return 9090
 }
 
+func (serving ServingModelResourceGenerator) LivenessPort() int32 {
+	if len(serving.Ports) == 0 {
+		return 0
+	}
+	return serving.Ports[0].TargetPort
+}
+
 func (serving ServingModelResourceGenerator) AllPorts() []Port {
 	if !serving.ExportMetrics() {
 		return serving.Ports
