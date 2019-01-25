@@ -36,7 +36,7 @@ type ResourceState struct {
 	Events    []api_v1.Event              `json:"events"`
 }
 
-var insufficientPattern = regexp.MustCompile(`No nodes are available.*(Insufficient .*?\(.*?\)).*`)
+var insufficientPattern = regexp.MustCompile(`nodes are available.*(Insufficient .*?\(.*?\)).*`)
 var mountFailedPattern = regexp.MustCompile(`.*(MountVolume.*failed.*)`)
 var gitRepoPattern = regexp.MustCompile(`([\w]+@)+([\w\d-\.]+)[:/]([\w\d-_\./]+)|(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)`)
 
