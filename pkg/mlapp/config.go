@@ -110,9 +110,7 @@ func (c *Config) ValidateConfig() error {
 		}
 	}
 	for _, t := range c.Tasks {
-		if t.TaskType == "" {
-			t.TaskType = TaskTypeGeneral
-		} else if t.TaskType != TaskTypeInit && t.TaskType != TaskTypeExport {
+		if t.TaskType != TaskTypeGeneral && t.TaskType != TaskTypeInit && t.TaskType != TaskTypeExport {
 			return errors.NewStatusReason(
 				http.StatusBadRequest,
 				fmt.Sprintf("Invalid task type '%s'", t.TaskType),
