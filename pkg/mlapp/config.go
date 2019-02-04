@@ -94,7 +94,7 @@ func (c *BoardConfig) GPURequests() int64 {
 	return gpus
 }
 
-func (c Config) ValidateConfig() error {
+func (c *Config) ValidateConfig() error {
 	resNameErr := func(n, r string) error {
 		return errors.NewStatusReason(
 			http.StatusBadRequest,
@@ -110,6 +110,19 @@ func (c Config) ValidateConfig() error {
 		}
 	}
 	for _, t := range c.Tasks {
+		if t.TaskType == "" {
+			t.TaskType = TaskTypeGeneral
+		} else if t.TaskType != TaskTypeInit && t.TaskType != TaskTypeExport {
+			return errors.NewStatusReason(
+				http.StatusBadRequest,
+				fmt.Sprintf("Invalid task type '%s'", t.TaskType),
+				fmt.Sprintf("Available types: '%s'. ", strings.Join([]string{
+					TaskTypeGeneral,
+					TaskTypeInit,
+					TaskTypeExport,
+				}, "', '")),
+			)
+		}
 		if !validNames.MatchString(t.Name) {
 			return resNameErr(t.Name, "task")
 		}
@@ -140,14 +153,14 @@ func NamespaceName(workspaceID, workspaceName string) string {
 	return utils.KubeNamespaceEncode(workspaceID + "-" + workspaceName)
 }
 
-func (c Config) GetNamespace() string {
+func (c *Config) GetNamespace() string {
 	return NamespaceName(c.WorkspaceID, c.Workspace)
 }
-func (c Config) GetAppID() string {
+func (c *Config) GetAppID() string {
 	return c.WorkspaceID + "-" + c.Name
 }
 
-func (c Config) GetAppName() string {
+func (c *Config) GetAppName() string {
 	return utils.KubeNamespaceEncode(c.Name)
 }
 
@@ -370,6 +383,8 @@ type Task struct {
 	Version string `json:"version,omitempty"`
 	// Deprecated
 	TimeoutMinutes uint `json:"timeoutMinutes,omitempty"`
+	// Task type, can be init, export or general (by default)
+	TaskType string `json:"type,omitempty"`
 	// Components that should be started during task execution
 	Resources []TaskResource `json:"resources,omitempty"`
 	// Information to commit new configuration
@@ -381,6 +396,12 @@ type Task struct {
 	// Revisions of models used for execution
 	ModelRevisions []TaskRevision `json:"modelRevisions,omitempty"`
 }
+
+const (
+	TaskTypeGeneral = "general"
+	TaskTypeInit    = "init"
+	TaskTypeExport  = "export"
+)
 
 func (t *Task) Type() string {
 	return KindTask
