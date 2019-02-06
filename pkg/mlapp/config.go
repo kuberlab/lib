@@ -185,6 +185,12 @@ type Revision struct {
 	Comment     string `json:"comment,omitempty"`
 }
 
+type ExportQuery struct {
+	Revision
+	BaseTask   string `json:"base_task"`
+	ExportTask string `json:"export_task"`
+}
+
 type Spec struct {
 	// Project tasks description
 	Tasks []Task `json:"tasks,omitempty"`
