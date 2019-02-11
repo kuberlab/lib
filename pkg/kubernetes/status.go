@@ -20,6 +20,10 @@ const (
 	ReasonError        = "error"
 )
 
+const (
+	ResourceNvidiaGPU = "nvidia.com/gpu"
+)
+
 type ComponentState struct {
 	Type           string `json:"type"`
 	Name           string `json:"name"`
@@ -39,6 +43,18 @@ type ResourceState struct {
 var insufficientPattern = regexp.MustCompile(`nodes are available.*(Insufficient .*?\(.*?\)).*`)
 var mountFailedPattern = regexp.MustCompile(`.*(MountVolume.*failed.*)`)
 var gitRepoPattern = regexp.MustCompile(`([\w]+@)+([\w\d-\.]+)[:/]([\w\d-_\./]+)|(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)`)
+
+func NvidiaGPU(reqs *api_v1.ResourceList) *resource.Quantity {
+	if reqs != nil {
+		if val, ok := (*reqs)[ResourceNvidiaGPU]; ok {
+			return &val
+		}
+		if val, ok := (*reqs)[api_v1.ResourceNvidiaGPU]; ok {
+			return &val
+		}
+	}
+	return &resource.Quantity{}
+}
 
 func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ string) (*ComponentState, error) {
 	var name string
