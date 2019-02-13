@@ -354,7 +354,7 @@ type ServingSpec struct {
 	RawInput    bool   `json:"rawInput,omitempty"`
 	Signature   string `json:"signature,omitempty"`
 	Model       string `json:"model,omitempty"`
-	Template    string `json:"model,omitempty"`
+	Template    string `json:"template,omitempty"`
 }
 
 type ServingSpecParam struct {
