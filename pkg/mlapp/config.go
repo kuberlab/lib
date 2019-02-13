@@ -346,13 +346,15 @@ func (s *Serving) GPURequests() int64 {
 }
 
 type ServingSpec struct {
-	Params      []ServingSpecParam     `json:"params,omitempty"`
-	Response    []ServingResponseParam `json:"response,omitempty"`
-	OutFilter   []string               `json:"outFilter,omitempty"`
-	OutMimeType string                 `json:"outMimeType,omitempty"`
-	RawInput    bool                   `json:"rawInput,omitempty"`
-	Signature   string                 `json:"signature,omitempty"`
-	Model       string                 `json:"model,omitempty"`
+	Params    []ServingSpecParam     `json:"params,omitempty"`
+	Response  []ServingResponseParam `json:"response,omitempty"`
+	OutFilter []string               `json:"outFilter,omitempty"`
+	// deprecated, todo remove soon
+	OutMimeType string `json:"outMimeType,omitempty"`
+	RawInput    bool   `json:"rawInput,omitempty"`
+	Signature   string `json:"signature,omitempty"`
+	Model       string `json:"model,omitempty"`
+	Template    string `json:"model,omitempty"`
 }
 
 type ServingSpecParam struct {
