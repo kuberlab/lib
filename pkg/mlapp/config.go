@@ -130,18 +130,12 @@ func (c *Config) ValidateConfig() error {
 			}
 		}
 	}
-	resVolumeErr := func(n string) error {
-		return errors.NewStatusReason(
-			http.StatusBadRequest,
-			fmt.Sprintf("Invalid volume name: '%s'. ", n),
-			"Valid name must be 63 characters or less "+
-				"and must begin and end with an lower case alphanumeric character ([a-z0-9]) "+
-				"with dashes (-) and lower case alphanumerics between",
-		)
-	}
 	for _, v := range c.Volumes {
 		if !validVolumes.MatchString(v.Name) {
-			return resVolumeErr(v.Name)
+			return resNameErr(v.Name, "volume")
+		}
+		if v.Model != nil || v.Dataset != nil || v.DatasetFS != nil {
+			v.ReadOnly = true
 		}
 	}
 	return nil
