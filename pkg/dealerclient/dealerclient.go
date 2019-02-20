@@ -49,6 +49,13 @@ type Workspace struct {
 	Can         []string
 }
 
+type NewVersion struct {
+	Version   string `json:"version"`
+	Workspace string `json:"workspace,omitempty"`
+	Name      string `json:"name"`
+	Type      string `json:"type,omitempty"`
+}
+
 func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	base, err := url.Parse(baseURL)
