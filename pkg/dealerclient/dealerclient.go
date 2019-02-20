@@ -322,7 +322,7 @@ func (c *Client) ReportNewVersion(version NewVersion) error {
 	if version.Workspace == "" {
 		return errors.NewStatus(http.StatusBadRequest, "'workspace' field required.")
 	}
-	u := fmt.Sprintf("/workspace/%v/pluke/new_version", version.Workspace)
+	u := fmt.Sprintf("/workspace/%v/pluke/new-version", version.Workspace)
 
 	req, err := c.NewRequest("POST", u, version)
 	if err != nil {
