@@ -54,6 +54,7 @@ type NewVersion struct {
 	Workspace string `json:"workspace,omitempty"`
 	Name      string `json:"name"`
 	Type      string `json:"type,omitempty"`
+	Latest    bool   `json:"latest"`
 }
 
 func NewClient(baseURL string, auth *AuthOpts) (*Client, error) {
