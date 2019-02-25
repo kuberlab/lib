@@ -26,8 +26,12 @@ func (c *Client) DeleteModel(workspace, name string) error {
 	return nil
 }
 
-func (c *Client) CreateModel(workspace, name string, public bool) error {
+func (c *Client) CreateModel(workspace, name string, public bool, skipPluke bool) error {
 	u := fmt.Sprintf("/workspace/%v/mlmodel", workspace)
+
+	if skipPluke {
+		u = fmt.Sprintf("%v?skip_pluk=true", u)
+	}
 
 	ds := &Dataset{
 		Name:          name,
