@@ -3,7 +3,6 @@ package dealerclient
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,9 +13,12 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/errors"
 	"net"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Client struct {
 	Client    *http.Client

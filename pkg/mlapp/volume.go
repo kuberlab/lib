@@ -2,12 +2,14 @@ package mlapp
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"strings"
 
+	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type VolumeMount struct {
 	// Volume (source) name

@@ -2,13 +2,16 @@ package types
 
 import (
 	"database/sql/driver"
-	"encoding/json"
+	jsonStd "encoding/json"
 	"reflect"
 	"strconv"
 	"time"
 
+	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/utils"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	Format    = "2006-01-02T15:04:05Z"
@@ -89,7 +92,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		*t = Time{Valid: false}
 		return nil
 	}
-	return &json.UnmarshalTypeError{Value: "time", Type: reflect.TypeOf(v)}
+	return &jsonStd.UnmarshalTypeError{Value: "time", Type: reflect.TypeOf(v)}
 }
 
 func (t Time) String() string {
