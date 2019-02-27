@@ -64,6 +64,20 @@ func MustParse(date string) time.Time {
 }
 
 func RankByWordCount(wordFrequencies map[string]int) PairList {
+	if len(wordFrequencies) == 2 {
+		// 1. Terminating
+		// 2. ContainerCreating
+		// 3. Else
+		if _, ok := wordFrequencies["Terminating"]; ok {
+			return PairList{Pair{"Terminating", 1}}
+		}
+		if _, ok := wordFrequencies["ContainerCreating"]; ok {
+			return PairList{Pair{"ContainerCreating", 1}}
+		}
+		if _, ok := wordFrequencies["CrashLoopBackOff"]; ok {
+			return PairList{Pair{"CrashLoopBackOff", 1}}
+		}
+	}
 	pl := make(PairList, len(wordFrequencies))
 	i := 0
 	for k, v := range wordFrequencies {
