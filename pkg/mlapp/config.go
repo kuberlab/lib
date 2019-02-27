@@ -339,13 +339,15 @@ func (s *Serving) GPURequests() int64 {
 	return gpus
 }
 
+type ServingSpecOptions struct {
+	NoCache bool `json:"noCache,omitempty"`
+}
+
 type ServingSpec struct {
 	Params    []ServingSpecParam     `json:"params,omitempty"`
 	Response  []ServingResponseParam `json:"response,omitempty"`
 	OutFilter []string               `json:"outFilter,omitempty"`
-	Options   struct {
-		NoCache bool `json:"noCache,omitempty"`
-	} `json:"options,omitempty"`
+	Options   ServingSpecOptions     `json:"options,omitempty"`
 	// deprecated, todo remove soon
 	OutMimeType string `json:"outMimeType,omitempty"`
 	RawInput    bool   `json:"rawInput,omitempty"`
