@@ -21,9 +21,7 @@ import:
 - package: github.com/pborman/uuid
 - package: github.com/ghodss/yaml
 - package: github.com/Masterminds/sprig
-  version: ^2.12
 - package: github.com/Masterminds/semver
-  version: v1.2.2
 - package: github.com/prometheus/client_golang
   subpackages:
   - api
@@ -32,4 +30,3 @@ import:
   subpackages:
   - model
 - package: github.com/jinzhu/gorm
-  version: v1.0
