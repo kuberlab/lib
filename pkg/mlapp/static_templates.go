@@ -485,7 +485,7 @@ func generateServingService(serv ServingResourceGenerator) *kubernetes.KubeResou
 		svc.Spec.Ports = append(
 			svc.Spec.Ports,
 			v1.ServicePort{
-				Name:       p.Name,
+				Name:       utils.KubeNamespaceEncode(p.Name),
 				TargetPort: intstr.FromInt(int(p.TargetPort)),
 				Protocol:   v1.Protocol(p.Protocol),
 				Port:       p.Port,
@@ -520,7 +520,7 @@ func generateUIService(ui UIXResourceGenerator) *kubernetes.KubeResource {
 		svc.Spec.Ports = append(
 			svc.Spec.Ports,
 			v1.ServicePort{
-				Name:       p.Name,
+				Name:       utils.KubeNamespaceEncode(p.Name),
 				TargetPort: intstr.FromInt(int(p.TargetPort)),
 				Protocol:   v1.Protocol(p.Protocol),
 				Port:       p.Port,
@@ -602,7 +602,7 @@ func baseEnv(c *BoardConfig, r Resource) ([]Env, string) {
 		// Add for all resources except for serving from model.
 		envs = append(envs, Env{
 			Name:            "WORKSPACE_SECRET",
-			ValueFromSecret: fmt.Sprintf("%v-ws-key-%v", c.Name, c.WorkspaceID),
+			ValueFromSecret: utils.KubePodNameEncode(fmt.Sprintf("%v-ws-key-%v", c.Name, c.WorkspaceID)),
 			SecretKey:       "token",
 		})
 	}

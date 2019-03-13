@@ -825,7 +825,7 @@ func (c *BoardConfig) getSecretVolumes(secrets []Secret) ([]v1.Volume, []v1.Volu
 		VolumeSource: v1.VolumeSource{
 			ConfigMap: &v1.ConfigMapVolumeSource{
 				LocalObjectReference: v1.LocalObjectReference{
-					Name: fmt.Sprintf("%v-kuberlab-config", c.Name),
+					Name: utils.KubePodNameEncode(fmt.Sprintf("%v-kuberlab-config", c.Name)),
 				},
 			},
 		},
@@ -889,14 +889,14 @@ func (c *BoardConfig) generateKuberlabConfig() *kuberlab.KubeResource {
 			APIVersion: "v1",
 		},
 		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-kuberlab-config", c.Name),
+			Name:      utils.KubePodNameEncode(fmt.Sprintf("%v-kuberlab-config", c.Name)),
 			Namespace: c.GetNamespace(),
 			Labels:    c.ResourceLabels(),
 		},
 	}
 	gv := config.GroupVersionKind()
 	return &kuberlab.KubeResource{
-		Name:   "kuberlab-config",
+		Name:   "kuberlab-config:configmap",
 		Kind:   &gv,
 		Object: config,
 	}
@@ -967,7 +967,7 @@ func BuildOption(workspaceID, workspaceName, projectID, projectName string) func
 }
 
 func (c *BoardConfig) GetSecretName(secret Secret) string {
-	return utils.KubeLabelEncode(c.Name + "-" + secret.Name)
+	return utils.KubePodNameEncode(c.Name + "-" + secret.Name)
 }
 
 func (c *BoardConfig) GetWorkspaceSecret() string {

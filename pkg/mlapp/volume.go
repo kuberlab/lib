@@ -72,7 +72,7 @@ func (v Volume) CommonID() string {
 	if v.ReadOnly {
 		m = "org-r-"
 	}
-	return m + v.Name
+	return m + utils.KubeNamespaceEncode(v.Name)
 }
 func (v Volume) V1Volume() v1.Volume {
 	r := v1.Volume{
