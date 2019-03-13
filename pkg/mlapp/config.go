@@ -33,7 +33,7 @@ const (
 	kibernetikaPythonLibs = "/kibernetika-python-libs"
 )
 
-var validNames = regexp.MustCompile("^[a-z0-9][-_a-z0-9]{0,61}[a-z0-9]$")
+var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 var validVolumes = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
 
 // swagger:model
@@ -95,7 +95,7 @@ func (c *BoardConfig) GPURequests() int64 {
 }
 
 func (c *Config) ValidateConfig() error {
-	resNameErr := func(n, r string, allowUnderscore bool) error {
+	var resNameErr = func(n, r string, allowUnderscore bool) error {
 		var underscoreRsn string
 		if allowUnderscore {
 			underscoreRsn = ", underscores (_)"
@@ -110,7 +110,7 @@ func (c *Config) ValidateConfig() error {
 	}
 	for _, u := range c.Uix {
 		if !validNames.MatchString(u.Name) {
-			return resNameErr(u.Name, "uix component", true)
+			return resNameErr(u.Name, "uix component", false)
 		}
 	}
 	for _, t := range c.Tasks {
@@ -126,11 +126,11 @@ func (c *Config) ValidateConfig() error {
 			)
 		}
 		if !validNames.MatchString(t.Name) {
-			return resNameErr(t.Name, "task", true)
+			return resNameErr(t.Name, "task", false)
 		}
 		for _, r := range t.Resources {
 			if !validNames.MatchString(r.Name) {
-				return resNameErr(r.Name, "task resource", true)
+				return resNameErr(r.Name, "task resource", false)
 			}
 		}
 	}
