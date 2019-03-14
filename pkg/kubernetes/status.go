@@ -162,20 +162,27 @@ func DetermineResourceState(pod apiv1.Pod, client *kubernetes.Clientset) (reason
 
 	for _, e := range events.Items {
 		resourceState.Events = append(resourceState.Events, convertEvent(e))
-		if insufficientPattern.MatchString(e.Message) {
-			groups := insufficientPattern.FindStringSubmatch(e.Message)
-			if len(groups) > 1 {
-				reason = groups[1]
+		if e.Reason == "FailedScheduling" || e.Reason == "FailedMount" {
+			reason = e.Message
+			code = ReasonError
+			if strings.Contains(strings.ToLower(e.Message), "insufficient") {
 				code = ReasonInsufficient
 			}
 		}
-		if mountFailedPattern.MatchString(e.Message) {
-			groups := mountFailedPattern.FindStringSubmatch(e.Message)
-			if len(groups) > 1 {
-				reason = groups[1]
-				code = ReasonError
-			}
-		}
+		//if insufficientPattern.MatchString(e.Message) {
+		//	groups := insufficientPattern.FindStringSubmatch(e.Message)
+		//	if len(groups) > 1 {
+		//		reason = groups[1]
+		//		code = ReasonInsufficient
+		//	}
+		//}
+		//if mountFailedPattern.MatchString(e.Message) {
+		//	groups := mountFailedPattern.FindStringSubmatch(e.Message)
+		//	if len(groups) > 1 {
+		//		reason = groups[1]
+		//		code = ReasonError
+		//	}
+		//}
 	}
 
 	for i, init := range pod.Status.InitContainerStatuses {
