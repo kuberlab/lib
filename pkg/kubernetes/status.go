@@ -188,7 +188,7 @@ func DetermineResourceState(pod apiv1.Pod, client *kubernetes.Clientset) (reason
 	for i, init := range pod.Status.InitContainerStatuses {
 		if init.State.Waiting != nil {
 			event := Event{
-				Message:        init.State.Waiting.Message,
+				Message:        "Waiting init container",
 				Reason:         init.State.Waiting.Reason,
 				Count:          1,
 				Type:           "Warning",
