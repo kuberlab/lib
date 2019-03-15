@@ -273,7 +273,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 			return nil, fmt.Errorf("Failed get volumes for '%s-%s': %v", task.Name, r.Name, err)
 		}
 
-		c.setGitRefs(volumes, task)
+		c.setRevisions(volumes, task)
 
 		initContainers, err := c.KubeInits(r.VolumeMounts(c.VolumesData, c.DefaultMountPath, c.DefaultReadOnly), &task, &jobID)
 		if err != nil {

@@ -8,32 +8,20 @@ type RightVolumeFunc func(v Volume) bool
 
 func (c *BoardConfig) injectVersionedRevisions(
 	task *Task, getRevs GetRevisionsFunc, addRev AddRevisionFunc, checkVolume RightVolumeFunc) {
-	// Detect explicitly set revisions.
-	for _, taskRev := range getRevs(task) {
-		for _, v := range c.VolumesData {
-			if v.Name == taskRev.VolumeName {
-				if v.FlexVolume != nil {
-					_, ok := v.FlexVolume.Options["version"]
-					if ok {
-						v.FlexVolume.Options["version"] = taskRev.Revision
-					}
-				}
-			}
-		}
-	}
-
-	// Set datasetRevisions in task
+	// Detect default revisions from config
 	revisionMap := make(map[string]string)
 	for _, v := range c.VolumesData {
-		if v.FlexVolume != nil {
-			if !checkVolume(v) {
-				continue
-			}
-			version, ok := v.FlexVolume.Options["version"]
-			if ok {
-				revisionMap[v.Name] = version
-			}
+		if !checkVolume(v) {
+			continue
 		}
+		version, ok := v.FlexVolume.Options["version"]
+		if ok {
+			revisionMap[v.Name] = version
+		}
+	}
+	// Override revisions from task
+	for _, rev := range getRevs(task) {
+		revisionMap[rev.VolumeName] = rev.Revision
 	}
 
 	setRevision := func(name, revision string) {
@@ -53,23 +41,7 @@ func (c *BoardConfig) injectVersionedRevisions(
 		logrus.Infof("Set dataset revision [%v=%v]", k, v)
 		setRevision(k, v)
 	}
-
-	// Set revisions in config.
-	for _, taskRev := range getRevs(task) {
-		for i, v := range c.Volumes {
-			if v.Name == taskRev.VolumeName {
-				if v.Dataset != nil {
-					c.Volumes[i].Dataset.Version = taskRev.Revision
-				} else if v.DatasetFS != nil {
-					c.Volumes[i].DatasetFS.Version = taskRev.Revision
-				} else if v.Model != nil {
-					c.Volumes[i].Model.Version = taskRev.Revision
-				}
-			}
-		}
-	}
 }
-
 
 func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 	getRevs := func(task *Task) []TaskRevision {
@@ -91,7 +63,6 @@ func (c *BoardConfig) InjectDatasetRevisions(task *Task) {
 	}
 	c.injectVersionedRevisions(task, getRevs, addRev, checkVolume)
 }
-
 
 func (c *BoardConfig) InjectModelRevisions(task *Task) {
 	getRevs := func(task *Task) []TaskRevision {

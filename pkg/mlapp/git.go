@@ -13,7 +13,34 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (c *BoardConfig) setGitRefs(volumes []v1.Volume, task Task) {
+func (c *BoardConfig) setRevisions(volumes []v1.Volume, task Task) {
+	c.setGitRevisions(volumes, task)
+	c.setPlukeRevisions(volumes, task)
+}
+
+func (c *BoardConfig) setPlukeRevisions(volumes []v1.Volume, task Task) {
+	setRevision := func(vName string, rev string) {
+		fromConfig := c.volumeByName(vName)
+		for i, v := range volumes {
+			if v.Name == fromConfig.CommonID() && v.FlexVolume != nil && v.FlexVolume.Options["kuberlabFS"] == "plukefs" {
+				volumes[i].FlexVolume.Options["version"] = rev
+			}
+		}
+	}
+
+	for _, dsRev := range task.DatasetRevisions {
+		if dsRev.Revision != "" {
+			setRevision(dsRev.VolumeName, dsRev.Revision)
+		}
+	}
+	for _, mdlRev := range task.ModelRevisions {
+		if mdlRev.Revision != "" {
+			setRevision(mdlRev.VolumeName, mdlRev.Revision)
+		}
+	}
+}
+
+func (c *BoardConfig) setGitRevisions(volumes []v1.Volume, task Task) {
 	setRevision := func(vName string, rev string) {
 		fromConfig := c.volumeByName(vName)
 		for i, v := range volumes {
