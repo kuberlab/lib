@@ -248,10 +248,10 @@ type Resource struct {
 	// Default mount prefix for volumes inside component
 	DefaultMountPath string `json:"default_mount_path,omitempty"`
 	// Resource autoscaling settings
-	AutoScale *AutoScale `json:"auto_scale,omitempty"`
+	Autoscale *Autoscale `json:"autoscale,omitempty"`
 }
 
-type AutoScale struct {
+type Autoscale struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
