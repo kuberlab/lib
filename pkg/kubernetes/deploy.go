@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"k8s.io/api/autoscaling/v2beta1"
 	"strings"
 	"text/template"
 	"time"
@@ -51,6 +52,9 @@ func init() {
 		panic(err)
 	}
 	if err := rbacv1beta1.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
+	if err := v2beta1.AddToScheme(scheme.Scheme); err != nil {
 		panic(err)
 	}
 }
@@ -194,6 +198,15 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 		}
 	case *extv1beta1.Deployment:
 		return waitAndApply(kubeClient, v)
+	case *v2beta1.HorizontalPodAutoscaler:
+		if old, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Create(v)
+			return err
+		} else {
+			old.Labels = v.Labels
+			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Update(old)
+			return err
+		}
 	case *api_v1.Service:
 		if old, err := kubeClient.CoreV1().Services(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
 			_, err := kubeClient.CoreV1().Services(v.Namespace).Create(v)
@@ -205,7 +218,6 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			_, err := kubeClient.CoreV1().Services(v.Namespace).Update(old)
 			return err
 		}
-		return nil
 	case *api_v1.ServiceAccount:
 		if _, err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Get(v.Name, meta_v1.GetOptions{}); err != nil {
 			_, err := kubeClient.CoreV1().ServiceAccounts(v.Namespace).Create(v)
