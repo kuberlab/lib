@@ -75,9 +75,9 @@ func (serving ServingModelResourceGenerator) AllPorts() []Port {
 		}
 	}
 	metricPort := Port{
-		Name: "metric",
-		Port: serving.MetricsPort(),
-		Protocol: "TCP",
+		Name:       "metric",
+		Port:       serving.MetricsPort(),
+		Protocol:   "TCP",
 		TargetPort: serving.MetricsPort(),
 	}
 	ports = append(ports, metricPort)
@@ -180,6 +180,14 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 	}
 
 	resources = append(resources, res)
+
+	if serving.Autoscale != nil && serving.Autoscale.Enabled {
+		autoscaler := c.generateHPA(res.Object.(*extv1beta1.Deployment), serving.Autoscale)
+		if autoscaler != nil {
+			resources = append(resources, autoscaler)
+		}
+	}
+
 	return resources, nil
 }
 
