@@ -247,6 +247,12 @@ type Resource struct {
 	UseDefaultVolumeMapping bool `json:"default_volume_mapping,omitempty"`
 	// Default mount prefix for volumes inside component
 	DefaultMountPath string `json:"default_mount_path,omitempty"`
+	// Resource autoscaling settings
+	AutoScale *AutoScale `json:"auto_scale,omitempty"`
+}
+
+type AutoScale struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string, defaultReadOnly bool) []VolumeMount {
