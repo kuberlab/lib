@@ -3,8 +3,7 @@ package types
 type ClusterStats struct {
 	TaskCount      uint `json:"task_count"`
 	ContainerCount uint `json:"container_count"`
-	GPUUsed        uint `json:"gpu_used"`
-	GPUCapacity    uint `json:"gpu_capacity"`
+	GPU            GPU  `json:"gpu"`
 }
 
 type GPU struct {
