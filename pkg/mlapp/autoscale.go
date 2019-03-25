@@ -3,7 +3,7 @@ package mlapp
 import (
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"k8s.io/api/autoscaling/v2beta1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +35,7 @@ func (c *BoardConfig) generateHPA(deployment *v1beta1.Deployment, autoscaleCfg *
 				{
 					Type: v2beta1.ResourceMetricSourceType,
 					Resource: &v2beta1.ResourceMetricSource{
-						Name: v1.ResourceCPU,
+						Name:                     v1.ResourceCPU,
 						TargetAverageUtilization: &target,
 					},
 				},
@@ -46,7 +46,7 @@ func (c *BoardConfig) generateHPA(deployment *v1beta1.Deployment, autoscaleCfg *
 	gv := hpa.GroupVersionKind()
 	return &kubernetes.KubeResource{
 		Object: hpa,
-		Name: hpa.Name + ":hpa",
-		Kind: &gv,
+		Name:   hpa.Name + ":hpa",
+		Kind:   &gv,
 	}
 }

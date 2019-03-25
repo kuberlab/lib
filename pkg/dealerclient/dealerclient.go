@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/errors"
-	"net"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

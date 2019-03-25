@@ -13,7 +13,6 @@ type Workspace struct {
 	Can         []string
 }
 
-
 func (c *Client) GetWorkspace(workspace string) (*Workspace, error) {
 	u := fmt.Sprintf("/workspace/%v", workspace)
 
