@@ -17,6 +17,7 @@ type GPUConsumer struct {
 	Name        string `json:"name"`
 	Workspace   string `json:"workspace"`
 	WorkspaceID string `json:"workspace_id"`
+	Consumed    uint   `json:"consumed"`
 
 	Project  string `json:"project,omitempty"`
 	TaskName string `json:"task_name,omitempty"`
