@@ -11,7 +11,26 @@ import (
 func (c *BoardConfig) generateHPA(deployment *v1beta1.Deployment, autoscaleCfg *Autoscale) *kubernetes.KubeResource {
 	min := int32(1)
 	max := int32(5)
-	target := int32(50)
+
+	var target int32 = 0
+	if autoscaleCfg.MinReplicas > 0 {
+		min = autoscaleCfg.MinReplicas
+	}
+	if autoscaleCfg.MaxReplicas > 1 {
+		max = autoscaleCfg.MaxReplicas
+	}
+	if autoscaleCfg.TargetAverageUtilization > 0 {
+		target = autoscaleCfg.TargetAverageUtilization
+	} else {
+		limit := deployment.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu()
+		request := deployment.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu()
+		if limit.MilliValue() != 0 {
+			// limit / request * 100 * 0.5
+			target = int32(float64(limit.MilliValue()) / float64(request.MilliValue()) * 100 * 0.5)
+		} else {
+			target = 50
+		}
+	}
 
 	hpa := &v2beta1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{

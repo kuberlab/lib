@@ -173,7 +173,8 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 		return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 	}
 
-	res.Deps = []*kubernetes.KubeResource{generateServingServiceFromDeployment(res.Object.(*extv1beta1.Deployment))}
+	deploy := res.Object.(*extv1beta1.Deployment)
+	res.Deps = []*kubernetes.KubeResource{generateServingServiceFromDeployment(deploy)}
 
 	for _, s := range c.Secrets {
 		res.Deps = append(res.Deps, c.secret2kubeResource(s))
@@ -182,9 +183,11 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 	resources = append(resources, res)
 
 	if serving.Autoscale != nil && serving.Autoscale.Enabled {
-		autoscaler := c.generateHPA(res.Object.(*extv1beta1.Deployment), serving.Autoscale)
-		if autoscaler != nil {
-			resources = append(resources, autoscaler)
+		if deploy.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().MilliValue() != 0 {
+			autoscaler := c.generateHPA(deploy, serving.Autoscale)
+			if autoscaler != nil {
+				resources = append(resources, autoscaler)
+			}
 		}
 	}
 

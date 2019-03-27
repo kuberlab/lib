@@ -252,7 +252,10 @@ type Resource struct {
 }
 
 type Autoscale struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled                  bool  `json:"enabled,omitempty"`
+	MinReplicas              int32 `json:"min_replicas,omitempty"`
+	MaxReplicas              int32 `json:"max_replicas,omitempty"`
+	TargetAverageUtilization int32 `json:"target_average_utilization,omitempty"`
 }
 
 func (r Resource) VolumeMounts(volumes []Volume, defaultMountPath string, defaultReadOnly bool) []VolumeMount {
