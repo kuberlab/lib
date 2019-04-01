@@ -204,7 +204,7 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 			return err
 		} else {
 			old.Labels = v.Labels
-			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Update(old)
+			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Update(v)
 			return err
 		}
 	case *api_v1.Service:
