@@ -28,6 +28,7 @@ type ComponentState struct {
 	Type           string           `json:"type"`
 	Name           string           `json:"name"`
 	Status         string           `json:"status"`
+	Health         string           `json:"health"`
 	Reason         string           `json:"reason,omitempty"`
 	ReasonCode     string           `json:",omitempty"`
 	ResourceStates []*ResourceState `json:"resource_states"`
