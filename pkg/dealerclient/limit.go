@@ -7,7 +7,7 @@ import (
 type ResourceLimit struct {
 	CPU           *resource.Quantity `json:"cpu,omitempty,omitempty"`
 	Memory        *resource.Quantity `json:"memory,omitempty,omitempty"`
-	GPU           int64              `json:"gpu,omitempty"`
+	GPU           *int64             `json:"gpu,omitempty"`
 	CPUMi         int64              `json:"cpu_mi,omitempty"`
 	MemoryMB      int64              `json:"memory_mb,omitempty"`
 	Replicas      int64              `json:"replicas,omitempty"`
@@ -18,9 +18,15 @@ type ResourceLimit struct {
 func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	minCPU := minQuantity(r.CPUQuantity(), limit.CPUQuantity())
 	minMemory := minQuantity(r.MemoryQuantity(), limit.MemoryQuantity())
-	if limit.GPU >= 0 && r.GPU > limit.GPU || r.GPU <= 0 {
+
+	if limit.GPU != nil && r.GPU != nil {
+		if *limit.GPU >= 0 && *r.GPU > *limit.GPU || *r.GPU <= 0 {
+			r.GPU = limit.GPU
+		}
+	} else if r.GPU == nil && limit.GPU != nil {
 		r.GPU = limit.GPU
 	}
+
 	if r.Replicas > limit.Replicas && limit.Replicas > 0 || r.Replicas <= 0 {
 		r.Replicas = limit.Replicas
 	}
@@ -68,12 +74,12 @@ func (r *ResourceLimit) GPUQuantity() *resource.Quantity {
 	if r == nil {
 		return nil
 	}
-	if r.GPU < 0 {
+	if r.GPU == nil || *r.GPU < 0 {
 		// No limit
 		return nil
 	}
 	q := &resource.Quantity{Format: resource.DecimalSI}
-	q.Set(r.GPU)
+	q.Set(*r.GPU)
 	return q
 }
 

@@ -595,8 +595,8 @@ func baseEnv(c *BoardConfig, r Resource) ([]Env, string) {
 	//})
 	if r.Resources != nil && r.Resources.Accelerators.GPU > 0 {
 		count := r.Resources.Accelerators.GPU
-		if c.BoardMetadata.Limits != nil && c.BoardMetadata.Limits.GPU > 0 {
-			count = uint(c.BoardMetadata.Limits.GPU)
+		if c.BoardMetadata.Limits != nil && c.BoardMetadata.Limits.GPU != nil {
+			count = uint(*c.BoardMetadata.Limits.GPU)
 		}
 		envs = append(envs, Env{
 			Name:  "GPU_COUNT",
