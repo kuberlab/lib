@@ -135,7 +135,11 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 	if dealerLimits && serving.DealerAPI != "" && serving.WorkspaceSecret != "" {
 		dealer, err := dealerclient.NewClient(
 			serving.DealerAPI,
-			&dealerclient.AuthOpts{WorkspaceSecret: serving.WorkspaceSecret, Workspace: serving.Workspace},
+			&dealerclient.AuthOpts{
+				WorkspaceSecret: serving.WorkspaceSecret,
+				Workspace: serving.Workspace,
+				Insecure: true,
+			},
 		)
 		if err != nil {
 			return nil, err
