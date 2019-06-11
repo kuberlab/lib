@@ -59,15 +59,20 @@ func GetPodSpec(name string, namespace string, image string, kubeVolume []v1.Vol
 	return pod, nil
 }
 
-func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) (bool, error) {
-	timeout := time.NewTimer(2 * time.Minute)
+func WaitPod(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Duration) (bool, error) {
+	var timeoutTimer *time.Timer
+	if timeout == 0 {
+		timeoutTimer = time.NewTimer(2 * time.Minute)
+	} else {
+		timeoutTimer = time.NewTimer(timeout)
+	}
 	ticker := time.NewTicker(time.Millisecond * 100)
 
 	p := pod
 	var err error
 
 	defer ticker.Stop()
-	defer timeout.Stop()
+	defer timeoutTimer.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -81,19 +86,24 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset) (bool, error) {
 			if p.Status.Phase == v1.PodSucceeded || p.Status.Phase == v1.PodFailed {
 				return true, nil
 			}
-		case <-timeout.C:
+		case <-timeoutTimer.C:
 			client.CoreV1().Pods(p.Namespace).Delete(p.Name, &meta_v1.DeleteOptions{})
 			return false, fmt.Errorf("Pod %v is not running. Current state: %v", p.Name, p.Status.Phase)
 		}
 	}
 }
 
-func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset) error {
-	timeout := time.NewTimer(time.Minute)
+func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Duration) error {
+	var timeoutTimer *time.Timer
+	if timeout == 0 {
+		timeoutTimer = time.NewTimer(time.Minute * 2)
+	} else {
+		timeoutTimer = time.NewTimer(timeout)
+	}
 	ticker := time.NewTicker(time.Millisecond * 100)
 
 	defer ticker.Stop()
-	defer timeout.Stop()
+	defer timeoutTimer.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -104,7 +114,7 @@ func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset) error {
 			if p.Status.Phase == v1.PodSucceeded || p.Status.Phase == v1.PodFailed {
 				return nil
 			}
-		case <-timeout.C:
+		case <-timeoutTimer.C:
 			client.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
 			return fmt.Errorf("Pod %v is still running. Killing pod", pod.Name)
 		}
