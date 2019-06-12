@@ -21,6 +21,9 @@ func (c *BoardConfig) setRevisions(volumes []v1.Volume, task Task) {
 func (c *BoardConfig) setPlukeRevisions(volumes []v1.Volume, task Task) {
 	setRevision := func(vName string, rev string) {
 		fromConfig := c.volumeByName(vName)
+		if fromConfig == nil {
+			return
+		}
 		for i, v := range volumes {
 			if v.Name == fromConfig.CommonID() && v.FlexVolume != nil && v.FlexVolume.Options["kuberlabFS"] == "plukefs" {
 				volumes[i].FlexVolume.Options["version"] = rev
