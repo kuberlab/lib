@@ -143,8 +143,8 @@ spec:
         livenessProbe:
           tcpSocket:
             port: {{ .LivenessPort }}
-          initialDelaySeconds: 900
-          periodSeconds: 30
+          initialDelaySeconds: 2400
+          periodSeconds: 60
         {{- end }}
         resources:
           requests:
