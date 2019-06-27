@@ -684,8 +684,10 @@ func (c *BoardConfig) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.V
 			return nil, nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
 		if v.FlexVolume != nil {
-			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" && !strings.HasPrefix(v.FlexVolume.SecretRef.Name, c.Name) {
-				v.FlexVolume.SecretRef.Name = fmt.Sprintf("%v-%v", c.Name, v.FlexVolume.SecretRef.Name)
+			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" &&
+					!strings.HasPrefix(v.FlexVolume.SecretRef.Name, utils.KubeDeploymentEncode(c.Name)) {
+				//v.FlexVolume.SecretRef.Name = fmt.Sprintf("%v-%v", c.Name, v.FlexVolume.SecretRef.Name)
+				v.FlexVolume.SecretRef.Name = c.GetSecretName(Secret{Name: v.FlexVolume.SecretRef.Name})
 			}
 		}
 		id := v.CommonID()
