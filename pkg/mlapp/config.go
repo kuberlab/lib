@@ -320,6 +320,7 @@ type Uix struct {
 	Resource    `json:",inline"`
 	FrontAPI    string `json:"front_api,omitempty"`
 	Disabled    bool   `json:"disabled"`
+	SkipPrefix  bool   `json:"skipPrefix"`
 }
 
 func (uix *Uix) Type() string {
@@ -685,7 +686,7 @@ func (c *BoardConfig) KubeVolumesSpec(mounts []VolumeMount) ([]v1.Volume, []v1.V
 		}
 		if v.FlexVolume != nil {
 			if v.FlexVolume.SecretRef != nil && v.FlexVolume.SecretRef.Name != "" &&
-					!strings.HasPrefix(v.FlexVolume.SecretRef.Name, utils.KubeDeploymentEncode(c.Name)) {
+				!strings.HasPrefix(v.FlexVolume.SecretRef.Name, utils.KubeDeploymentEncode(c.Name)) {
 				//v.FlexVolume.SecretRef.Name = fmt.Sprintf("%v-%v", c.Name, v.FlexVolume.SecretRef.Name)
 				v.FlexVolume.SecretRef.Name = c.GetSecretName(Secret{Name: v.FlexVolume.SecretRef.Name})
 			}
