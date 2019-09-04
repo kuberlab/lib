@@ -1,9 +1,8 @@
 package mlapp
 
 import (
-	"encoding/base64"
-	"strings"
-
+	"crypto/sha1"
+	"fmt"
 	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
@@ -65,8 +64,8 @@ func (v Volume) CommonID() string {
 		if v.ReadOnly {
 			m = "r"
 		}
-		server := base64.RawURLEncoding.EncodeToString([]byte(v.NFS.Server + "-" + v.NFS.Path + "-" + m))
-		return "nfs-" + strings.ToLower(strings.Replace(server, "_", "-", -1))
+		hash := fmt.Sprintf("%x", sha1.Sum([]byte(v.NFS.Server + "-" + v.NFS.Path + "-" + m)))
+		return "nfs-" + hash
 	}
 	m := "org-"
 	if v.ReadOnly {
