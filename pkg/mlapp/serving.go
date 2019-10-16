@@ -3,8 +3,9 @@ package mlapp
 type ServingType string
 
 const (
-	ServingTypeTask  ServingType = "task"
-	ServingTypeModel ServingType = "model"
+	ServingTypeTask      ServingType = "task"
+	ServingTypeModel     ServingType = "model"
+	ServingTypeInference ServingType = "inference"
 )
 
 type UniversalServing struct {
