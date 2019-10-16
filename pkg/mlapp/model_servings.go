@@ -24,6 +24,7 @@ type ModelServing struct {
 	DealerAPI   string   `json:"dealer_api,omitempty"`
 	WorkspaceID string   `json:"workspace_id,omitempty"`
 	Workspace   string   `json:"workspace,omitempty"`
+	ServingType string   `json:"type"`
 }
 
 type BoardModelServing struct {
@@ -137,8 +138,8 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 			serving.DealerAPI,
 			&dealerclient.AuthOpts{
 				WorkspaceSecret: serving.WorkspaceSecret,
-				Workspace: serving.Workspace,
-				Insecure: true,
+				Workspace:       serving.Workspace,
+				Insecure:        true,
 			},
 		)
 		if err != nil {
