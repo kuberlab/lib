@@ -20,11 +20,11 @@ const (
 
 type ModelServing struct {
 	Uix
-	Sources     []Volume `json:"sources,omitempty"`
-	DealerAPI   string   `json:"dealer_api,omitempty"`
-	WorkspaceID string   `json:"workspace_id,omitempty"`
-	Workspace   string   `json:"workspace,omitempty"`
-	ServingType string   `json:"type"`
+	Sources     []Volume    `json:"sources,omitempty"`
+	DealerAPI   string      `json:"dealer_api,omitempty"`
+	WorkspaceID string      `json:"workspace_id,omitempty"`
+	Workspace   string      `json:"workspace,omitempty"`
+	ServingType ServingType `json:"type"`
 }
 
 type BoardModelServing struct {
