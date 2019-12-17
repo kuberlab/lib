@@ -354,7 +354,8 @@ func (s *Serving) GPURequests() int64 {
 }
 
 type ServingSpecOptions struct {
-	NoCache bool `json:"noCache,omitempty"`
+	NoCache            bool `json:"noCache,omitempty"`
+	SaveStreamPreviews bool `json:"saveStreamPreviews,omitempty"`
 }
 
 type ServingSpec struct {
