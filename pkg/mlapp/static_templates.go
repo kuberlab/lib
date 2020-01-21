@@ -93,7 +93,7 @@ spec:
           {{- if .WorkDir }}
           cd {{ .WorkDir }};
           {{- end }}
-          {{ .Command }} {{ .Args }};
+          {{ .Command | indent 10 }} {{ .Args }};
           code=$?;
           exit $code
         {{- end }}
