@@ -381,13 +381,6 @@ type ServingSpecParam struct {
 	Options []string    `json:"options,omitempty"`
 }
 
-func (p ServingSpecParam) IsBytes() bool {
-	return p.Type == "bytes" ||
-		p.Type == "image" ||
-		p.Type == "video" ||
-		p.Type == "audio"
-}
-
 type ServingResponseParam struct {
 	Name        string `json:"name,omitempty"`
 	Type        string `json:"type,omitempty"`
