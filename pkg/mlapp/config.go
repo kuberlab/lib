@@ -360,10 +360,11 @@ type ServingSpecOptions struct {
 }
 
 type ServingSpec struct {
-	Params    []ServingSpecParam     `json:"params,omitempty"`
-	Response  []ServingResponseParam `json:"response,omitempty"`
-	OutFilter []string               `json:"outFilter,omitempty"`
-	Options   ServingSpecOptions     `json:"options,omitempty"`
+	Params           []ServingSpecParam     `json:"params,omitempty"`
+	Response         []ServingResponseParam `json:"response,omitempty"`
+	ResponseTemplate string                 `json:"responseTemplate,omitempty"`
+	OutFilter        []string               `json:"outFilter,omitempty"`
+	Options          ServingSpecOptions     `json:"options,omitempty"`
 	// deprecated, todo remove soon
 	OutMimeType string `json:"outMimeType,omitempty"`
 	RawInput    bool   `json:"rawInput,omitempty"`
@@ -378,6 +379,13 @@ type ServingSpecParam struct {
 	Label   string      `json:"label,omitempty"`
 	Value   interface{} `json:"value,omitempty"`
 	Options []string    `json:"options,omitempty"`
+}
+
+func (p ServingSpecParam) IsBytes() bool {
+	return p.Type == "bytes" ||
+		p.Type == "image" ||
+		p.Type == "video" ||
+		p.Type == "audio"
 }
 
 type ServingResponseParam struct {
