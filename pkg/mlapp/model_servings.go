@@ -24,7 +24,8 @@ type ModelServing struct {
 	DealerAPI   string      `json:"dealer_api,omitempty"`
 	WorkspaceID string      `json:"workspace_id,omitempty"`
 	Workspace   string      `json:"workspace,omitempty"`
-	ServingType ServingType `json:"type"`
+	ServingType ServingType `json:"type,omitempty"`
+	Spec        ServingSpec `json:"spec,omitempty"`
 }
 
 type BoardModelServing struct {

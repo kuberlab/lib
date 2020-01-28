@@ -72,7 +72,7 @@ spec:
       {{- end }}
       export PYTHONPATH=$PYTHONPATH:{{ .PythonPath }};
       cd {{ .WorkDir }};
-      {{ .Command }} {{ .Args }};
+      {{ .Command | indent 6 }} {{ .Args }};
       code=$?;
       exit $code
     image: {{ .Image }}
