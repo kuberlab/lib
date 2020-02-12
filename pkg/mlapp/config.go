@@ -87,6 +87,9 @@ func (c *BoardConfig) Type() string {
 func (c *BoardConfig) GPURequests() int64 {
 	var gpus int64 = 0
 	for _, uix := range c.Spec.Uix {
+		if uix.Disabled {
+			continue
+		}
 		if uix.Resources != nil {
 			gpus += int64(uix.Resources.Accelerators.GPU)
 		}
