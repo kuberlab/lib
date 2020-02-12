@@ -314,13 +314,14 @@ func (r Resource) Image() string {
 }
 
 type Uix struct {
-	Meta        `json:",inline"`
-	DisplayName string `json:"displayName,omitempty"`
-	Ports       []Port `json:"ports,omitempty"`
-	Resource    `json:",inline"`
-	FrontAPI    string `json:"front_api,omitempty"`
-	Disabled    bool   `json:"disabled"`
-	SkipPrefix  bool   `json:"skipPrefix"`
+	Meta           `json:",inline"`
+	DisplayName    string `json:"displayName,omitempty"`
+	Ports          []Port `json:"ports,omitempty"`
+	Resource       `json:",inline"`
+	FrontAPI       string `json:"front_api,omitempty"`
+	Disabled       bool   `json:"disabled"`
+	DisabledReason string `json:"disabledReason,omitempty"`
+	SkipPrefix     bool   `json:"skipPrefix"`
 }
 
 func (uix *Uix) Type() string {
