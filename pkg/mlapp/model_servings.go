@@ -121,6 +121,9 @@ func (serving ServingModelResourceGenerator) ComponentName() string {
 func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimits bool) ([]*kubernetes.KubeResource, error) {
 	var resources []*kubernetes.KubeResource
 
+	if serving.Disabled {
+		return resources, nil
+	}
 	// Do not use volume mounts, use mounts from sources
 	serving.UseDefaultVolumeMapping = true
 
