@@ -31,6 +31,8 @@ const (
 	KindServing           = "Serving"
 	KindTask              = "Task"
 	kibernetikaPythonLibs = "/kibernetika-python-libs"
+
+	GPUDisabledMessage = "GPU is disabled. Please wait till GPU is available (if you have one) or see and update your billing plans."
 )
 
 var validNames = regexp.MustCompile("^[a-z0-9][-a-z0-9]{0,61}[a-z0-9]$")
@@ -95,6 +97,29 @@ func (c *BoardConfig) GPURequests() int64 {
 		}
 	}
 	return gpus
+}
+
+func (c *BoardConfig) DisableGPU(num int) int {
+	disabled := 0
+	remain := num
+	for i, ui := range c.Uix {
+		reqs := 0
+		if ui.Resources != nil {
+			reqs = int(ui.Resources.Accelerators.GPU)
+		}
+		// Disable component which has GPU request and fit to disable num.
+		if reqs >= remain && reqs > 0 {
+			// Disable it.
+			c.Uix[i].DisabledReason = GPUDisabledMessage
+			c.Uix[i].Disabled = true
+			remain -= reqs
+			disabled += reqs
+		}
+		if remain <= 0 {
+			break
+		}
+	}
+	return disabled
 }
 
 func (c *Config) ValidateConfig() error {
@@ -357,6 +382,12 @@ func (s *Serving) GPURequests() int64 {
 	return gpus
 }
 
+func (s *Serving) DisableGPU(num int) int {
+	s.Disabled = true
+	s.DisabledReason = GPUDisabledMessage
+	return int(s.GPURequests())
+}
+
 type ServingSpecOptions struct {
 	NoCache            bool   `json:"noCache,omitempty"`
 	SaveStreamPreviews bool   `json:"saveStreamPreviews,omitempty"`
@@ -441,6 +472,10 @@ func (t *Task) GPURequests() int64 {
 		}
 	}
 	return gpus
+}
+
+func (t *Task) DisableGPU(num int) int {
+	return 0
 }
 
 type TaskRevision struct {
