@@ -28,7 +28,7 @@ const (
 	KUBERLAB_STORAGE_NAME = "kuberlab.io/storage-name"
 
 	KindMlApp             = "MLApp"
-	KindServing           = "Serving"
+	KindServing           = "modelServing"
 	KindTask              = "Task"
 	kibernetikaPythonLibs = "/kibernetika-python-libs"
 
