@@ -25,12 +25,17 @@ metadata:
   name: "{{ .ComponentName }}"
   namespace: "{{ .Namespace }}"
   labels:
-    {{- range $key, $value := .Labels }}
+    {{- range $key, $value := .DLabels }}
     {{ $key }}: "{{ $value }}"
     {{- end }}
 spec:
   replicas: {{ .Replicas }}
   revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+		{{- range $key, $value := .DLabels }}
+		{{ $key }}: "{{ $value }}"
+		{{- end }}
   template:
     metadata:
       labels:
@@ -317,12 +322,7 @@ func (ui UIXResourceGenerator) ComponentName() string {
 	return utils.KubeDeploymentEncode(ui.c.Name + "-" + ui.Name)
 }
 
-func (ui UIXResourceGenerator) Labels() map[string]string {
-	computeType := "cpu"
-	if ui.ResourcesSpec().Accelerators.GPU > 0 {
-		computeType = "gpu"
-
-	}
+func (ui UIXResourceGenerator) SLabels() map[string]string {
 	labels := map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
@@ -332,6 +332,20 @@ func (ui UIXResourceGenerator) Labels() map[string]string {
 	if ui.NodesLabel != "" {
 		labels[types.KuberlabMLNodeLabel] = ui.NodesLabel
 	}
+}
+
+func (ui UIXResourceGenerator) DLabels() map[string]string {
+	return ui.c.ResourceLabels(ui.SLabels())
+}
+
+func (ui UIXResourceGenerator) Labels() map[string]string {
+	labels := ui.SLabels()
+	computeType := "cpu"
+	if ui.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+
+	}
+	labels[types.ComputeTypeLabel] = computeType
 	return ui.c.ResourceLabels(labels)
 }
 
@@ -446,19 +460,29 @@ func (serving ServingResourceGenerator) Env() []Env {
 	}
 	return ResolveEnv(envs)
 }
-func (serving ServingResourceGenerator) Labels() map[string]string {
-	computeType := "cpu"
-	if serving.ResourcesSpec().Accelerators.GPU > 0 {
-		computeType = "gpu"
 
-	}
-	return serving.c.ResourceLabels(map[string]string{
+func (serving ServingResourceGenerator) SLabels() map[string]string {
+	labels := map[string]string{
 		types.ComponentLabel:     serving.Uix.Name,
 		types.ComponentTypeLabel: "serving",
 		types.ServingIDLabel:     serving.Name(),
-		types.ComputeTypeLabel:   computeType,
 		"scope":                  "mlboard",
-	})
+	}
+}
+
+func (serving ServingResourceGenerator) DLabels() map[string]string {
+	return ui.c.ResourceLabels(serving.SLabels())
+}
+
+func (serving ServingResourceGenerator) Labels() map[string]string {
+	labels := ui.SLabels()
+	computeType := "cpu"
+	if ui.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+
+	}
+	labels[types.ComputeTypeLabel] = computeType
+	return ui.c.ResourceLabels(labels)
 }
 
 func (serving ServingResourceGenerator) Name() string {
