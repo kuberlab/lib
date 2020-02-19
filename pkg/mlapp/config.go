@@ -1038,13 +1038,17 @@ func (c *BoardConfig) GetWorkspaceSecret() string {
 	return ""
 }
 
-func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
-	l1 := map[string]string{
+func (c *BoardConfig) resourceLabels() map[string]string {
+	return map[string]string{
 		KUBERLAB_WS_LABEL:     utils.KubeLabelEncode(c.Workspace),
 		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
 		KUBERLAB_PROJECT_NAME: utils.KubeLabelEncode(c.Name),
 		KUBERLAB_PROJECT_ID:   c.ProjectID,
 	}
+}
+
+func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
+	l1 := c.resourceLabels()
 	defautTemplate := utils.GetDefaultCPUNodeSelector()
 	for _, m := range l {
 		for k, v := range m {
@@ -1058,6 +1062,16 @@ func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
 	}
 	if defautTemplate != "" {
 		l1[types.KuberlabMLNodeLabel] = defautTemplate
+	}
+	return l1
+}
+
+func (c *BoardConfig) GenericResourceLabels(l ...map[string]string) map[string]string {
+	l1 := c.resourceLabels()
+	for _, m := range l {
+		for k, v := range m {
+			l1[k] = utils.KubeLabelEncode(v)
+		}
 	}
 	return l1
 }
