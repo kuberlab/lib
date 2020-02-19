@@ -13,6 +13,7 @@ import (
 	"github.com/kuberlab/lib/pkg/dealerclient"
 	"github.com/kuberlab/lib/pkg/errors"
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
+	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
 	"k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -1044,10 +1045,19 @@ func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {
 		KUBERLAB_PROJECT_NAME: utils.KubeLabelEncode(c.Name),
 		KUBERLAB_PROJECT_ID:   c.ProjectID,
 	}
+	defautTemplate := utils.GetDefaultCPUNodeSelector()
 	for _, m := range l {
 		for k, v := range m {
 			l1[k] = utils.KubeLabelEncode(v)
+			if k == types.ComputeTypeLabel && v == "gpu" {
+				if gtemplate := utils.GetDefaultGPUNodeSelector(); gtemplate != "" {
+					defautTemplate = gtemplate
+				}
+			}
 		}
+	}
+	if defautTemplate != "" {
+		l1[types.KuberlabMLNodeLabel] = defautTemplate
 	}
 	return l1
 }

@@ -318,9 +318,15 @@ func (ui UIXResourceGenerator) ComponentName() string {
 }
 
 func (ui UIXResourceGenerator) Labels() map[string]string {
+	computeType := "cpu"
+	if ui.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+
+	}
 	labels := map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
+		types.ComputeTypeLabel:   computeType,
 		"scope":                  "mlboard",
 	}
 	if ui.NodesLabel != "" {
@@ -441,10 +447,16 @@ func (serving ServingResourceGenerator) Env() []Env {
 	return ResolveEnv(envs)
 }
 func (serving ServingResourceGenerator) Labels() map[string]string {
+	computeType := "cpu"
+	if serving.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+
+	}
 	return serving.c.ResourceLabels(map[string]string{
 		types.ComponentLabel:     serving.Uix.Name,
 		types.ComponentTypeLabel: "serving",
 		types.ServingIDLabel:     serving.Name(),
+		types.ComputeTypeLabel:   computeType,
 		"scope":                  "mlboard",
 	})
 }
