@@ -33,9 +33,9 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-		{{- range $key, $value := .DLabels }}
-		{{ $key }}: "{{ $value }}"
-		{{- end }}
+	  {{- range $key, $value := .DLabels }}
+	  {{ $key }}: "{{ $value }}"
+	  {{- end }}
   template:
     metadata:
       labels:
