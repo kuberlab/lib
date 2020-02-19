@@ -476,9 +476,9 @@ func (serving ServingResourceGenerator) DLabels() map[string]string {
 }
 
 func (serving ServingResourceGenerator) Labels() map[string]string {
-	labels := ui.SLabels()
+	labels := serving.SLabels()
 	computeType := "cpu"
-	if ui.ResourcesSpec().Accelerators.GPU > 0 {
+	if serving.UIXResourceGenerator.ResourcesSpec().Accelerators.GPU > 0 {
 		computeType = "gpu"
 
 	}
