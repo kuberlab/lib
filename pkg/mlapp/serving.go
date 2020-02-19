@@ -25,9 +25,6 @@ type UniversalServing struct {
 	Model       string   `json:"model,omitempty"`
 	WorkspaceID string   `json:"workspace_id,omitempty"`
 	Workspace   string   `json:"workspace,omitempty"`
-
-	// edge serving
-	AudienceHost string `json:"audienceHost,omitempty"`
 }
 
 type UniversalServingPrivate struct {

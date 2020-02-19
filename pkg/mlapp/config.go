@@ -390,9 +390,11 @@ func (s *Serving) DisableGPU(num int) int {
 }
 
 type ServingSpecOptions struct {
-	NoCache            bool   `json:"noCache,omitempty"`
-	SaveStreamPreviews bool   `json:"saveStreamPreviews,omitempty"`
-	EdgeHost           string `json:"edgeHost,omitempty"`
+	NoCache            bool `json:"noCache,omitempty"`
+	SaveStreamPreviews bool `json:"saveStreamPreviews,omitempty"`
+	// edge serving
+	EdgeHost     string `json:"edgeHost,omitempty"`
+	AudienceHost string `json:"audienceHost,omitempty"`
 }
 
 type ServingSpec struct {
