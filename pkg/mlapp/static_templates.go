@@ -33,9 +33,9 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-	  {{- range $key, $value := .DLabels }}
-	  {{ $key }}: "{{ $value }}"
-	  {{- end }}
+      {{- range $key, $value := .DLabels }}
+      {{ $key }}: "{{ $value }}"
+      {{- end }}
   template:
     metadata:
       labels:
@@ -335,7 +335,7 @@ func (ui UIXResourceGenerator) SLabels() map[string]string {
 }
 
 func (ui UIXResourceGenerator) DLabels() map[string]string {
-	return ui.c.ResourceLabels(ui.SLabels())
+	return ui.c.GenericResourceLabels(ui.SLabels())
 }
 
 func (ui UIXResourceGenerator) Labels() map[string]string {
@@ -472,7 +472,7 @@ func (serving ServingResourceGenerator) SLabels() map[string]string {
 }
 
 func (serving ServingResourceGenerator) DLabels() map[string]string {
-	return serving.UIXResourceGenerator.c.ResourceLabels(serving.SLabels())
+	return serving.UIXResourceGenerator.c.GenericResourceLabels(serving.SLabels())
 }
 
 func (serving ServingResourceGenerator) Labels() map[string]string {
