@@ -326,12 +326,12 @@ func (ui UIXResourceGenerator) SLabels() map[string]string {
 	labels := map[string]string{
 		types.ComponentLabel:     ui.Uix.Name,
 		types.ComponentTypeLabel: "ui",
-		types.ComputeTypeLabel:   computeType,
 		"scope":                  "mlboard",
 	}
 	if ui.NodesLabel != "" {
 		labels[types.KuberlabMLNodeLabel] = ui.NodesLabel
 	}
+	return labels
 }
 
 func (ui UIXResourceGenerator) DLabels() map[string]string {
@@ -468,10 +468,11 @@ func (serving ServingResourceGenerator) SLabels() map[string]string {
 		types.ServingIDLabel:     serving.Name(),
 		"scope":                  "mlboard",
 	}
+	return labels
 }
 
 func (serving ServingResourceGenerator) DLabels() map[string]string {
-	return ui.c.ResourceLabels(serving.SLabels())
+	return serving.UIXResourceGenerator.c.ResourceLabels(serving.SLabels())
 }
 
 func (serving ServingResourceGenerator) Labels() map[string]string {
@@ -482,7 +483,7 @@ func (serving ServingResourceGenerator) Labels() map[string]string {
 
 	}
 	labels[types.ComputeTypeLabel] = computeType
-	return ui.c.ResourceLabels(labels)
+	return serving.UIXResourceGenerator.c.ResourceLabels(labels)
 }
 
 func (serving ServingResourceGenerator) Name() string {
