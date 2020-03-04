@@ -100,14 +100,30 @@ func (serving ServingModelResourceGenerator) Env() []Env {
 	)
 	return ResolveEnv(envs)
 }
-func (serving ServingModelResourceGenerator) Labels() map[string]string {
-	return map[string]string{
-		KUBERLAB_WS_LABEL:        serving.c.Workspace,
-		KUBERLAB_WS_ID_LABEL:     serving.c.WorkspaceID,
+
+func (serving ServingModelResourceGenerator) SLabels() map[string]string {
+	labels := map[string]string{
 		types.ComponentLabel:     serving.Uix.Name,
 		types.ComponentTypeLabel: ServingModelComponent,
 		types.ServingIDLabel:     serving.Name(),
+		"scope":                  "mlboard",
 	}
+	return labels
+}
+
+func (serving ServingModelResourceGenerator) DLabels() map[string]string {
+	return serving.UIXResourceGenerator.c.GenericResourceLabels(serving.SLabels())
+}
+
+func (serving ServingModelResourceGenerator) Labels() map[string]string {
+	labels := serving.SLabels()
+	computeType := "cpu"
+	if serving.UIXResourceGenerator.ResourcesSpec().Accelerators.GPU > 0 {
+		computeType = "gpu"
+
+	}
+	labels[types.ComputeTypeLabel] = computeType
+	return serving.UIXResourceGenerator.c.ResourceLabels(labels)
 }
 
 func (serving ServingModelResourceGenerator) Name() string {
