@@ -370,7 +370,6 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 type Serving struct {
 	Uix       `json:",inline"`
 	Spec      ServingSpec            `json:"spec,omitempty"`
-	ModelSpec ServingModelSpec       `json:"model_spec,omitempty"`
 	TaskName  string                 `json:"taskName,omitempty"`
 	Build     string                 `json:"build,omitempty"`
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
@@ -416,6 +415,7 @@ type ServingSpec struct {
 	Response         []ServingResponseParam `json:"response,omitempty"`
 	ResponseTemplate string                 `json:"responseTemplate,omitempty"`
 	OutFilter        []string               `json:"outFilter,omitempty"`
+	ModelSpec        ServingModelSpec       `json:"model_spec,omitempty"`
 	Options          ServingSpecOptions     `json:"options,omitempty"`
 	// deprecated, todo remove soon
 	OutMimeType string `json:"outMimeType,omitempty"`

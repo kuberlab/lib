@@ -10,10 +10,9 @@ const (
 
 type UniversalServing struct {
 	// common
-	Uix       `json:",inline"`
-	Type      ServingType      `json:"type,omitempty"`
-	Spec      ServingSpec      `json:"spec,omitempty"`
-	ModelSpec ServingModelSpec `json:"model_spec,omitempty"`
+	Uix  `json:",inline"`
+	Type ServingType `json:"type,omitempty"`
+	Spec ServingSpec `json:"spec,omitempty"`
 
 	// task serving
 	TaskName  string                 `json:"taskName,omitempty"`
