@@ -370,6 +370,7 @@ func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName stri
 type Serving struct {
 	Uix       `json:",inline"`
 	Spec      ServingSpec            `json:"spec,omitempty"`
+	ModelSpec ServingModelSpec       `json:"model_spec,omitempty"`
 	TaskName  string                 `json:"taskName,omitempty"`
 	Build     string                 `json:"build,omitempty"`
 	BuildInfo map[string]interface{} `json:"build_info,omitempty"`
@@ -387,6 +388,19 @@ func (s *Serving) DisableGPU(num int) int {
 	s.Disabled = true
 	s.DisabledReason = GPUDisabledMessage
 	return int(s.GPURequests())
+}
+
+type ServingModelSpec struct {
+	Driver  string            `json:"driver"`
+	Path    string            `json:"path"`
+	Options map[string]string `json:"options"`
+	Inputs  InputOutSpec      `json:"inputs"`
+	Outputs InputOutSpec      `json:"outputs"`
+}
+
+type InputOutSpec struct {
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }
 
 type ServingSpecOptions struct {
