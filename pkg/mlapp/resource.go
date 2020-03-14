@@ -30,7 +30,7 @@ func ResourceSpec(r *ResourceRequest, limitVal *dealerclient.ResourceLimit, defa
 		//gpu limit from global
 		gpuLimitCluster = limitVal.GPUQuantity()
 	}
-	logrus.Infof("Get Resources: r=%v  \rlimitVal=%v   ]rdefaultReq=%v", *r, *limitVal, defaultReq)
+	logrus.Infof("Get CPU Req: r=%v", r.Requests.CPUQuantity().AsInt64())
 	cpuRequest := r.Requests.CPUQuantity()
 	cpuDefault := defaultReq.CPUQuantity()
 	cpuLimit := r.Limits.CPUQuantity()
