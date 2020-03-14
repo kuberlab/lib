@@ -1,7 +1,6 @@
 package mlapp
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/dealerclient"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -30,7 +29,6 @@ func ResourceSpec(r *ResourceRequest, limitVal *dealerclient.ResourceLimit, defa
 		//gpu limit from global
 		gpuLimitCluster = limitVal.GPUQuantity()
 	}
-	logrus.Infof("Get CPU Req: r=%v", r.Requests.CPUQuantity().String())
 	cpuRequest := r.Requests.CPUQuantity()
 	cpuDefault := defaultReq.CPUQuantity()
 	cpuLimit := r.Limits.CPUQuantity()
