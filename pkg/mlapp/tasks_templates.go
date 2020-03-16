@@ -2,6 +2,7 @@ package mlapp
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"strconv"
 	"strings"
 	"sync"
@@ -165,7 +166,9 @@ func (t TaskResourceGenerator) KubeVersionMinor() int {
 }
 
 func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
-	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128})
+	cpu, _ := resource.ParseQuantity("50m")
+	mem, _ := resource.ParseQuantity("128Mi")
+	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPU: &cpu, Memory: &mem})
 }
 
 func (t TaskResourceGenerator) DockerSecretNames() []string {

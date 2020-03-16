@@ -8,8 +8,6 @@ type ResourceLimit struct {
 	CPU           *resource.Quantity `json:"cpu,omitempty,omitempty"`
 	Memory        *resource.Quantity `json:"memory,omitempty,omitempty"`
 	GPU           *int64             `json:"gpu,omitempty"`
-	CPUMi         int64              `json:"cpu_mi,omitempty"`
-	MemoryMB      int64              `json:"memory_mb,omitempty"`
 	Replicas      int64              `json:"replicas,omitempty"`
 	ParallelRuns  int64              `json:"parallel_runs,omitempty"`
 	ExecutionTime int64              `json:"execution_time,omitempty"`
@@ -36,16 +34,10 @@ func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	r.Memory = nil
 	r.CPU = nil
 	if minCPU != nil {
-		r.CPUMi = minCPU.MilliValue()
 		r.CPU = minCPU
-	} else {
-		r.CPUMi = 0
 	}
 	if minMemory != nil {
-		r.MemoryMB = minMemory.ScaledValue(resource.Mega)
 		r.Memory = minMemory
-	} else {
-		r.MemoryMB = 0
 	}
 }
 
@@ -55,17 +47,13 @@ func (r *ResourceLimit) CPUQuantity() *resource.Quantity {
 		return nil
 	}
 
-	if (r.CPU != nil && r.CPU.MilliValue() <= 0) || r.CPUMi < 0 {
+	if r.CPU != nil && r.CPU.MilliValue() <= 0 {
 		return nil
 	}
 
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.CPU != nil && !r.CPU.IsZero() {
 		q = r.CPU
-		r.CPUMi = q.MilliValue()
-	} else if r.CPUMi != 0 {
-		q.SetMilli(r.CPUMi)
-		r.CPU = q
 	} else {
 		return nil
 	}
@@ -92,17 +80,13 @@ func (r *ResourceLimit) MemoryQuantity() *resource.Quantity {
 		return nil
 	}
 
-	if r.MemoryMB < 0 || (r.Memory != nil && r.Memory.Value() <= 0) {
+	if r.Memory != nil && r.Memory.Value() <= 0 {
 		return nil
 	}
 
 	q := &resource.Quantity{Format: resource.DecimalSI}
 	if r.Memory != nil && !r.Memory.IsZero() {
 		q = r.Memory
-		r.MemoryMB = q.ScaledValue(resource.Mega)
-	} else if r.MemoryMB != 0 {
-		q.SetScaled(r.MemoryMB, resource.Mega)
-		r.Memory = q
 	} else {
 		return nil
 	}

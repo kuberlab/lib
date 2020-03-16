@@ -3,6 +3,7 @@ package mlapp
 import (
 	"bytes"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"strconv"
 	"strings"
 	"text/template"
@@ -273,10 +274,12 @@ func (ui UIXResourceGenerator) Conda() string {
 }
 
 func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {
+	cpu, _ := resource.ParseQuantity("50m")
+	mem, _ := resource.ParseQuantity("128Mi")
 	return ResourceSpec(
 		ui.Resources,
 		ui.c.BoardMetadata.Limits,
-		dealerclient.ResourceLimit{CPUMi: 50, MemoryMB: 128},
+		dealerclient.ResourceLimit{CPU: &cpu, Memory: &mem},
 	)
 }
 
