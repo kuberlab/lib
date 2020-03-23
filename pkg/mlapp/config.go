@@ -1055,12 +1055,15 @@ func (c *BoardConfig) GetWorkspaceSecret() string {
 }
 
 func (c *BoardConfig) resourceLabels() map[string]string {
-	return map[string]string{
-		KUBERLAB_WS_LABEL:     utils.KubeLabelEncode(c.Workspace),
-		KUBERLAB_WS_ID_LABEL:  c.WorkspaceID,
-		KUBERLAB_PROJECT_NAME: utils.KubeLabelEncode(c.Name),
-		KUBERLAB_PROJECT_ID:   c.ProjectID,
+	l := map[string]string{
+		KUBERLAB_WS_LABEL:    utils.KubeLabelEncode(c.Workspace),
+		KUBERLAB_WS_ID_LABEL: c.WorkspaceID,
 	}
+	if c.ProjectID != "" {
+		l[KUBERLAB_PROJECT_NAME] = utils.KubeLabelEncode(c.Name)
+		l[KUBERLAB_PROJECT_ID] = c.ProjectID
+	}
+	return l
 }
 
 func (c *BoardConfig) ResourceLabels(l ...map[string]string) map[string]string {

@@ -3,10 +3,11 @@ package mlapp
 import (
 	"bytes"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"strconv"
 	"strings"
 	"text/template"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/kuberlab/lib/pkg/dealerclient"
