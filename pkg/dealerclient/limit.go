@@ -18,7 +18,7 @@ func (r *ResourceLimit) MinimizeTo(limit ResourceLimit) {
 	minMemory := minQuantity(r.MemoryQuantity(), limit.MemoryQuantity())
 
 	if limit.GPU != nil && r.GPU != nil {
-		if *limit.GPU >= 0 && *r.GPU > *limit.GPU || *r.GPU <= 0 {
+		if *limit.GPU >= 0 && *r.GPU > *limit.GPU || *r.GPU < 0 {
 			r.GPU = limit.GPU
 		}
 	} else if r.GPU == nil && limit.GPU != nil {
