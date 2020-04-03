@@ -123,6 +123,38 @@ func (c *BoardConfig) DisableGPU(num int) int {
 	return disabled
 }
 
+func (c *BoardConfig) CPUMiLimits() map[string]int64 {
+	cpuMap := make(map[string]int64)
+	for _, uix := range c.Uix {
+		if uix.Disabled {
+			continue
+		}
+		if uix.Resources != nil {
+			cpu, _ := uix.Resources.CPUMemLimits()
+			cpuMap[uix.Name] = cpu
+		} else {
+			cpuMap[uix.Name] = 0
+		}
+	}
+	return cpuMap
+}
+
+func (c *BoardConfig) MemoryMBLimits() map[string]int64 {
+	memoryMap := make(map[string]int64)
+	for _, uix := range c.Uix {
+		if uix.Disabled {
+			continue
+		}
+		if uix.Resources != nil {
+			_, mem := uix.Resources.CPUMemLimits()
+			memoryMap[uix.Name] = mem
+		} else {
+			memoryMap[uix.Name] = 0
+		}
+	}
+	return memoryMap
+}
+
 func (c *Config) ValidateConfig() error {
 	var resNameErr = func(n, r string, allowUnderscore bool) error {
 		var underscoreRsn string
@@ -383,6 +415,28 @@ func (s *Serving) GPURequests() int64 {
 	return gpus
 }
 
+func (s *Serving) CPUMiLimits() map[string]int64 {
+	cpuMap := make(map[string]int64)
+	if s.Uix.Resources != nil {
+		cpu, _ := s.Uix.Resources.CPUMemLimits()
+		cpuMap[s.Uix.Name] = cpu
+	} else {
+		cpuMap[s.Uix.Name] = 0
+	}
+	return cpuMap
+}
+
+func (s *Serving) MemoryMBLimits() map[string]int64 {
+	memoryMap := make(map[string]int64)
+	if s.Uix.Resources != nil {
+		_, memory := s.Uix.Resources.CPUMemLimits()
+		memoryMap[s.Uix.Name] = memory
+	} else {
+		memoryMap[s.Uix.Name] = 0
+	}
+	return memoryMap
+}
+
 func (s *Serving) DisableGPU(num int) int {
 	s.Disabled = true
 	s.DisabledReason = GPUDisabledMessage
@@ -489,6 +543,32 @@ func (t *Task) GPURequests() int64 {
 		}
 	}
 	return gpus
+}
+
+func (t *Task) CPUMiLimits() map[string]int64 {
+	cpuMap := make(map[string]int64)
+	for _, resource := range t.Resources {
+		if resource.Resources != nil {
+			cpu, _ := resource.Resources.CPUMemLimits()
+			cpuMap[resource.Name] = cpu
+		} else {
+			cpuMap[resource.Name] = 0
+		}
+	}
+	return cpuMap
+}
+
+func (t *Task) MemoryMBLimits() map[string]int64 {
+	memoryMap := make(map[string]int64)
+	for _, resource := range t.Resources {
+		if resource.Resources != nil {
+			_, mem := resource.Resources.CPUMemLimits()
+			memoryMap[resource.Name] = mem
+		} else {
+			memoryMap[resource.Name] = 0
+		}
+	}
+	return memoryMap
 }
 
 func (t *Task) DisableGPU(num int) int {

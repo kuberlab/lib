@@ -11,6 +11,28 @@ type ResourceRequest struct {
 	Limits       *dealerclient.ResourceLimit `json:"limits,omitempty"`
 }
 
+func (r *ResourceRequest) CPUMemLimits() (int64, int64) {
+	var cpuLimit int64 = 0
+	var memoryLimit int64 = 0
+	if r.Limits != nil {
+		if r.Limits.Memory != nil {
+			memoryLimit = r.Limits.Memory.ScaledValue(6)
+		}
+		if r.Limits.CPU != nil {
+			cpuLimit = r.Limits.CPU.MilliValue()
+		}
+	}
+	if r.Requests != nil {
+		if r.Requests.Memory != nil && r.Requests.Memory.ScaledValue(6) > memoryLimit {
+			memoryLimit = r.Requests.Memory.ScaledValue(6)
+		}
+		if r.Requests.CPU != nil && r.Requests.CPU.MilliValue() > cpuLimit {
+			cpuLimit = r.Requests.CPU.MilliValue()
+		}
+	}
+	return cpuLimit, memoryLimit
+}
+
 type ResourceAccelerators struct {
 	GPU uint `json:"gpu"`
 }
