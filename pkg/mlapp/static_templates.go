@@ -285,6 +285,9 @@ func (ui UIXResourceGenerator) ResourcesSpec() ResourceRequest {
 }
 
 func (ui UIXResourceGenerator) Replicas() int {
+	if ui.Disabled {
+		return 0
+	}
 	if ui.Resource.Replicas > 0 {
 		return ui.Resource.Replicas
 	}
@@ -360,9 +363,9 @@ func (ui UIXResourceGenerator) Args() string {
 func (c *BoardConfig) GenerateUIXResources() ([]*kubernetes.KubeResource, error) {
 	resources := []*kubernetes.KubeResource{}
 	for _, uix := range c.Uix {
-		if uix.Disabled {
-			continue
-		}
+		//if uix.Disabled {
+		//	continue
+		//}
 
 		if err := c.CheckResourceLimit(uix.Resource, uix.Name); err != nil {
 			return nil, err
