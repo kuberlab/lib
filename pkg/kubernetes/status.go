@@ -146,7 +146,7 @@ func DetermineResourceState(pod apiv1.Pod, client *kubernetes.Clientset) (reason
 		Resources: sumResourceRequests(pod),
 	}
 
-	if pod.Status.Phase == apiv1.PodRunning {
+	if pod.Status.Phase == apiv1.PodRunning || pod.Status.Phase == apiv1.PodSucceeded || resourceState.Status == "Completed" {
 		return
 	}
 
