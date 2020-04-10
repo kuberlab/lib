@@ -57,7 +57,10 @@ func MustParse(date string) time.Time {
 	if err != nil {
 		t, err = time.ParseInLocation("2006-01-02 15:04:05Z", date, time.FixedZone("UTC", 0))
 		if err != nil {
-			panic(err)
+			t, err = time.ParseInLocation("2006-01-02T15:04:05.000Z", date, time.FixedZone("UTC", 0))
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 	return t
