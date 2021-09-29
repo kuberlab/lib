@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -76,7 +77,7 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Duration) (
 	for {
 		select {
 		case <-ticker.C:
-			p, err = client.CoreV1().Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
+			p, err = client.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
@@ -87,7 +88,7 @@ func WaitPod(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Duration) (
 				return true, nil
 			}
 		case <-timeoutTimer.C:
-			client.CoreV1().Pods(p.Namespace).Delete(p.Name, &meta_v1.DeleteOptions{})
+			client.CoreV1().Pods(p.Namespace).Delete(context.TODO(), p.Name, meta_v1.DeleteOptions{})
 			return false, fmt.Errorf("Pod %v is not running. Current state: %v", p.Name, p.Status.Phase)
 		}
 	}
@@ -107,7 +108,7 @@ func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Dur
 	for {
 		select {
 		case <-ticker.C:
-			p, err := client.CoreV1().Pods(pod.Namespace).Get(pod.Name, meta_v1.GetOptions{})
+			p, err := client.CoreV1().Pods(pod.Namespace).Get(context.TODO(), pod.Name, meta_v1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -115,7 +116,7 @@ func WaitPodComplete(pod *v1.Pod, client *kubernetes.Clientset, timeout time.Dur
 				return nil
 			}
 		case <-timeoutTimer.C:
-			client.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &meta_v1.DeleteOptions{})
+			client.CoreV1().Pods(pod.Namespace).Delete(context.TODO(), pod.Name, meta_v1.DeleteOptions{})
 			return fmt.Errorf("Pod %v is still running. Killing pod", pod.Name)
 		}
 	}

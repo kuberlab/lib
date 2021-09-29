@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/json-iterator/go"
 	"github.com/kuberlab/lib/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

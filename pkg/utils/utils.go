@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var charNotFitToKube = regexp.MustCompile("[^-a-z0-9]")

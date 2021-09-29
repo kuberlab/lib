@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/pborman/uuid"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"

@@ -1,6 +1,6 @@
 package mlapp
 
-import "github.com/Sirupsen/logrus"
+import "github.com/sirupsen/logrus"
 
 type GetRevisionsFunc func(task *Task) []TaskRevision
 type AddRevisionFunc func(rev TaskRevision)

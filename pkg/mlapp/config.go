@@ -1,6 +1,7 @@
 package mlapp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,8 +16,8 @@ import (
 	kuberlab "github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -231,7 +232,7 @@ type Meta struct {
 type DeploymentBasedResource interface {
 	Type() string
 	GetName() string
-	Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error)
+	Deployment(client *kubernetes.Clientset, namespace, appName string) (*appsv1.Deployment, error)
 }
 
 type Revision struct {
@@ -393,9 +394,11 @@ func (uix *Uix) GetName() string {
 	return uix.Name
 }
 
-func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName string) (*extv1beta1.Deployment, error) {
-	return client.ExtensionsV1beta1().Deployments(namespace).Get(
-		utils.KubeDeploymentEncode(appName+"-"+uix.Name), meta_v1.GetOptions{},
+func (uix *Uix) Deployment(client *kubernetes.Clientset, namespace, appName string) (*appsv1.Deployment, error) {
+	return client.AppsV1().Deployments(namespace).Get(
+		context.TODO(),
+		utils.KubeDeploymentEncode(appName+"-"+uix.Name),
+		meta_v1.GetOptions{},
 	)
 }
 

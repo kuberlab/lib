@@ -2,13 +2,13 @@ package mlapp
 
 import (
 	"github.com/kuberlab/lib/pkg/kubernetes"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
 	"k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *BoardConfig) generateHPA(deployment *v1beta1.Deployment, autoscaleCfg *Autoscale) *kubernetes.KubeResource {
+func (c *BoardConfig) generateHPA(deployment *appsv1.Deployment, autoscaleCfg *Autoscale) *kubernetes.KubeResource {
 	min := int32(1)
 	max := int32(5)
 

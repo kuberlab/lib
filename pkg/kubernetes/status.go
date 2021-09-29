@@ -1,12 +1,13 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/kuberlab/lib/pkg/utils"
+	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -60,9 +61,6 @@ func NvidiaGPU(reqs *apiv1.ResourceList) *resource.Quantity {
 		if val, ok := (*reqs)[ResourceNvidiaGPU]; ok {
 			return &val
 		}
-		if val, ok := (*reqs)[apiv1.ResourceNvidiaGPU]; ok {
-			return &val
-		}
 	}
 	return &resource.Quantity{}
 }
@@ -75,7 +73,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 		pods = append(pods, *v)
 		name = v.Name
 	case *extv1beta1.Deployment:
-		ps, err := client.CoreV1().Pods(v.Namespace).List(labelSelector(v.Spec.Template.Labels))
+		ps, err := client.CoreV1().Pods(v.Namespace).List(context.TODO(), labelSelector(v.Spec.Template.Labels))
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +82,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	case []*WorkerSet:
 		for _, wset := range v {
 			logrus.Debugf("Using labelselector = %v", labelSelector(wset.PodTemplate.Labels).LabelSelector)
-			ps, err := client.CoreV1().Pods(wset.Namespace).List(labelSelector(wset.PodTemplate.Labels))
+			ps, err := client.CoreV1().Pods(wset.Namespace).List(context.TODO(), labelSelector(wset.PodTemplate.Labels))
 			if err != nil {
 				return nil, err
 			}
@@ -296,7 +294,7 @@ func sumResourceRequests(pod apiv1.Pod) apiv1.ResourceRequirements {
 				reqs[k].Add(v)
 			} else {
 				vv := &v
-				reqs[k] = vv.Copy()
+				vv.DeepCopyInto(reqs[k])
 			}
 		}
 		for k, v := range container.Resources.Limits {
@@ -304,7 +302,7 @@ func sumResourceRequests(pod apiv1.Pod) apiv1.ResourceRequirements {
 				limits[k].Add(v)
 			} else {
 				vv := &v
-				limits[k] = vv.Copy()
+				vv.DeepCopyInto(limits[k])
 			}
 		}
 	}

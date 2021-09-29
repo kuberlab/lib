@@ -145,11 +145,11 @@ type TaskResourceGenerator struct {
 	InitContainers []InitContainers
 }
 
-func (t TaskResourceGenerator) KubeVersion() *version.Info {
+func (t *TaskResourceGenerator) KubeVersion() *version.Info {
 	return kuberlab.MlBoardKubeVersion
 }
 
-func (t TaskResourceGenerator) KubeVersionMajor() int {
+func (t *TaskResourceGenerator) KubeVersionMajor() int {
 	major, _ := strconv.ParseInt(kuberlab.MlBoardKubeVersion.Major, 10, 32)
 	if major == 0 {
 		return 1
@@ -157,7 +157,7 @@ func (t TaskResourceGenerator) KubeVersionMajor() int {
 	return int(major)
 }
 
-func (t TaskResourceGenerator) KubeVersionMinor() int {
+func (t *TaskResourceGenerator) KubeVersionMinor() int {
 	minor, _ := strconv.ParseInt(kuberlab.MlBoardKubeVersion.Minor, 10, 32)
 	if minor == 0 {
 		return 8
@@ -165,17 +165,17 @@ func (t TaskResourceGenerator) KubeVersionMinor() int {
 	return int(minor)
 }
 
-func (t TaskResourceGenerator) ResourcesSpec() ResourceRequest {
+func (t *TaskResourceGenerator) ResourcesSpec() ResourceRequest {
 	cpu, _ := resource.ParseQuantity("50m")
 	mem, _ := resource.ParseQuantity("128Mi")
 	return ResourceSpec(t.Resources, t.c.BoardMetadata.Limits, dealerclient.ResourceLimit{CPU: &cpu, Memory: &mem})
 }
 
-func (t TaskResourceGenerator) DockerSecretNames() []string {
+func (t *TaskResourceGenerator) DockerSecretNames() []string {
 	return t.c.DockerSecretNames()
 }
 
-func (t TaskResourceGenerator) Conda() string {
+func (t *TaskResourceGenerator) Conda() string {
 	for _, e := range t.Env() {
 		if e.Name == "CONDA_ENV" {
 			return e.Value
@@ -184,14 +184,14 @@ func (t TaskResourceGenerator) Conda() string {
 	return ""
 }
 
-func (t TaskResourceGenerator) PythonPath() string {
+func (t *TaskResourceGenerator) PythonPath() string {
 	_, pythonPath := baseEnv(t.c, t.TaskResource.Resource)
 	return pythonPath
 }
-func (t TaskResourceGenerator) DeployResourceLabel() string {
+func (t *TaskResourceGenerator) DeployResourceLabel() string {
 	return t.c.DeployResourceLabel
 }
-func (t TaskResourceGenerator) Env() []Env {
+func (t *TaskResourceGenerator) Env() []Env {
 	envs, _ := baseEnv(t.c, t.TaskResource.Resource)
 	for _, r := range t.task.Resources {
 		hosts := make([]string, r.Replicas)
@@ -224,24 +224,24 @@ func (t TaskResourceGenerator) Env() []Env {
 	})
 	return ResolveEnv(envs)
 }
-func (t TaskResourceGenerator) BuildName() string {
+func (t *TaskResourceGenerator) BuildName() string {
 	return utils.KubePodNameEncode(fmt.Sprintf("%s-%s-%s-%s", t.c.Name, t.task.Name, t.JobID, t.TaskResource.Name))
 }
-func (t TaskResourceGenerator) Mounts() interface{} {
+func (t *TaskResourceGenerator) Mounts() interface{} {
 	return map[string]interface{}{
 		"volumeMounts": t.mounts,
 	}
 }
-func (t TaskResourceGenerator) Volumes() interface{} {
+func (t *TaskResourceGenerator) Volumes() interface{} {
 	return map[string]interface{}{
 		"volumes": t.volumes,
 	}
 }
-func (t TaskResourceGenerator) Namespace() string {
+func (t *TaskResourceGenerator) Namespace() string {
 	return t.c.GetNamespace()
 }
 
-func (t TaskResourceGenerator) Labels() map[string]string {
+func (t *TaskResourceGenerator) Labels() map[string]string {
 	computeType := "cpu"
 	if t.ResourcesSpec().Accelerators.GPU > 0 {
 		computeType = "gpu"
@@ -256,12 +256,12 @@ func (t TaskResourceGenerator) Labels() map[string]string {
 	})
 }
 
-func (t TaskResourceGenerator) Args() string {
+func (t *TaskResourceGenerator) Args() string {
 	//return strings.Replace(t.RawArgs, "\"", "\\\"", -1)
 	return t.RawArgs
 }
 
-func (t TaskResourceGenerator) PrivilegedMode() bool {
+func (t *TaskResourceGenerator) PrivilegedMode() bool {
 	return t.NodesLabel == "knode:movidius"
 }
 
@@ -284,7 +284,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 		}
 		//volumes = append(volumes, sshVolumes...)
 		//mounts = append(mounts, sshVolumesMount...)
-		g := TaskResourceGenerator{
+		g := &TaskResourceGenerator{
 			c:              c,
 			task:           task,
 			TaskResource:   r,
@@ -307,7 +307,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 
 		res, err := kuberlab.GetTemplatedResource(ResourceTpl, g.BuildName()+":resource", g)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
 		}
 		res.Object = &kuberlab.WorkerSet{
 			PodTemplate:         res.Object.(*v1.Pod),
@@ -325,9 +325,6 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 				types.ComponentLabel: task.Name + "-" + r.Name,
 			}),
 		}
-		if err != nil {
-			return nil, fmt.Errorf("Failed parse template '%s': %v", g.BuildName(), err)
-		}
 		//res.Deps = []*kuberlab.KubeResource{&sshSecretResource}
 		if g.Port > 0 {
 			res.Deps = []*kuberlab.KubeResource{generateHeadlessService(g)}
@@ -343,7 +340,7 @@ func (c *BoardConfig) GenerateTaskResources(task Task, jobID string) ([]TaskReso
 	return taskSpec, nil
 }
 
-func generateHeadlessService(g TaskResourceGenerator) *kuberlab.KubeResource {
+func generateHeadlessService(g *TaskResourceGenerator) *kuberlab.KubeResource {
 	labels := g.Labels()
 	utils.JoinMaps(labels, g.c.Labels)
 	svc := &v1.Service{

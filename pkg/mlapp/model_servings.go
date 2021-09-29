@@ -7,8 +7,8 @@ import (
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	"github.com/kuberlab/lib/pkg/types"
 	"github.com/kuberlab/lib/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -198,7 +198,7 @@ func (c *BoardConfig) GenerateModelServing(serving BoardModelServing, dealerLimi
 		return nil, fmt.Errorf("Failed parse template '%s': %v", g.ComponentName(), err)
 	}
 
-	deploy := res.Object.(*extv1beta1.Deployment)
+	deploy := res.Object.(*appsv1.Deployment)
 	res.Deps = []*kubernetes.KubeResource{generateServingServiceFromDeployment(deploy)}
 
 	for _, s := range c.Secrets {
@@ -271,7 +271,7 @@ func GenerateModelServing(serving BoardModelServing, dealerLimits bool, dockerSe
 	return cfg.GenerateModelServing(serving, dealerLimits)
 }
 
-func generateServingServiceFromDeployment(serv *extv1beta1.Deployment) *kubernetes.KubeResource {
+func generateServingServiceFromDeployment(serv *appsv1.Deployment) *kubernetes.KubeResource {
 	labels := serv.Labels
 	svc := &v1.Service{
 		TypeMeta: meta_v1.TypeMeta{
