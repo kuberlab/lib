@@ -381,11 +381,11 @@ func DeleteResource(kubeClient *kubernetes.Clientset, resource *KubeResource) er
 			return err
 		}
 	case *appsv1.DaemonSet:
-		if err := kubeClient.ExtensionsV1beta1().DaemonSets(v.Namespace).Delete(context.TODO(), v.Name, meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.AppsV1().DaemonSets(v.Namespace).Delete(context.TODO(), v.Name, meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *appsv1.Deployment:
-		if err := kubeClient.ExtensionsV1beta1().Deployments(v.Namespace).Delete(context.TODO(), v.Name, meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+		if err := kubeClient.AppsV1().Deployments(v.Namespace).Delete(context.TODO(), v.Name, meta_v1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
 			return err
 		}
 	case *api_v1.Service:

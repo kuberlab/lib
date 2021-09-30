@@ -8,8 +8,8 @@ import (
 
 	"github.com/kuberlab/lib/pkg/utils"
 	"github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -72,7 +72,7 @@ func GetComponentState(client *kubernetes.Clientset, obj interface{}, type_ stri
 	case *apiv1.Pod:
 		pods = append(pods, *v)
 		name = v.Name
-	case *extv1beta1.Deployment:
+	case *appsv1.Deployment:
 		ps, err := client.CoreV1().Pods(v.Namespace).List(context.TODO(), labelSelector(v.Spec.Template.Labels))
 		if err != nil {
 			return nil, err
