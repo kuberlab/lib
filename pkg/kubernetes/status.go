@@ -294,6 +294,9 @@ func sumResourceRequests(pod apiv1.Pod) apiv1.ResourceRequirements {
 				reqs[k].Add(v)
 			} else {
 				vv := &v
+				//reqs[k] = vv.Copy()
+				// Not exist; need initialize
+				reqs[k] = &resource.Quantity{}
 				vv.DeepCopyInto(reqs[k])
 			}
 		}
@@ -302,6 +305,8 @@ func sumResourceRequests(pod apiv1.Pod) apiv1.ResourceRequirements {
 				limits[k].Add(v)
 			} else {
 				vv := &v
+				// Not exist; need initialize
+				limits[k] = &resource.Quantity{}
 				vv.DeepCopyInto(limits[k])
 			}
 		}
