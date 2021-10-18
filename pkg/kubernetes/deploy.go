@@ -12,7 +12,7 @@ import (
 	"github.com/kuberlab/lib/pkg/apputil"
 	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2beta1"
+	v2beta2 "k8s.io/api/autoscaling/v2beta2"
 	batch_v1 "k8s.io/api/batch/v1"
 	api_v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -54,7 +54,7 @@ func init() {
 	if err := rbacv1.AddToScheme(scheme.Scheme); err != nil {
 		panic(err)
 	}
-	if err := v2beta1.AddToScheme(scheme.Scheme); err != nil {
+	if err := v2beta2.AddToScheme(scheme.Scheme); err != nil {
 		panic(err)
 	}
 }
@@ -198,13 +198,13 @@ func applyResource(kubeClient *kubernetes.Clientset, resource *KubeResource) err
 		}
 	case *appsv1.Deployment:
 		return waitAndApply(kubeClient, v)
-	case *v2beta1.HorizontalPodAutoscaler:
-		if old, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Get(context.TODO(), v.Name, meta_v1.GetOptions{}); err != nil {
-			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Create(context.TODO(), v, meta_v1.CreateOptions{})
+	case *v2beta2.HorizontalPodAutoscaler:
+		if old, err := kubeClient.AutoscalingV2beta2().HorizontalPodAutoscalers(v.Namespace).Get(context.TODO(), v.Name, meta_v1.GetOptions{}); err != nil {
+			_, err := kubeClient.AutoscalingV2beta2().HorizontalPodAutoscalers(v.Namespace).Create(context.TODO(), v, meta_v1.CreateOptions{})
 			return err
 		} else {
 			old.Labels = v.Labels
-			_, err := kubeClient.AutoscalingV2beta1().HorizontalPodAutoscalers(v.Namespace).Update(context.TODO(), v, meta_v1.UpdateOptions{})
+			_, err := kubeClient.AutoscalingV2beta2().HorizontalPodAutoscalers(v.Namespace).Update(context.TODO(), v, meta_v1.UpdateOptions{})
 			return err
 		}
 	case *api_v1.Service:
