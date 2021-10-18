@@ -735,26 +735,27 @@ func (c *BoardConfig) KubeInits(mounts []VolumeMount, task *Task, build *string)
 		if v == nil {
 			return nil, fmt.Errorf("Source '%s' not found", m.Name)
 		}
-		if v.GitRepo != nil && v.GitRepo.AccountId != "" {
-			// Skip for UIX and already cloned repos.
-			if v.GitRepo.AccountId == "" && task == nil && build == nil {
-				return []InitContainers{}, nil
-			}
+		//if v.GitRepo != nil && v.GitRepo.AccountId != "" {
+		if v.GitRepo != nil {
+			// Skip for UIX with public repos.
+			//if task == nil && build == nil {
+			//	return []InitContainers{}, nil
+			//}
 			var cmd []string
 			repoName := getGitRepoName(v.GitRepo.Repository)
 			baseDir := fmt.Sprintf("/gitdata/%d", j)
 			repoDir := fmt.Sprintf("%v/%v", baseDir, repoName)
-			if v.GitRepo.AccountId == "" {
-				// If already cloned.
-				cmd = append(cmd, fmt.Sprintf("cd %v", repoDir))
-			} else {
-				apnd := []string{
-					fmt.Sprintf("cd %v", baseDir),
-					fmt.Sprintf("git clone %v", v.GitRepo.Repository),
-					fmt.Sprintf("cd %v", repoDir),
-				}
-				cmd = append(cmd, apnd...)
+			//if v.GitRepo.AccountId == "" {
+			// If already cloned.
+			//cmd = append(cmd, fmt.Sprintf("cd %v", repoDir))
+			//} else {
+			apnd := []string{
+				fmt.Sprintf("cd %v", baseDir),
+				fmt.Sprintf("git clone %v", v.GitRepo.Repository),
+				fmt.Sprintf("cd %v", repoDir),
 			}
+			cmd = append(cmd, apnd...)
+			//}
 
 			findRevision := func(volume string) string {
 				for _, rev := range task.GitRevisions {

@@ -3,7 +3,7 @@ package mlapp
 import (
 	"github.com/kuberlab/lib/pkg/kubernetes"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2beta1"
+	"k8s.io/api/autoscaling/v2beta2"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,30 +32,32 @@ func (c *BoardConfig) generateHPA(deployment *appsv1.Deployment, autoscaleCfg *A
 		}
 	}
 
-	hpa := &v2beta1.HorizontalPodAutoscaler{
+	hpa := &v2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployment.Name,
 			Labels:    deployment.Labels,
 			Namespace: deployment.Namespace,
 		},
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta1",
+			APIVersion: "autoscaling/v2beta2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
-		Spec: v2beta1.HorizontalPodAutoscalerSpec{
+		Spec: v2beta2.HorizontalPodAutoscalerSpec{
 			MinReplicas: &min,
 			MaxReplicas: max,
-			ScaleTargetRef: v2beta1.CrossVersionObjectReference{
+			ScaleTargetRef: v2beta2.CrossVersionObjectReference{
 				APIVersion: deployment.APIVersion,
 				Kind:       deployment.Kind,
 				Name:       deployment.Name,
 			},
-			Metrics: []v2beta1.MetricSpec{
+			Metrics: []v2beta2.MetricSpec{
 				{
-					Type: v2beta1.ResourceMetricSourceType,
-					Resource: &v2beta1.ResourceMetricSource{
-						Name:                     v1.ResourceCPU,
-						TargetAverageUtilization: &target,
+					Type: v2beta2.ResourceMetricSourceType,
+					Resource: &v2beta2.ResourceMetricSource{
+						Name: v1.ResourceCPU,
+						Target: v2beta2.MetricTarget{
+							AverageUtilization: &target,
+						},
 					},
 				},
 			},

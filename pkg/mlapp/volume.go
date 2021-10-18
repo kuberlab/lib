@@ -90,13 +90,13 @@ func (v Volume) V1Volume() v1.Volume {
 		}
 	}
 	if v.GitRepo != nil {
-		if v.GitRepo.AccountId != "" {
-			r.EmptyDir = &v1.EmptyDirVolumeSource{}
-		} else {
+		//if v.GitRepo.AccountId != "" {
+		r.EmptyDir = &v1.EmptyDirVolumeSource{}
+		//} else {
 			// Copy git repo to not allow change it in the future.
-			git := v.GitRepo.GitRepoVolumeSource
-			r.GitRepo = &git
-		}
+			//git := v.GitRepo.GitRepoVolumeSource
+			//r.GitRepo = &git
+		//}
 	}
 	if v.Model != nil {
 		r.EmptyDir = &v1.EmptyDirVolumeSource{}
