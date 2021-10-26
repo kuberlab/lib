@@ -54,7 +54,7 @@ type Event struct {
 
 var insufficientPattern = regexp.MustCompile(`nodes are available.*(Insufficient .*?\(.*?\)).*`)
 var mountFailedPattern = regexp.MustCompile(`.*(MountVolume.*failed.*)`)
-var gitRepoPattern = regexp.MustCompile(`([\w]+@)+([\w\d-\.]+)[:/]([\w\d-_\./]+)|(\w+://)(.+@)*([\w\d\.]+)(:[\d]+){0,1}/*(.*)`)
+var gitRepoPattern = regexp.MustCompile(`([\w]+@)+([\w\d-\.]+)[:/]([\w\d-_\./]+)|(\w+://)([\S]+@)*([\w\d\.]+)(:[\d]+){0,1}/*([\S]*)`)
 
 func NvidiaGPU(reqs *apiv1.ResourceList) *resource.Quantity {
 	if reqs != nil {
@@ -218,14 +218,14 @@ func DetermineResourceState(pod apiv1.Pod, client *kubernetes.Clientset) (reason
 				}
 				if terminated.ExitCode == 39 {
 					event.Reason = fmt.Sprintf("%v: %v", terminated.Message, terminated.Reason)
-					matches := gitRepoPattern.FindAllStringSubmatch(strings.Join(pod.Spec.InitContainers[i].Command, " "), -1)
-					repos := make([]string, 0)
-					for _, groups := range matches {
-						if len(groups) > 1 {
-							repos = append(repos, groups[0])
-						}
-					}
-					msg := "Failed get access to the repo(s): [" + strings.Join(repos, ",") + "]"
+					matches := gitRepoPattern.FindAllString(strings.Join(pod.Spec.InitContainers[i].Command, " "), -1)
+					//repos := make([]string, 0)
+					//for _, groups := range matches {
+					//	if len(groups) > 1 {
+					//		repos = append(repos, groups[0])
+					//	}
+					//}
+					msg := "Failed get access to the repo(s): [" + strings.Join(matches, ",") + "]"
 					event.Message = msg
 				} else {
 					event.Reason = terminated.Reason
